@@ -8,9 +8,11 @@ namespace Brushes {
 
 BrushSystem::BrushSystem()
     : tileset_service_(registry_),
-      brush_size_panel_(&settings_service_, [this]() { saveBrushes(); }) {
+      brush_size_panel_(&settings_service_, &controller_,
+                        [this]() { saveBrushes(); }) {
   // Wire the settings service to the controller for multi-tile painting
   controller_.setBrushSettingsService(&settings_service_);
+  controller_.setBrushRegistry(&registry_);
   // Wire the preview factory for creating preview providers
   controller_.setPreviewFactory(&preview_factory_);
 }

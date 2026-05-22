@@ -54,6 +54,7 @@ UIComponentContainer UIFactory::create(const UIFactoryContext &ctx) {
   components.hotkey_controller = std::make_unique<AppLogic::HotkeyController>(
       ctx.hotkey_registry, ctx.view_settings, components.map_panel.get(),
       *components.ingame_box_window, ctx.tab_manager);
+  components.hotkey_controller->setBrushController(&ctx.brush_controller);
 
   components.menu_bar = std::make_unique<Presentation::MenuBar>(
       ctx.view_settings, ctx.selection_settings, components.map_panel.get(),

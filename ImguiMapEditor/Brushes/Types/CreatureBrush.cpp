@@ -23,9 +23,13 @@ void CreatureBrush::draw(Domain::ChunkedMap &map, Domain::Tile *tile,
   creature->setName(name_);
   creature->setOutfit(outfit_);
   creature->setPosition(tile->getPosition());
+  if (ctx.brushSettings) {
+    creature->spawn_time = ctx.brushSettings->getDefaultSpawnTime();
+  }
 
   // Add to tile (Tile takes ownership)
   tile->setCreature(std::move(creature));
+  tile->setCreatureBrushId(ctx.ownerBrushId);
 
   // Auto-create spawn if enabled in settings
   if (ctx.brushSettings && ctx.brushSettings->getAutoCreateSpawn()) {
@@ -57,6 +61,7 @@ void CreatureBrush::draw(Domain::ChunkedMap &map, Domain::Tile *tile,
       int radius = ctx.brushSettings->getDefaultSpawnRadius();
       auto spawn = std::make_unique<Domain::Spawn>(tile->getPosition(), radius);
       tile->setSpawn(std::move(spawn));
+      tile->setSpawnBrushId(ctx.ownerBrushId);
       spdlog::debug(
           "[CreatureBrush] Auto-created spawn at ({},{},{}) with radius {}",
           tile->getPosition().x, tile->getPosition().y, tile->getPosition().z,
@@ -70,6 +75,7 @@ void CreatureBrush::undraw(Domain::ChunkedMap &map, Domain::Tile *tile) {
     return;
   // Remove creature from tile
   tile->removeCreature();
+  tile->setCreatureBrushId(InvalidBrushId);
 }
 
 } // namespace MapEditor::Brushes

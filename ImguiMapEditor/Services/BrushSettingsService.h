@@ -1,9 +1,11 @@
 #pragma once
 
 #include "Domain/Position.h"
+#include <array>
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -97,8 +99,10 @@ struct CustomBrushShape {
 class BrushSettingsService {
 public:
   static constexpr int MIN_SIZE = 1;
-  static constexpr int MAX_SIZE = 10;
+  static constexpr int MAX_SIZE = 11;
   static constexpr int DEFAULT_CUSTOM_GRID_SIZE = 10;
+  static constexpr std::array<int, 6> STANDARD_SIZE_PROGRESSION{1, 2, 4, 6, 8,
+                                                                11};
 
   BrushSettingsService() = default;
   ~BrushSettingsService() = default;
@@ -128,14 +132,36 @@ public:
   BrushSizeMode getBrushSizeMode() const { return sizeMode_; }
 
   // ========================
-  // Standard Size (radius 1-10)
+  // Tool Options
   // ========================
 
-  void setStandardSize(int radius);
+  void setPreviewBorder(bool enabled);
+  bool getPreviewBorder() const { return previewBorder_; }
+
+  void setLockDoors(bool enabled);
+  bool getLockDoors() const { return lockDoors_; }
+
+  // ========================
+  // Standard Size
+  // ========================
+
+  void setStandardSize(int size);
   int getStandardSize() const { return standardSize_; }
 
   void increaseSize();
   void decreaseSize();
+
+  [[nodiscard]] static std::span<const int> getStandardSizeProgression() {
+    return STANDARD_SIZE_PROGRESSION;
+  }
+  [[nodiscard]] static int normalizeStandardSize(int size);
+  [[nodiscard]] static int
+  getStandardSizeProgressionIndexForValue(int size);
+  [[nodiscard]] int getStandardSizeProgressionIndex() const {
+    return getStandardSizeProgressionIndexForValue(standardSize_);
+  }
+  [[nodiscard]] int getNextStandardSize() const;
+  [[nodiscard]] int getPreviousStandardSize() const;
 
   // ========================
   // Custom Dimensions (independent W×H)
@@ -286,6 +312,10 @@ private:
   bool autoCreateSpawn_ = false;
   int defaultSpawnRadius_ = 3;
   int defaultSpawnTime_ = 60; // seconds
+
+  // Tool options
+  bool previewBorder_ = true;
+  bool lockDoors_ = false;
 
   void notifyChanged();
 

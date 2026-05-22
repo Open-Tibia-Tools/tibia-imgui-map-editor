@@ -85,6 +85,19 @@ std::string HotkeyRegistry::formatShortcut(const HotkeyBinding& binding) {
     return oss.str();
 }
 
+namespace {
+
+void mergeMissingBindings(HotkeyRegistry &registry,
+                          const HotkeyRegistry &defaults) {
+    for (const auto &[action_id, binding] : defaults.getAllBindings()) {
+        if (!registry.findByAction(action_id)) {
+            registry.registerBinding(binding);
+        }
+    }
+}
+
+} // namespace
+
 HotkeyRegistry HotkeyRegistry::createDefaults() {
     HotkeyRegistry registry;
     
@@ -113,7 +126,7 @@ HotkeyRegistry HotkeyRegistry::createDefaults() {
     registry.registerBinding({"GHOST_HIGHER_FLOORS", GLFW_KEY_L, GLFW_MOD_CONTROL, "view"});
     registry.registerBinding({"GHOST_LOWER_FLOORS", GLFW_KEY_L, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT, "view"});
     registry.registerBinding({"SHOW_ALL_FLOORS", GLFW_KEY_W, GLFW_MOD_CONTROL, "view"});
-    registry.registerBinding({"SHOW_SHADE", GLFW_KEY_Q, 0, "view"});
+    registry.registerBinding({"SHOW_SHADE", GLFW_KEY_F9, 0, "view"});
     
     // Overlay toggles
     registry.registerBinding({"SHOW_SPAWNS", GLFW_KEY_S, 0, "overlay"});
@@ -132,6 +145,30 @@ HotkeyRegistry HotkeyRegistry::createDefaults() {
     // Navigation
     registry.registerBinding({"FLOOR_UP", GLFW_KEY_PAGE_UP, 0, "navigation"});
     registry.registerBinding({"FLOOR_DOWN", GLFW_KEY_PAGE_DOWN, 0, "navigation"});
+
+    // Brush actions
+    registry.registerBinding({"BRUSH_REFRESH_CURRENT", GLFW_KEY_SPACE, GLFW_MOD_CONTROL, "brush"});
+    registry.registerBinding({"BRUSH_TOGGLE_SELECTION_TOOL", GLFW_KEY_SPACE, 0, "brush"});
+    registry.registerBinding({"BRUSH_RESTORE_LAST", GLFW_KEY_Q, 0, "brush"});
+    registry.registerBinding({"BRUSH_VARIATION_PREV", GLFW_KEY_Z, 0, "brush"});
+    registry.registerBinding({"BRUSH_VARIATION_NEXT", GLFW_KEY_X, 0, "brush"});
+    registry.registerBinding({"ROTATE_ITEM", GLFW_KEY_R, 0, "brush"});
+
+    for (int slot = 0; slot < 10; ++slot) {
+        const auto slot_suffix = std::to_string(slot);
+        registry.registerBinding({
+            "BRUSH_SLOT_" + slot_suffix,
+            GLFW_KEY_0 + slot,
+            0,
+            "brush",
+        });
+        registry.registerBinding({
+            "BRUSH_STORE_SLOT_" + slot_suffix,
+            GLFW_KEY_0 + slot,
+            GLFW_MOD_CONTROL,
+            "brush",
+        });
+    }
     
     // Selection
     registry.registerBinding({"SELECT_ALL", GLFW_KEY_A, GLFW_MOD_CONTROL, "selection"});
@@ -154,7 +191,7 @@ HotkeyRegistry HotkeyRegistry::loadOrCreateDefaults(const std::vector<std::strin
         if (std::filesystem::exists(path)) {
             HotkeyRegistry registry;
             if (IO::HotkeyJsonReader::load(path, registry)) {
-                // IO::HotkeyJsonReader::load handles its own logging
+                mergeMissingBindings(registry, createDefaults());
                 return registry;
             }
         }

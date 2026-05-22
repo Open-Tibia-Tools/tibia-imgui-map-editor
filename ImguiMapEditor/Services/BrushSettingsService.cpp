@@ -1,10 +1,77 @@
 #include "BrushSettingsService.h"
 
+#include <cstdlib>
 #include <fstream>
+#include <ranges>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 
 namespace MapEditor::Services {
+
+namespace {
+
+[[nodiscard]] int snapToDiscreteBrushSize(int size) {
+  size = std::clamp(size, BrushSettingsService::MIN_SIZE,
+                    BrushSettingsService::MAX_SIZE);
+
+  auto best = BrushSettingsService::STANDARD_SIZE_PROGRESSION.front();
+  auto bestDistance = std::abs(best - size);
+  for (const auto candidate :
+       BrushSettingsService::STANDARD_SIZE_PROGRESSION) {
+    const auto distance = std::abs(candidate - size);
+    if (distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
+[[nodiscard]] int nextDiscreteBrushSize(int current) {
+  current = snapToDiscreteBrushSize(current);
+  for (const auto candidate :
+       BrushSettingsService::STANDARD_SIZE_PROGRESSION) {
+    if (candidate > current) {
+      return candidate;
+    }
+  }
+  return BrushSettingsService::STANDARD_SIZE_PROGRESSION.back();
+}
+
+[[nodiscard]] int previousDiscreteBrushSize(int current) {
+  current = snapToDiscreteBrushSize(current);
+  for (auto it = BrushSettingsService::STANDARD_SIZE_PROGRESSION.rbegin();
+       it != BrushSettingsService::STANDARD_SIZE_PROGRESSION.rend(); ++it) {
+    if (*it < current) {
+      return *it;
+    }
+  }
+  return BrushSettingsService::STANDARD_SIZE_PROGRESSION.front();
+}
+
+} // namespace
+
+int BrushSettingsService::normalizeStandardSize(int size) {
+  return snapToDiscreteBrushSize(size);
+}
+
+int BrushSettingsService::getStandardSizeProgressionIndexForValue(int size) {
+  const auto normalized = normalizeStandardSize(size);
+  const auto it =
+      std::ranges::find(STANDARD_SIZE_PROGRESSION, normalized);
+  if (it == STANDARD_SIZE_PROGRESSION.end()) {
+    return 0;
+  }
+  return static_cast<int>(std::distance(STANDARD_SIZE_PROGRESSION.begin(), it));
+}
+
+int BrushSettingsService::getNextStandardSize() const {
+  return nextDiscreteBrushSize(standardSize_);
+}
+
+int BrushSettingsService::getPreviousStandardSize() const {
+  return previousDiscreteBrushSize(standardSize_);
+}
 
 // ========================
 // Brush Type
@@ -28,12 +95,38 @@ void BrushSettingsService::setBrushSizeMode(BrushSizeMode mode) {
   }
 }
 
+void BrushSettingsService::setPreviewBorder(bool enabled) {
+  if (previewBorder_ != enabled) {
+    previewBorder_ = enabled;
+    notifyChanged();
+  }
+}
+
+void BrushSettingsService::setLockDoors(bool enabled) {
+  if (lockDoors_ != enabled) {
+    lockDoors_ = enabled;
+    notifyChanged();
+  }
+}
+
 // ========================
 // Standard Size (now direct tile count, not radius)
 // ========================
 
 void BrushSettingsService::setStandardSize(int size) {
   size = std::clamp(size, MIN_SIZE, MAX_SIZE);
+
+  if (std::ranges::find(STANDARD_SIZE_PROGRESSION, size) ==
+      STANDARD_SIZE_PROGRESSION.end()) {
+    if (size > standardSize_) {
+      size = getNextStandardSize();
+    } else if (size < standardSize_) {
+      size = getPreviousStandardSize();
+    } else {
+      size = normalizeStandardSize(size);
+    }
+  }
+
   if (standardSize_ != size) {
     standardSize_ = size;
     notifyChanged();
@@ -41,11 +134,11 @@ void BrushSettingsService::setStandardSize(int size) {
 }
 
 void BrushSettingsService::increaseSize() {
-  setStandardSize(standardSize_ + 1);
+  setStandardSize(getNextStandardSize());
 }
 
 void BrushSettingsService::decreaseSize() {
-  setStandardSize(standardSize_ - 1);
+  setStandardSize(getPreviousStandardSize());
 }
 
 // ========================

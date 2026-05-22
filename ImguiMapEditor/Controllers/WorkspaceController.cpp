@@ -86,7 +86,11 @@ void WorkspaceController::bindSession(
 
     // Clear selection when brush is activated
     brush_controller_.setOnBrushActivatedCallback(
-        [session]() { session->getSelectionService().clear(); });
+        [this]() {
+          if (auto *activeSession = map_panel_.getEditorSession()) {
+            activeSession->getSelectionService().clear();
+          }
+        });
   }
 }
 

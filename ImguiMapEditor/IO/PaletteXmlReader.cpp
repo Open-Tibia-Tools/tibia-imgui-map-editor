@@ -69,19 +69,16 @@ void PaletteXmlReader::parsePaletteNode(const pugi::xml_node &node,
 
   // Process <tileset> children
   for (pugi::xml_node tilesetNode : node.children("tileset")) {
-    auto tilesetNames = processTilesetIncludes(tilesetNode, basePath);
+    auto tilesets = processTilesetIncludes(tilesetNode, basePath);
 
-    // Resolve tileset names to actual tileset pointers - use injected registry
-    for (const auto &tilesetName : tilesetNames) {
-      Tileset *tileset = tileset_registry_.getTileset(tilesetName);
+    for (auto *tileset : tilesets) {
       if (tileset) {
         palette->addTileset(tileset);
         spdlog::debug("[PaletteXmlReader] Added tileset '{}' to palette '{}'",
-                      tilesetName, name);
+                      tileset->getName(), name);
       } else {
-        spdlog::warn(
-            "[PaletteXmlReader] Tileset '{}' not found for palette '{}'",
-            tilesetName, name);
+        spdlog::warn("[PaletteXmlReader] Encountered null tileset for palette '{}'",
+                     name);
       }
     }
   }
@@ -95,11 +92,11 @@ void PaletteXmlReader::parsePaletteNode(const pugi::xml_node &node,
   palette_registry_.registerPalette(std::move(palette));
 }
 
-std::vector<std::string>
+std::vector<Tileset *>
 PaletteXmlReader::processTilesetIncludes(const pugi::xml_node &tilesetNode,
                                          const fs::path &basePath) {
 
-  std::vector<std::string> tilesetNames;
+  std::vector<Tileset *> tilesets;
 
   for (pugi::xml_node include : tilesetNode.children("include")) {
     // Check for file include
@@ -110,14 +107,24 @@ PaletteXmlReader::processTilesetIncludes(const pugi::xml_node &tilesetNode,
       // Check if specific tileset attribute is set
       std::string specificTileset = include.attribute("tileset").as_string();
       if (!specificTileset.empty()) {
-        tilesetNames.push_back(specificTileset);
+        if (auto *tileset = tileset_registry_.getTileset(specificTileset)) {
+          tilesets.push_back(tileset);
+        }
         continue;
       }
 
-      // Otherwise extract tileset name from file
+      if (auto *tileset =
+              tileset_registry_.getTilesetBySourceFile(fs::absolute(filePath))) {
+        tilesets.push_back(tileset);
+        continue;
+      }
+
+      // Fallback for legacy callers that only registered by display name.
       std::string name = getTilesetNameFromFile(filePath);
       if (!name.empty()) {
-        tilesetNames.push_back(name);
+        if (auto *tileset = tileset_registry_.getTileset(name)) {
+          tilesets.push_back(tileset);
+        }
       }
       continue;
     }
@@ -131,16 +138,24 @@ PaletteXmlReader::processTilesetIncludes(const pugi::xml_node &tilesetNode,
       if (fs::exists(folderPath) && fs::is_directory(folderPath)) {
         auto files = collectXmlFiles(folderPath, recursive);
         for (const auto &xmlFile : files) {
+          if (auto *tileset =
+                  tileset_registry_.getTilesetBySourceFile(fs::absolute(xmlFile))) {
+            tilesets.push_back(tileset);
+            continue;
+          }
+
           std::string name = getTilesetNameFromFile(xmlFile);
           if (!name.empty()) {
-            tilesetNames.push_back(name);
+            if (auto *tileset = tileset_registry_.getTileset(name)) {
+              tilesets.push_back(tileset);
+            }
           }
         }
       }
     }
   }
 
-  return tilesetNames;
+  return tilesets;
 }
 
 std::vector<fs::path> PaletteXmlReader::collectXmlFiles(const fs::path &folder,

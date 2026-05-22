@@ -15,6 +15,8 @@ void FlagBrush::draw(Domain::ChunkedMap &map, Domain::Tile *tile,
 
   // Add the flag to this tile
   tile->addFlag(flag_);
+  tile->setZoneBrushId(flag_, ctx.ownerBrushId);
+  map.markChanged();
 
   spdlog::trace("[FlagBrush] Added {} flag to ({},{},{})", name_,
                 tile->getPosition().x, tile->getPosition().y,
@@ -27,6 +29,8 @@ void FlagBrush::undraw(Domain::ChunkedMap &map, Domain::Tile *tile) {
 
   // Remove the flag from this tile
   tile->removeFlag(flag_);
+  tile->setZoneBrushId(flag_, InvalidBrushId);
+  map.markChanged();
 
   spdlog::trace("[FlagBrush] Removed {} flag from ({},{},{})", name_,
                 tile->getPosition().x, tile->getPosition().y,

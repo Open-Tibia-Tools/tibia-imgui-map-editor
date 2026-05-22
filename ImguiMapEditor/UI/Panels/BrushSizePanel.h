@@ -6,6 +6,10 @@
 #include <vector>
 
 namespace MapEditor {
+namespace Brushes {
+class BrushController;
+class WaypointBrush;
+}
 namespace Services {
 class BrushSettingsService;
 } // namespace Services
@@ -16,20 +20,19 @@ namespace UI {
 namespace Panels {
 
 /**
- * Compact dockable panel for brush size and shape settings.
+ * Dockable Tool Options window for brush controls.
  *
- * Features:
- * - Icon-only shape buttons (Square, Circle, Custom)
- * - Dual W/H sliders with symmetric lock (Square/Circle modes)
- * - Interactive 11×11 preview grid (editable in Custom mode)
- * - Inline brush management (dropdown, save/edit/delete)
- * - Quick preset buttons (3×3, 5×5, Diamond, Cross)
+ * Keeps the existing custom brush editor available behind a collapsible
+ * section, but the default visible UI now mirrors the RME-style tool options
+ * layout: active brush shortcuts, brush-specific toggles, size/thickness, and
+ * context-sensitive settings.
  */
 class BrushSizePanel {
 public:
   using SaveCallback = std::function<void()>;
 
   explicit BrushSizePanel(Services::BrushSettingsService *brushService,
+                          Brushes::BrushController *brushController,
                           SaveCallback onSave = nullptr);
   ~BrushSizePanel() = default;
 
@@ -41,6 +44,7 @@ public:
 
 private:
   Services::BrushSettingsService *service_;
+  Brushes::BrushController *controller_;
   SaveCallback onSave_;
   bool symmetricSize_ = true;
 
@@ -48,10 +52,14 @@ private:
   bool isEditingCustomBrush_ = false;
   bool isNewBrushMode_ = false; // For pulsing "New" state
   std::string editingBrushName_;
+  char waypointNameBuffer_[128]{};
   std::vector<std::vector<bool>> customGrid_; // 11×11 editable grid
   static constexpr int GRID_SIZE = 11;
+  const Brushes::WaypointBrush *cachedWaypointBrush_ = nullptr;
 
   // Layout sections
+  void renderToolbar();
+  void renderBrushOptions();
   void renderTopRow();
   void renderSizeSliders();
   void renderCustomBrushControls();

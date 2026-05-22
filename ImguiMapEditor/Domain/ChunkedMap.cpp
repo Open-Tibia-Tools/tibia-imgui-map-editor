@@ -574,11 +574,65 @@ bool ChunkedMap::hasTownWithHouses(uint32_t town_id) const {
 }
 
 void ChunkedMap::addWaypoint(const std::string &name, const Position &pos) {
+  upsertWaypoint(name, pos);
+}
+
+bool ChunkedMap::upsertWaypoint(const std::string &name, const Position &pos) {
+  if (name.empty()) {
+    return false;
+  }
+
+  auto same_name =
+      std::ranges::find(waypoints_, name, &Waypoint::name);
+  if (same_name != waypoints_.end()) {
+    waypoint_lookup_.erase(positionToKey(same_name->position));
+    same_name->position = pos;
+    waypoint_lookup_[positionToKey(pos)] =
+        static_cast<size_t>(std::distance(waypoints_.begin(), same_name));
+    markChanged();
+    return true;
+  }
+
+  if (auto *existing = getWaypointAtMutable(pos)) {
+    existing->name = name;
+    markChanged();
+    return true;
+  }
+
   waypoints_.push_back({name, pos});
-  // Add to O(1) lookup map - index of the waypoint we just added
-  uint64_t key = positionToKey(pos);
-  waypoint_lookup_[key] = waypoints_.size() - 1;
+  waypoint_lookup_[positionToKey(pos)] = waypoints_.size() - 1;
   markChanged();
+  return true;
+}
+
+bool ChunkedMap::removeWaypointAt(const Position &pos) {
+  auto it = waypoint_lookup_.find(positionToKey(pos));
+  if (it == waypoint_lookup_.end()) {
+    return false;
+  }
+
+  const size_t index = it->second;
+  if (index >= waypoints_.size()) {
+    waypoint_lookup_.erase(it);
+    return false;
+  }
+
+  waypoints_.erase(waypoints_.begin() + static_cast<ptrdiff_t>(index));
+  waypoint_lookup_.clear();
+  for (size_t i = 0; i < waypoints_.size(); ++i) {
+    waypoint_lookup_[positionToKey(waypoints_[i].position)] = i;
+  }
+  markChanged();
+  return true;
+}
+
+bool ChunkedMap::removeWaypointByName(const std::string &name) {
+  auto it = std::ranges::find(waypoints_, name, &Waypoint::name);
+  if (it == waypoints_.end()) {
+    return false;
+  }
+
+  return removeWaypointAt(it->position);
 }
 
 void ChunkedMap::addHouse(std::unique_ptr<House> house) {

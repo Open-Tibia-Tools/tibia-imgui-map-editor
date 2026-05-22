@@ -14,6 +14,16 @@ namespace MapEditor::Brushes {
 class BrushRegistry;
 }
 
+namespace MapEditor::Services {
+class ClientDataService;
+namespace Brushes {
+class BorderLookupService;
+class WallLookupService;
+class TableLookupService;
+class CarpetLookupService;
+} // namespace Brushes
+} // namespace MapEditor::Services
+
 namespace MapEditor::Domain::Tileset {
 class TilesetRegistry;
 }
@@ -46,7 +56,12 @@ class MaterialsXmlReader {
 public:
   MaterialsXmlReader(Brushes::BrushRegistry &brushRegistry,
                      Domain::Tileset::TilesetRegistry &tilesetRegistry,
-                     Domain::Palette::PaletteRegistry &paletteRegistry);
+                     Domain::Palette::PaletteRegistry &paletteRegistry,
+                     Services::Brushes::BorderLookupService *borderLookup,
+                     Services::Brushes::WallLookupService *wallLookup,
+                     Services::Brushes::TableLookupService *tableLookup,
+                     Services::Brushes::CarpetLookupService *carpetLookup,
+                     Services::ClientDataService *clientData);
 
   /**
    * Load all materials from the given materials.xml file.
@@ -92,6 +107,11 @@ private:
   Brushes::BrushRegistry &brushRegistry_;
   Domain::Tileset::TilesetRegistry &tilesetRegistry_;
   Domain::Palette::PaletteRegistry &paletteRegistry_;
+  Services::Brushes::BorderLookupService *borderLookup_;
+  Services::Brushes::WallLookupService *wallLookup_;
+  Services::Brushes::TableLookupService *tableLookup_;
+  Services::Brushes::CarpetLookupService *carpetLookup_;
+  Services::ClientDataService *clientData_;
   std::unordered_set<std::string> loadedFiles_; // Prevent circular includes
 };
 

@@ -11,13 +11,12 @@
 #include <spdlog/spdlog.h>
 
 #include "../../Brushes/BrushController.h"
-#include "../../Brushes/Types/CreatureBrush.h"
 #include "../../Brushes/Types/RawBrush.h"
-#include "../../Domain/ItemType.h"
-#include "../../Rendering/Core/Texture.h"
+#include "../../Domain/Tileset/TilesetEntry.h"
 #include "../../Services/ClientDataService.h"
 #include "../../Services/SpriteManager.h"
-#include "../Utils/PreviewUtils.hpp"
+#include "../Utils/BrushPreviewRenderer.h"
+#include "../Utils/BrushPreviewResolver.h"
 #include "../Utils/UIUtils.hpp"
 
 namespace MapEditor::UI {
@@ -51,6 +50,8 @@ void TilesetWidget::render(bool *p_visible) {
     return;
   }
 
+  syncActiveBrushSelection();
+
   // Row 1: Tileset dropdown (flat list of all tilesets)
   renderTilesetDropdown();
 
@@ -77,39 +78,55 @@ void TilesetWidget::renderTilesetDropdown() {
     return;
   }
 
-  // Build list of tileset names
-  std::vector<std::string> tilesetNames;
-  tilesetNames.reserve(allTilesets.size());
-  for (const auto &ts : allTilesets) {
-    tilesetNames.push_back(ts->getName());
+  std::vector<int> duplicateCounts(allTilesets.size(), 0);
+  for (size_t i = 0; i < allTilesets.size(); ++i) {
+    duplicateCounts[i] = static_cast<int>(std::count_if(
+        allTilesets.begin(), allTilesets.end(), [&](const auto &candidate) {
+          return candidate && allTilesets[i] &&
+                 candidate->getName() == allTilesets[i]->getName();
+        }));
   }
 
   // Find current index
   int currentIdx = -1;
-  for (size_t i = 0; i < tilesetNames.size(); ++i) {
-    if (tilesetNames[i] == currentTilesetName_) {
+  for (size_t i = 0; i < allTilesets.size(); ++i) {
+    if (allTilesets[i].get() == currentTileset_) {
       currentIdx = static_cast<int>(i);
       break;
     }
   }
 
   // Auto-select first if none selected
-  if (currentIdx < 0 && !tilesetNames.empty()) {
+  if (currentIdx < 0 && !allTilesets.empty()) {
     currentIdx = 0;
-    currentTilesetName_ = tilesetNames[0];
+    currentTileset_ = allTilesets[0].get();
     filterDirty_ = true;
   }
 
-  const char *previewValue =
-      currentIdx >= 0 ? tilesetNames[currentIdx].c_str() : "Select tileset...";
+  const auto formatTilesetLabel = [&](size_t index) {
+    const auto *tileset = allTilesets[index].get();
+    if (!tileset) {
+      return std::string{"<missing>"};
+    }
+    if (duplicateCounts[index] <= 1 || tileset->getSourceFile().empty()) {
+      return tileset->getName();
+    }
+    return std::format("{} [{}]", tileset->getName(),
+                       tileset->getSourceFile().stem().string());
+  };
+
+  const auto previewLabel =
+      currentIdx >= 0 ? formatTilesetLabel(static_cast<size_t>(currentIdx))
+                      : std::string{"Select tileset..."};
 
   // Full width dropdown
   ImGui::SetNextItemWidth(-FLT_MIN);
-  if (ImGui::BeginCombo("##Tileset", previewValue)) {
-    for (size_t i = 0; i < tilesetNames.size(); ++i) {
+  if (ImGui::BeginCombo("##Tileset", previewLabel.c_str())) {
+    for (size_t i = 0; i < allTilesets.size(); ++i) {
       bool isSelected = (static_cast<int>(i) == currentIdx);
-      if (ImGui::Selectable(tilesetNames[i].c_str(), isSelected)) {
-        currentTilesetName_ = tilesetNames[i];
+      const auto label = formatTilesetLabel(i);
+      if (ImGui::Selectable(label.c_str(), isSelected)) {
+        currentTileset_ = allTilesets[i].get();
         selectedTilesetIdx_ = static_cast<int>(i);
         filterDirty_ = true;
       }
@@ -122,10 +139,10 @@ void TilesetWidget::renderTilesetDropdown() {
 }
 
 void TilesetWidget::renderItemGrid() {
-  if (currentTilesetName_.empty() || !tilesetRegistry_)
+  if (!currentTileset_ || !tilesetRegistry_)
     return;
 
-  const auto *tileset = tilesetRegistry_->getTileset(currentTilesetName_);
+  const auto *tileset = currentTileset_;
   if (!tileset) {
     ImGui::TextDisabled(ICON_FA_TRIANGLE_EXCLAMATION " Tileset not found");
     return;
@@ -224,97 +241,59 @@ void TilesetWidget::renderItemGrid() {
           brushName = "Unnamed";
         }
 
-        bool isSelected = (selectedBrushName_ == brushName);
-        bool clicked = false;
+        bool isSelected = (selectedBrush_ == brush);
 
-        // Render preview based on brush type
-        uint32_t lookId = brush->getLookId();
-        Brushes::BrushType brushType = brush->getType();
+        ImVec2 tileSize(iconSize_, iconSize_);
+        ImVec2 cursorPos = ImGui::GetCursorScreenPos();
 
-        if (brushType == Brushes::BrushType::Creature) {
-          // Render creature brush with sprite
-          const auto *creatureBrush =
-              static_cast<const Brushes::CreatureBrush *>(brush);
-          const auto &outfit = creatureBrush->getOutfit();
+        ImGui::InvisibleButton("##tile", tileSize);
+        bool isHovered = ImGui::IsItemHovered();
+        bool clicked = ImGui::IsItemClicked();
 
-          bool rendered = false;
-          if (clientData_ && spriteManager_) {
-            auto preview = Utils::GetCreaturePreview(*clientData_,
-                                                     *spriteManager_, outfit);
-            if (preview && preview.texture && preview.texture->isValid() &&
-                preview.texture->id() != 0) {
-              clicked =
-                  Utils::RenderGridItem((void *)(intptr_t)preview.texture->id(),
-                                        iconSize_, isSelected);
-              rendered = true;
-            }
-          }
+        ImDrawList *dl = ImGui::GetWindowDrawList();
 
-          if (!rendered) {
-            clicked =
-                ImGui::Button(brushName.c_str(), ImVec2(iconSize_, iconSize_));
-          }
-        } else {
-          // Item-based brushes (Raw, Doodad, etc.)
-          const Domain::ItemType *itemType = nullptr;
-          if (clientData_) {
-            itemType = clientData_->getItemTypeByServerId(
-                static_cast<uint16_t>(lookId));
-          }
+        ImU32 bgColor = IM_COL32(40, 40, 40, 255);
+        if (isSelected) {
+          bgColor = IM_COL32(60, 100, 160, 255);
+        } else if (isHovered) {
+          bgColor = IM_COL32(80, 80, 80, 255);
+        }
+        dl->AddRectFilled(
+            cursorPos, ImVec2(cursorPos.x + tileSize.x, cursorPos.y + tileSize.y),
+            bgColor);
 
-          bool rendered = false;
-          if (spriteManager_) {
-            if (auto *texture =
-                    Utils::GetItemPreview(*spriteManager_, itemType)) {
-              clicked = Utils::RenderGridItem((void *)(intptr_t)texture->id(),
-                                              iconSize_, isSelected);
-              rendered = true;
-            }
-          }
+        const auto preview = getBrushPreview(brush);
+        Utils::RenderBrushPreviewTile(dl, cursorPos, tileSize, preview);
 
-          if (!rendered) {
-            if (spriteManager_ && itemType) {
-              clicked = ImGui::Button(brush->getName().c_str(),
-                                      ImVec2(iconSize_, iconSize_));
-            } else if (brush->getType() == Brushes::BrushType::Placeholder) {
-              ImGui::PushStyleColor(ImGuiCol_Text,
-                                    ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
-              clicked = ImGui::Button(brush->getName().c_str(),
-                                      ImVec2(iconSize_, iconSize_));
-              ImGui::PopStyleColor();
-              Utils::SetTooltipOnHover(
-                  std::format("Missing data for brush: {}", brush->getName())
-                      .c_str());
-            } else {
-              clicked = ImGui::Button(
-                  brush->getName().empty() ? "?" : brush->getName().c_str(),
-                  ImVec2(iconSize_, iconSize_));
-            }
-          }
+        if (isSelected) {
+          dl->AddRect(
+              cursorPos,
+              ImVec2(cursorPos.x + tileSize.x, cursorPos.y + tileSize.y),
+              IM_COL32(100, 180, 255, 255), 0, 0, 2.0f);
         }
 
-        if (ImGui::IsItemHovered()) {
+        if (isHovered) {
           std::string tooltip = brush->getName();
           if (brush->getType() == Brushes::BrushType::Raw) {
             if (tooltip.empty())
               tooltip = "Raw Item";
-            tooltip = std::format("{} (ID: {})", tooltip, lookId);
+            tooltip = std::format("{} (ID: {})", tooltip, brush->getLookId());
           } else if (tooltip.empty()) {
-            tooltip = std::format("ID: {}", lookId);
+            tooltip = std::format("ID: {}", brush->getLookId());
           }
           ImGui::SetTooltip("%s", tooltip.c_str());
         }
 
         if (clicked) {
-          selectedBrushName_ = brush->getName();
+          selectedBrush_ = brush;
 
-          // Activate brush - factory handles preview creation
           if (brushController_) {
             brushController_->setBrush(const_cast<Brushes::IBrush *>(brush));
           }
 
           if (onBrushSelected_) {
-            auto *rawBrush = dynamic_cast<const Brushes::RawBrush *>(brush);
+            auto *rawBrush =
+                dynamic_cast<const Brushes::RawBrush *>(brush);
             onBrushSelected_(rawBrush ? rawBrush->getItemId() : 0,
                              brush->getName());
           }
@@ -329,6 +308,65 @@ void TilesetWidget::renderItemGrid() {
   }
 
   ImGui::EndChild();
+}
+
+void TilesetWidget::syncActiveBrushSelection() {
+  if (!brushController_) {
+    return;
+  }
+  const auto *activeBrush = brushController_->getCurrentBrush();
+  if (activeBrush == syncedActiveBrush_) {
+    return;
+  }
+  syncedActiveBrush_ = activeBrush;
+  selectedBrush_ = activeBrush;
+
+  if (const auto *tileset = findTilesetForBrush(activeBrush); tileset) {
+    currentTileset_ = tileset;
+    filterDirty_ = true;
+  }
+
+  updateSelectedTilesetIndex();
+}
+
+Utils::ResolvedBrushPreview TilesetWidget::getBrushPreview(
+    const Brushes::IBrush *brush) const {
+  return Utils::ResolveBrushPreview(brush, clientData_, spriteManager_);
+}
+
+const Domain::Tileset::Tileset *TilesetWidget::findTilesetForBrush(
+    const Brushes::IBrush *brush) const {
+  if (!tilesetRegistry_ || !brush) {
+    return nullptr;
+  }
+
+  for (const auto &tileset : tilesetRegistry_->getAllTilesets()) {
+    for (const auto &entry : tileset->getEntries()) {
+      if (Domain::Tileset::isBrush(entry) &&
+          Domain::Tileset::getBrush(entry) == brush) {
+        return tileset.get();
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+void TilesetWidget::updateSelectedTilesetIndex() {
+  if (!tilesetRegistry_) {
+    selectedTilesetIdx_ = 0;
+    return;
+  }
+
+  const auto &tilesets = tilesetRegistry_->getAllTilesets();
+  for (size_t i = 0; i < tilesets.size(); ++i) {
+    if (tilesets[i].get() == currentTileset_) {
+      selectedTilesetIdx_ = static_cast<int>(i);
+      return;
+    }
+  }
+
+  selectedTilesetIdx_ = 0;
 }
 
 void TilesetWidget::renderIconSizeSlider() {

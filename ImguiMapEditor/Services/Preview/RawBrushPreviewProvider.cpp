@@ -5,6 +5,47 @@ namespace MapEditor {
 namespace Services {
 namespace Preview {
 
+namespace {
+
+[[nodiscard]] bool containsOffset(
+    std::span<const std::pair<int, int>> offsets, int x, int y) {
+  for (const auto &[dx, dy] : offsets) {
+    if (dx == x && dy == y) {
+      return true;
+    }
+  }
+  return false;
+}
+
+[[nodiscard]] std::vector<std::pair<int, int>>
+buildPreviewOffsets(const BrushSettingsService *brushSettings) {
+  if (!brushSettings) {
+    return {{0, 0}};
+  }
+
+  auto offsets = brushSettings->getBrushOffsets();
+  if (!brushSettings->getPreviewBorder() || offsets.size() <= 1) {
+    return offsets;
+  }
+
+  std::vector<std::pair<int, int>> borderOffsets;
+  borderOffsets.reserve(offsets.size());
+  for (const auto &[dx, dy] : offsets) {
+    const bool isPerimeter =
+        !containsOffset(offsets, dx - 1, dy) ||
+        !containsOffset(offsets, dx + 1, dy) ||
+        !containsOffset(offsets, dx, dy - 1) ||
+        !containsOffset(offsets, dx, dy + 1);
+    if (isPerimeter) {
+      borderOffsets.emplace_back(dx, dy);
+    }
+  }
+
+  return borderOffsets.empty() ? offsets : borderOffsets;
+}
+
+} // namespace
+
 RawBrushPreviewProvider::RawBrushPreviewProvider(
     uint32_t itemId, uint16_t subtype, BrushSettingsService *brushSettings)
     : itemId_(itemId), subtype_(subtype), brushSettings_(brushSettings) {
@@ -21,8 +62,8 @@ bool RawBrushPreviewProvider::checkSettingsChanged() const {
   if (!brushSettings_) {
     return false;
   }
-  // Compare actual offsets, not just count (fixes 2x1 vs 1x2 issue)
-  auto offsets = brushSettings_->getBrushOffsets();
+  // Compare effective preview offsets so Preview Border changes regenerate too.
+  auto offsets = buildPreviewOffsets(brushSettings_);
   return offsets != cachedOffsets_;
 }
 
@@ -41,6 +82,12 @@ const std::vector<PreviewTileData> &RawBrushPreviewProvider::getTiles() const {
 
 PreviewBounds RawBrushPreviewProvider::getBounds() const { return bounds_; }
 
+PreviewStyle RawBrushPreviewProvider::getStyle() const {
+  return brushSettings_ && brushSettings_->getPreviewBorder()
+             ? PreviewStyle::Outline
+             : PreviewStyle::Ghost;
+}
+
 void RawBrushPreviewProvider::updateCursorPosition(
     const Domain::Position &cursor) {
   anchor_ = cursor;
@@ -58,15 +105,7 @@ void RawBrushPreviewProvider::buildPreview() {
     return;
   }
 
-  // Get brush offsets from settings service, or use single tile
-  std::vector<std::pair<int, int>> offsets;
-
-  if (brushSettings_) {
-    offsets = brushSettings_->getBrushOffsets();
-  } else {
-    // No brush settings, default to single tile
-    offsets.emplace_back(0, 0);
-  }
+  auto offsets = buildPreviewOffsets(brushSettings_);
 
   // Cache actual offsets for change detection
   cachedOffsets_ = offsets;

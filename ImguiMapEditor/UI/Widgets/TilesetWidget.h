@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "../Utils/BrushPreviewResolver.h"
+
 namespace MapEditor {
 
 namespace Services {
@@ -74,12 +76,19 @@ private:
   void renderTilesetDropdown();
   void renderItemGrid();
   void renderIconSizeSlider();
+  void syncActiveBrushSelection();
+  [[nodiscard]] Utils::ResolvedBrushPreview
+  getBrushPreview(const Brushes::IBrush *brush) const;
+  [[nodiscard]] const Domain::Tileset::Tileset *
+  findTilesetForBrush(const Brushes::IBrush *brush) const;
+  void updateSelectedTilesetIndex();
 
   // Services (non-owning)
   Services::ClientDataService *clientData_ = nullptr;
   Services::SpriteManager *spriteManager_ = nullptr;
   Brushes::BrushController *brushController_ = nullptr;
   Domain::Tileset::TilesetRegistry *tilesetRegistry_ = nullptr;
+  const Domain::Tileset::Tileset *currentTileset_ = nullptr;
 
   // State
   bool visible_ = true;
@@ -90,8 +99,8 @@ private:
 
   // Selection
   int selectedTilesetIdx_ = 0;
-  std::string currentTilesetName_;
-  std::string selectedBrushName_; // For highlighting
+  const Brushes::IBrush *selectedBrush_ = nullptr; // Currently highlighted brush
+  const Brushes::IBrush *syncedActiveBrush_ = nullptr;
 
   // Callback
   BrushSelectedCallback onBrushSelected_;

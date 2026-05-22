@@ -14,8 +14,17 @@ void WaypointBrush::draw(Domain::ChunkedMap &map, Domain::Tile *tile,
   if (waypointName_.empty())
     return; // No waypoint name set
 
-  // TODO: Implement waypoint storage on tile
-  // tile->setWaypoint(waypointName_);
+  for (const auto &existing : map.getWaypoints()) {
+    if (existing.name == waypointName_ && existing.position != tile->getPosition()) {
+      if (auto *previousTile = map.getTile(existing.position)) {
+        previousTile->setWaypointBrushId(InvalidBrushId);
+      }
+      break;
+    }
+  }
+
+  map.upsertWaypoint(waypointName_, tile->getPosition());
+  tile->setWaypointBrushId(ctx.ownerBrushId);
 
   spdlog::trace("[WaypointBrush] Set waypoint '{}' at ({},{},{})",
                 waypointName_, tile->getPosition().x, tile->getPosition().y,
@@ -26,8 +35,8 @@ void WaypointBrush::undraw(Domain::ChunkedMap &map, Domain::Tile *tile) {
   if (!tile)
     return;
 
-  // TODO: Implement waypoint removal from tile
-  // tile->removeWaypoint();
+  map.removeWaypointAt(tile->getPosition());
+  tile->setWaypointBrushId(InvalidBrushId);
 
   spdlog::trace("[WaypointBrush] Removed waypoint from ({},{},{})",
                 tile->getPosition().x, tile->getPosition().y,

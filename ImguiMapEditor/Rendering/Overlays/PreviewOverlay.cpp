@@ -21,6 +21,19 @@ void PreviewOverlay::render(
 
   ImU32 tintColor = getStyleColor(style);
   float tileSizePx = Config::Rendering::TILE_SIZE * zoom;
+  const bool drawOutlineBorder = style == Services::Preview::PreviewStyle::Outline;
+  const float outlineThickness = std::max(1.0f, zoom * 1.5f);
+
+  const auto hasRelativeTile =
+      [&tiles](int x, int y, int z) {
+        return std::any_of(
+            tiles.begin(), tiles.end(),
+            [x, y, z](const Services::Preview::PreviewTileData &candidate) {
+              return candidate.relativePosition.x == x &&
+                     candidate.relativePosition.y == y &&
+                     candidate.relativePosition.z == z;
+            });
+      };
 
   for (const auto &tile : tiles) {
     // Calculate world position from anchor + relative
@@ -45,6 +58,34 @@ void PreviewOverlay::render(
 
     renderTile(drawList, clientData, spriteManager, spriteCache, tile, worldPos,
                cameraPos, viewportPos, viewportSize, zoom, tintColor);
+
+    if (!drawOutlineBorder) {
+      continue;
+    }
+
+    const auto &relativePosition = tile.relativePosition;
+    const ImVec2 topLeft(screenPos.x, screenPos.y);
+    const ImVec2 topRight(screenPos.x + tileSizePx, screenPos.y);
+    const ImVec2 bottomLeft(screenPos.x, screenPos.y + tileSizePx);
+    const ImVec2 bottomRight(screenPos.x + tileSizePx,
+                             screenPos.y + tileSizePx);
+
+    if (!hasRelativeTile(relativePosition.x, relativePosition.y - 1,
+                         relativePosition.z)) {
+      drawList->AddLine(topLeft, topRight, tintColor, outlineThickness);
+    }
+    if (!hasRelativeTile(relativePosition.x + 1, relativePosition.y,
+                         relativePosition.z)) {
+      drawList->AddLine(topRight, bottomRight, tintColor, outlineThickness);
+    }
+    if (!hasRelativeTile(relativePosition.x, relativePosition.y + 1,
+                         relativePosition.z)) {
+      drawList->AddLine(bottomLeft, bottomRight, tintColor, outlineThickness);
+    }
+    if (!hasRelativeTile(relativePosition.x - 1, relativePosition.y,
+                         relativePosition.z)) {
+      drawList->AddLine(topLeft, bottomLeft, tintColor, outlineThickness);
+    }
   }
 }
 

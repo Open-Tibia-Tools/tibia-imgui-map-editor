@@ -1,6 +1,7 @@
 // Prevent GLFW from including OpenGL headers (glad provides them)
 #define GLFW_INCLUDE_NONE
 #include "PreferencesDialog.h"
+#include "../Utils/StringCopy.h"
 #include "../ext/imhotkey/imHotKey.h"
 #include "IO/HotkeyJsonReader.h"
 #include "Presentation/NotificationHelper.h"
@@ -191,8 +192,7 @@ void PreferencesDialog::renderSecondaryClientTab() {
     if (ImGui::Button(ICON_FA_FOLDER_OPEN "##BrowseFolder")) {
       NFD::UniquePath outPath;
       if (NFD::PickFolder(outPath) == NFD_OKAY) {
-        strncpy(secondary_folder_path_, outPath.get(),
-                sizeof(secondary_folder_path_) - 1);
+        ::MapEditor::Utils::copyTruncate(secondary_folder_path_, outPath.get());
       }
     }
 

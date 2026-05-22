@@ -1,5 +1,6 @@
 #include "RawBrush.h"
 #include "Brushes/Behaviors/ItemPlacement.h"
+#include "BrushUtils.h"
 #include "Domain/ChunkedMap.h"
 #include "Domain/Tile.h"
 #include "Domain/Item.h"
@@ -17,21 +18,20 @@ RawBrush::RawBrush(uint32_t itemId, const Domain::ItemType* type)
 
 void RawBrush::draw(Domain::ChunkedMap& map, 
                     Domain::Tile* tile,
-                    const DrawContext& /*ctx*/) 
+                    const DrawContext& ctx) 
 {
     if (!tile) {
         return;
     }
-    
-    // Create the item
-    auto item = std::make_unique<Domain::Item>(static_cast<uint16_t>(itemId_));
-    
-    // Set cached type if available
-    if (cachedType_) {
+
+    auto item = Types::createTypedItem(ctx, static_cast<uint16_t>(itemId_));
+    if (!item) {
+        item = std::make_unique<Domain::Item>(static_cast<uint16_t>(itemId_));
+    } else if (!item->getType() && cachedType_) {
         item->setType(cachedType_);
         item->setClientId(cachedType_->client_id);
     }
-    
+
     // Add to tile (sorting is handled by Tile::addItem)
     tile->addItem(std::move(item));
 }

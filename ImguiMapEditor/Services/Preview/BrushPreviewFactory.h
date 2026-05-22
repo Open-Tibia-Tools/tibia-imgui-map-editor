@@ -33,7 +33,8 @@ public:
    * @return Provider, or nullptr if brush has no preview support
    */
   std::unique_ptr<IPreviewProvider>
-  createProvider(const Brushes::IBrush *brush, BrushSettingsService *settings);
+  createProvider(const ::MapEditor::Brushes::IBrush *brush,
+                 BrushSettingsService *settings);
 };
 
 } // namespace MapEditor::Services::Preview

@@ -15,6 +15,42 @@
 namespace MapEditor::Brushes {
 
 /**
+ * Specific case block for complex border conditions.
+ * Used by GroundBrush to handle special border situations.
+ */
+class SpecificCaseBlock {
+public:
+  void addMatchItem(uint32_t itemId);
+  void setMatchGroup(uint32_t matchGroup, EdgeType alignment) {
+    matchGroup_ = matchGroup;
+    groupMatchAlignment_ = alignment;
+  }
+  void setReplaceAction(uint32_t toReplaceId, uint32_t withId);
+  void setDeleteAll(bool value) { deleteAll_ = value; }
+  void setKeepBorder(bool value) { keepBorder_ = value; }
+
+  const std::vector<uint32_t> &getItemsToMatch() const { return itemsToMatch_; }
+  uint32_t getMatchGroup() const { return matchGroup_; }
+  EdgeType getGroupMatchAlignment() const { return groupMatchAlignment_; }
+  size_t getRequiredMatchCount() const {
+    return itemsToMatch_.size() + (matchGroup_ != 0 ? 1u : 0u);
+  }
+  uint32_t getToReplaceId() const { return toReplaceId_; }
+  uint32_t getWithId() const { return withId_; }
+  bool isDeleteAll() const { return deleteAll_; }
+  bool keepBorder() const { return keepBorder_; }
+
+private:
+  std::vector<uint32_t> itemsToMatch_;
+  uint32_t matchGroup_ = 0;
+  EdgeType groupMatchAlignment_ = EdgeType::None;
+  uint32_t toReplaceId_ = 0;
+  uint32_t withId_ = 0;
+  bool deleteAll_ = false;
+  bool keepBorder_ = false;
+};
+
+/**
  * Stores border items for each edge type.
  * Used by GroundBrush for border generation.
  */
@@ -43,6 +79,13 @@ public:
   uint32_t getRandomItem(EdgeType edge) const;
 
   /**
+   * Get the canonical item for a specific edge type.
+   * Used by reference-style specific-case matching where edge identity must be
+   * stable and not depend on weighted placement selection.
+   */
+  uint32_t getPrimaryItem(EdgeType edge) const;
+
+  /**
    * Get all items for a specific edge type.
    */
   const std::vector<std::pair<uint32_t, uint32_t>> &
@@ -59,6 +102,13 @@ public:
    */
   void setGroundEquivalent(uint32_t id) { groundEquivalent_ = id; }
   uint32_t getGroundEquivalent() const { return groundEquivalent_; }
+  void setGroup(uint16_t group) { group_ = group; }
+  uint16_t getGroup() const { return group_; }
+
+  void addSpecificCase(SpecificCaseBlock specificCase);
+  const std::vector<SpecificCaseBlock> &getSpecificCases() const {
+    return specificCases_;
+  }
 
 private:
   // Items for each of 14 edge types: vector of (itemId, chance)
@@ -69,52 +119,11 @@ private:
 
   // Ground equivalent for optional borders
   uint32_t groundEquivalent_ = 0;
+  uint16_t group_ = 0;
+
+  std::vector<SpecificCaseBlock> specificCases_;
 
   // Random number generator for weighted selection
   mutable std::mt19937 rng_{std::random_device{}()};
 };
-
-/**
- * Condition for specific border case matching.
- */
-struct SpecificCaseCondition {
-  EdgeType edge = EdgeType::None; // Edge to check
-  std::string matchBrush;         // Brush name to match (empty = any)
-  bool matchEmpty = false;        // If true, match when no border present
-};
-
-/**
- * Action to perform when specific case matches.
- */
-struct SpecificCaseAction {
-  EdgeType edge = EdgeType::None; // Edge to modify
-  uint32_t itemId = 0;            // Item to place
-  bool keepBorder = false;        // If true, keep existing border
-};
-
-/**
- * Specific case block for complex border conditions.
- * Used by GroundBrush to handle special border situations.
- */
-class SpecificCaseBlock {
-public:
-  void addCondition(SpecificCaseCondition condition);
-  void addAction(SpecificCaseAction action);
-
-  const std::vector<SpecificCaseCondition> &getConditions() const {
-    return conditions_;
-  }
-  const std::vector<SpecificCaseAction> &getActions() const { return actions_; }
-
-  /**
-   * Check if this specific case matches the given context.
-   * (Implementation depends on map context - declared here for interface)
-   */
-  // bool matches(const NeighborContext& context) const;
-
-private:
-  std::vector<SpecificCaseCondition> conditions_;
-  std::vector<SpecificCaseAction> actions_;
-};
-
 } // namespace MapEditor::Brushes

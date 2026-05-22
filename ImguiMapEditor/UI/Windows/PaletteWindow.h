@@ -4,6 +4,7 @@
 #include "../../Domain/Tileset/TilesetRegistry.h"
 #include "../Widgets/TilesetGridWidget.h"
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -62,6 +63,11 @@ private:
   void selectTileset(size_t index);
   void handleJumpToTileset(const std::string &tilesetName,
                            const std::string &brushName);
+  void syncActiveBrushSelection();
+  [[nodiscard]] Domain::Tileset::Tileset *getTilesetAt(size_t index) const;
+  [[nodiscard]] std::string getTilesetDisplayLabel(size_t index) const;
+  std::optional<size_t> findTilesetIndexForBrush(
+      const Brushes::IBrush *brush) const;
 
   std::string paletteName_;
   Domain::Palette::Palette *palette_ = nullptr;
@@ -82,6 +88,7 @@ private:
   Services::AppSettings *appSettings_ = nullptr;
   Domain::Tileset::TilesetRegistry *tilesetRegistry_ = nullptr;
   Domain::Palette::PaletteRegistry *paletteRegistry_ = nullptr;
+  const Brushes::IBrush *syncedActiveBrush_ = nullptr;
 };
 
 } // namespace UI

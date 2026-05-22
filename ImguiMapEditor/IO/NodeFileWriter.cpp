@@ -10,7 +10,11 @@ NodeFileWriteHandle::NodeFileWriteHandle(
     const std::filesystem::path& path,
     const std::string& identifier
 ) {
-    file_ = fopen(path.string().c_str(), "wb");
+#ifdef _WIN32
+    _wfopen_s(&file_, path.c_str(), L"wb");
+#else
+    file_ = std::fopen(path.c_str(), "wb");
+#endif
     if (!file_) {
         error_ = true;
         return;

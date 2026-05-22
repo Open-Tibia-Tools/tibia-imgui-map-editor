@@ -3,9 +3,9 @@
 #include "Domain/ItemType.h"
 #include "Domain/Position.h"
 #include "Presentation/NotificationHelper.h"
+#include "../../../Utils/StringCopy.h"
 #include "ext/fontawesome6/IconsFontAwesome6.h"
 #include <cmath>
-#include <cstring>
 #include <imgui.h>
 
 namespace MapEditor::UI {
@@ -27,8 +27,7 @@ void ItemPropertiesDialog::open(Domain::Item *item, SaveCallback on_save) {
 
   // Text
   std::string text = item->getText();
-  strncpy(text_buffer_, text.c_str(), sizeof(text_buffer_) - 1);
-  text_buffer_[sizeof(text_buffer_) - 1] = '\0';
+  ::MapEditor::Utils::copyTruncate(text_buffer_, text);
 
   // Teleport destination
   const Domain::Position *dest = item->getTeleportDestination();

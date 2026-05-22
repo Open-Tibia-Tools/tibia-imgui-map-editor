@@ -1,4 +1,5 @@
 #include "ClientEditModal.h"
+#include "../../../Utils/StringCopy.h"
 #include <IconsFontAwesome6.h>
 #include <algorithm>
 #include <imgui.h>
@@ -142,13 +143,10 @@ void ClientEditModal::fillEditData(uint32_t version) {
     return;
 
   edit_data_.version = cv->getVersion();
-  strncpy(edit_data_.name, cv->getName().c_str(), sizeof(edit_data_.name) - 1);
-  strncpy(edit_data_.description, cv->getDescription().c_str(),
-          sizeof(edit_data_.description) - 1);
-  strncpy(edit_data_.data_directory, cv->getDataDirectory().c_str(),
-          sizeof(edit_data_.data_directory) - 1);
-  strncpy(edit_data_.client_path, cv->getClientPath().string().c_str(),
-          sizeof(edit_data_.client_path) - 1);
+  ::MapEditor::Utils::copyTruncate(edit_data_.name, cv->getName());
+  ::MapEditor::Utils::copyTruncate(edit_data_.description, cv->getDescription());
+  ::MapEditor::Utils::copyTruncate(edit_data_.data_directory, cv->getDataDirectory());
+  ::MapEditor::Utils::copyTruncate(edit_data_.client_path, cv->getClientPath().string());
 
   edit_data_.otb_id = cv->getOtbVersion();
   edit_data_.otb_major = cv->getOtbMajor();

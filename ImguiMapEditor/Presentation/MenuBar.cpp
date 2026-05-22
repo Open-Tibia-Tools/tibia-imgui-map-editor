@@ -268,7 +268,7 @@ void MenuBar::renderViewMenu() {
     ImGui::MenuItem("Show As Minimap", nullptr,
                     &view_settings_.show_minimap_window);
     ImGui::MenuItem("Browse Tile", nullptr, &view_settings_.show_browse_tile);
-    ImGui::MenuItem(ICON_FA_PAINTBRUSH " Brush Settings", nullptr,
+    ImGui::MenuItem(ICON_FA_PAINTBRUSH " Tool Options", nullptr,
                     &view_settings_.show_brush_settings);
     ImGui::MenuItem(ICON_FA_MAGNIFYING_GLASS " Search Results", "Ctrl+Shift+F",
                     &view_settings_.show_search_results);

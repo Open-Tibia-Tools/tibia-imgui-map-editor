@@ -10,6 +10,20 @@
 namespace MapEditor {
 namespace AppLogic {
 
+namespace {
+
+std::tm toLocalTime(std::time_t value) {
+  std::tm localTime{};
+#ifdef _WIN32
+  localtime_s(&localTime, &value);
+#else
+  localtime_r(&value, &localTime);
+#endif
+  return localTime;
+}
+
+} // namespace
+
 StartupController::StartupController(
     UI::StartupDialog &dialog, MapOperationHandler &map_ops,
     Services::ConfigService &config, Services::ClientVersionRegistry &registry,
@@ -100,9 +114,10 @@ std::vector<UI::RecentMapEntry> StartupController::getRecentMaps() const {
                 ftime - std::filesystem::file_time_type::clock::now() +
                 std::chrono::system_clock::now());
         auto time = std::chrono::system_clock::to_time_t(sctp);
+        const auto localTime = toLocalTime(time);
 
         std::stringstream ss;
-        ss << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M");
+        ss << std::put_time(&localTime, "%Y-%m-%d %H:%M");
         entry.last_modified = ss.str();
       } catch (...) {
         entry.last_modified = "Unknown";

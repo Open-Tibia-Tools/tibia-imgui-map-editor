@@ -11,6 +11,15 @@ class BrushRegistry;
 
 namespace MapEditor::Services {
 
+class ClientDataService;
+
+namespace Brushes {
+class BorderLookupService;
+class WallLookupService;
+class TableLookupService;
+class CarpetLookupService;
+} // namespace Brushes
+
 /**
  * Service responsible for loading and managing tilesets and palettes.
  *
@@ -22,8 +31,8 @@ namespace MapEditor::Services {
  */
 class TilesetService {
 public:
-  explicit TilesetService(Brushes::BrushRegistry &brushRegistry);
-  ~TilesetService() = default;
+  explicit TilesetService(MapEditor::Brushes::BrushRegistry &brushRegistry);
+  ~TilesetService();
 
   // Non-copyable
   TilesetService(const TilesetService &) = delete;
@@ -46,6 +55,17 @@ public:
    * @return true if palettes were loaded successfully
    */
   bool loadPalettes(const std::filesystem::path &dataPath);
+
+  /**
+   * Load the full materials graph rooted at materials.xml.
+   * This loads border templates, brushes, tilesets, and palettes in reference
+   * order.
+   */
+  bool loadMaterials(const std::filesystem::path &dataPath);
+
+  void setClientDataService(ClientDataService *clientData) {
+    clientData_ = clientData;
+  }
 
   /**
    * Check if tilesets have been loaded.
@@ -73,9 +93,17 @@ public:
   }
 
 private:
-  Brushes::BrushRegistry &brushRegistry_;
+  MapEditor::Brushes::BrushRegistry &brushRegistry_;
   Domain::Tileset::TilesetRegistry tilesetRegistry_;
   Domain::Palette::PaletteRegistry paletteRegistry_;
+  ClientDataService *clientData_ = nullptr;
+  std::unique_ptr<MapEditor::Services::Brushes::BorderLookupService>
+      borderLookup_;
+  std::unique_ptr<MapEditor::Services::Brushes::WallLookupService> wallLookup_;
+  std::unique_ptr<MapEditor::Services::Brushes::TableLookupService>
+      tableLookup_;
+  std::unique_ptr<MapEditor::Services::Brushes::CarpetLookupService>
+      carpetLookup_;
   bool loaded_ = false;
 };
 

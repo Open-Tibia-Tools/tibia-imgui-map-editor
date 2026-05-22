@@ -1,4 +1,5 @@
 #include "EditTownsDialog.h"
+#include "../../Utils/StringCopy.h"
 #include <imgui.h>
 #include <IconsFontAwesome6.h>
 #include <algorithm>
@@ -354,8 +355,7 @@ void EditTownsDialog::applyChangesToMap() {
 void EditTownsDialog::updateSelectionBuffers() {
     if (selected_index_ >= 0 && selected_index_ < static_cast<int>(towns_.size())) {
         const auto& town = towns_[selected_index_];
-        strncpy(name_buffer_, town.name.c_str(), sizeof(name_buffer_) - 1);
-        name_buffer_[sizeof(name_buffer_) - 1] = '\0';
+        ::MapEditor::Utils::copyTruncate(name_buffer_, town.name);
         temple_x_ = town.temple_position.x;
         temple_y_ = town.temple_position.y;
         temple_z_ = town.temple_position.z;

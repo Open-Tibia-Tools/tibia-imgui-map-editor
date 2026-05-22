@@ -18,6 +18,48 @@ namespace MapEditor::AppLogic {
 
 using namespace Domain::Selection;
 
+namespace {
+
+bool shouldPreserveContextSelection(
+    const Services::Selection::SelectionService &selection,
+    const Domain::Position &pos, const SelectionEntry &entry, int mods) {
+  if (entry.entity_ptr && selection.isSelected(entry.id)) {
+    return true;
+  }
+
+  if (!selection.hasSelectionAt(pos)) {
+    return false;
+  }
+
+  return entry.entity_ptr == nullptr ||
+         (mods & (GLFW_MOD_CONTROL | GLFW_MOD_SHIFT)) != 0;
+}
+
+void prepareContextSelection(Services::Selection::SelectionService &selection,
+                             Domain::ChunkedMap *map,
+                             const Domain::Position &pos,
+                             const SelectionEntry &entry, int mods) {
+  if (!map) {
+    selection.clear();
+    return;
+  }
+
+  if (shouldPreserveContextSelection(selection, pos, entry, mods)) {
+    return;
+  }
+
+  selection.clear();
+  if (!entry.entity_ptr) {
+    return;
+  }
+
+  selection.addEntity(entry);
+  spdlog::debug("[INPUT] Right-click context selected {} at ({}, {}, {})",
+                entityTypeToString(entry.getType()), pos.x, pos.y, pos.z);
+}
+
+} // namespace
+
 MapInputController::MapInputController(Domain::SelectionSettings &settings,
                                        Services::ClientDataService *client_data)
     : settings_(settings), client_data_(client_data),
@@ -65,16 +107,38 @@ void MapInputController::onLeftClick(const Domain::Position &pos, int mods,
   if (!session)
     return;
 
-  // BRUSH MODE: Paint single tile on click (atomic undo entry)
-  if (brush_controller_ && brush_controller_->hasBrush() &&
-      !(mods & (GLFW_MOD_CONTROL | GLFW_MOD_SHIFT))) {
-    brush_controller_->applyBrush(pos);
-    session->setModified(true);
-    return;
+  auto *map = session->getMap();
+  auto &selection_service = session->getSelectionService();
+
+  // Ctrl+Alt+Click: smart pick brush from tile content.
+  if ((mods & GLFW_MOD_CONTROL) && (mods & GLFW_MOD_ALT) && brush_controller_ &&
+      map) {
+    ensureCorrectStrategy();
+    const auto entry = current_strategy_->selectAt(map, pos, pixel_offset);
+    const auto *preferredItem =
+        (entry.getType() == EntityType::Item ||
+         entry.getType() == EntityType::Ground)
+            ? static_cast<const Domain::Item *>(entry.entity_ptr)
+            : nullptr;
+    if (const auto *tile = map->getTile(pos);
+        tile && brush_controller_->selectBrushFromTile(
+                    *tile, Brushes::BrushPickMode::Smart, preferredItem)) {
+      return;
+    }
   }
 
-  auto &selection_service = session->getSelectionService();
-  auto *map = session->getMap();
+  // BRUSH MODE: Paint or erase single tile on click (atomic undo entry)
+  if (brush_controller_ && brush_controller_->hasBrush()) {
+    const auto modifiers = static_cast<uint32_t>(mods);
+    const bool eraseMode = (mods & GLFW_MOD_CONTROL) != 0;
+    const bool applied =
+        eraseMode ? brush_controller_->eraseBrush(pos, modifiers)
+                  : brush_controller_->applyBrush(pos, modifiers);
+    if (applied) {
+      session->setModified(true);
+      return;
+    }
+  }
 
   // Ctrl+Shift+Click: TOGGLE ENTIRE TILE
   if ((mods & GLFW_MOD_CONTROL) && (mods & GLFW_MOD_SHIFT)) {
@@ -143,19 +207,35 @@ bool MapInputController::isSomethingSelectedAt(const Domain::Position &pos,
 }
 
 void MapInputController::onLeftDragStart(const Domain::Position &pos,
-                                         EditorSession *session) {
+                                         int mods, EditorSession *session) {
   if (!session)
     return;
 
   // BRUSH MODE: Start stroke
   if (brush_controller_ && brush_controller_->hasBrush()) {
+    const auto modifiers = static_cast<uint32_t>(mods);
+    const bool eraseMode = (mods & GLFW_MOD_CONTROL) != 0;
+    if (const auto *brush = brush_controller_->getCurrentBrush();
+        brush && !brush->isDraggable()) {
+      const bool changed =
+          eraseMode ? brush_controller_->eraseBrush(pos, modifiers)
+                    : brush_controller_->applyBrush(pos, modifiers);
+      if (changed) {
+        session->setModified(true);
+      }
+      spdlog::debug("[INPUT] Applied non-draggable {} at ({}, {}, {})",
+                    eraseMode ? "eraser action" : "brush", pos.x, pos.y,
+                    pos.z);
+      return;
+    }
+
     is_brush_dragging_ = true;
     last_brush_pos_ = pos;
-    brush_controller_->beginStroke();
+    brush_controller_->beginStroke(modifiers, eraseMode);
     brush_controller_->continueStroke(pos);
     session->setModified(true);
-    spdlog::debug("[INPUT] Started brush drag stroke at ({}, {}, {})", pos.x,
-                  pos.y, pos.z);
+    spdlog::debug("[INPUT] Started {} drag stroke at ({}, {}, {})",
+                  eraseMode ? "erase" : "brush", pos.x, pos.y, pos.z);
     return;
   }
 
@@ -204,17 +284,26 @@ void MapInputController::onLeftDragEnd(const Domain::Position &pos,
   }
 }
 
-void MapInputController::onRightClick(const Domain::Position &pos,
+void MapInputController::onRightClick(const Domain::Position &pos, int mods,
+                                      const glm::vec2 &pixel_offset,
                                       EditorSession *session) {
-  if (!session)
+  if (!session) {
     return;
+  }
 
-  // Clear brush on right-click
   if (brush_controller_ && brush_controller_->hasBrush()) {
     brush_controller_->clearBrush();
-    spdlog::debug(
-        "[INPUT] Right-click: cleared brush, switched to selection mode");
-    return;
+  }
+
+  auto *map = session->getMap();
+  auto &selection_service = session->getSelectionService();
+
+  if (map) {
+    ensureCorrectStrategy();
+    const auto entry = current_strategy_->selectAt(map, pos, pixel_offset);
+    prepareContextSelection(selection_service, map, pos, entry, mods);
+  } else {
+    selection_service.clear();
   }
 
   context_menu_pos_ = pos;
@@ -298,6 +387,10 @@ void MapInputController::onMouseMove(const Domain::Position &pos,
 
 bool MapInputController::hasBrush() const {
   return brush_controller_ && brush_controller_->hasBrush();
+}
+
+bool MapInputController::toggleSelectionTool() {
+  return brush_controller_ && brush_controller_->toggleSelectionTool();
 }
 
 } // namespace MapEditor::AppLogic

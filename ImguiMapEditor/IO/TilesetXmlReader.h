@@ -1,12 +1,15 @@
 #pragma once
 
 #include <filesystem>
+#include <memory>
 #include <pugixml.hpp>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace MapEditor::Brushes {
 class BrushRegistry;
+class IBrush;
 }
 
 namespace MapEditor::Domain::Tileset {
@@ -36,6 +39,7 @@ class TilesetXmlReader {
 public:
   TilesetXmlReader(Brushes::BrushRegistry &brushRegistry,
                    Domain::Tileset::TilesetRegistry &tilesetRegistry);
+  ~TilesetXmlReader();
 
   /**
    * Load a single tileset XML file.
@@ -58,11 +62,17 @@ private:
    * Parse child entries (brush, item, creature, separator) into a tileset.
    */
   void parseEntries(const pugi::xml_node &node,
-                    Domain::Tileset::Tileset &tileset);
+                    Domain::Tileset::Tileset &tileset,
+                    bool collectionTileset);
+
+  void recordPlaceholder(std::string name);
+  void decrementPlaceholderUsage(const std::string &name);
+  void resolvePlaceholders(bool collectionTileset);
 
   Brushes::BrushRegistry &brush_registry_;
   Domain::Tileset::TilesetRegistry &tileset_registry_;
   std::unordered_set<std::string> loaded_files_;
+  std::unordered_map<std::string, size_t> placeholder_usage_;
 };
 
 } // namespace MapEditor::IO

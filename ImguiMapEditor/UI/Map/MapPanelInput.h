@@ -11,6 +11,9 @@ namespace AppLogic {
 class EditorSession;
 class MapInputController;
 } // namespace AppLogic
+namespace Brushes {
+class BrushController;
+}
 namespace Domain {
 struct SelectionSettings;
 }
@@ -82,7 +85,7 @@ private:
   void handleRightClickInput(const MapViewCamera &camera,
                              AppLogic::EditorSession *session,
                              AppLogic::MapInputController *input_controller,
-                             const glm::vec2 &mouse_pos);
+                             const glm::vec2 &mouse_pos, int mods);
 
   void handleLassoInput(const MapViewCamera &camera, AppLogic::EditorSession *session,
                         const Domain::SelectionSettings *selection_settings,
@@ -152,9 +155,17 @@ private:
   bool show_context_menu_ = false;
   Domain::Position context_menu_pos_;
 
+  // Brush size modifier support (non-owning)
+  Brushes::BrushController *brush_controller_ = nullptr;
+
   // Deferred selection state
   bool skipped_selection_on_down_ = false;
   int mods_at_down_ = 0; // Store modifiers when click started (for Shift+Click)
+
+public:
+  void setBrushController(Brushes::BrushController *brush_controller) {
+    brush_controller_ = brush_controller;
+  }
 };
 
 } // namespace UI

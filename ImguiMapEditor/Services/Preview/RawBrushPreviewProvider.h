@@ -46,6 +46,7 @@ public:
   const std::vector<PreviewTileData> &getTiles() const override;
   PreviewBounds getBounds() const override;
   void updateCursorPosition(const Domain::Position &cursor) override;
+  PreviewStyle getStyle() const override;
 
   // Regeneration support for brush size changes
   bool needsRegeneration() const override { return needsRegen_; }

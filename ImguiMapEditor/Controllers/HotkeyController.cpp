@@ -1,15 +1,48 @@
 #include "HotkeyController.h"
 // glad must be included before GLFW
 #include <glad/glad.h>
+#include "Brushes/BrushController.h"
+#include "Domain/Item.h"
+#include "Domain/Selection/SelectionEntry.h"
 #include "Services/HotkeyRegistry.h"
+#include "Services/Selection/SelectionService.h"
 #include "UI/Map/MapPanel.h"
 #include "UI/Windows/IngameBoxWindow.h"
 #include "Application/MapTabManager.h"
 #include <imgui.h>
 #include <spdlog/spdlog.h>
+#include <optional>
+#include <string_view>
 
 namespace MapEditor {
 namespace AppLogic {
+
+namespace {
+
+constexpr std::string_view kBrushRefreshAction{"BRUSH_REFRESH_CURRENT"};
+constexpr std::string_view kBrushToggleSelectionAction{"BRUSH_TOGGLE_SELECTION_TOOL"};
+constexpr std::string_view kBrushRestoreAction{"BRUSH_RESTORE_LAST"};
+constexpr std::string_view kBrushVariationPrevAction{"BRUSH_VARIATION_PREV"};
+constexpr std::string_view kBrushVariationNextAction{"BRUSH_VARIATION_NEXT"};
+constexpr std::string_view kRotateItemAction{"ROTATE_ITEM"};
+constexpr std::string_view kBrushSlotPrefix{"BRUSH_SLOT_"};
+constexpr std::string_view kBrushStoreSlotPrefix{"BRUSH_STORE_SLOT_"};
+
+std::optional<size_t> parseBrushSlotIndex(std::string_view action,
+                                          std::string_view prefix) {
+    if (!action.starts_with(prefix) || action.size() != prefix.size() + 1) {
+        return std::nullopt;
+    }
+
+    const char slot_char = action.back();
+    if (slot_char < '0' || slot_char > '9') {
+        return std::nullopt;
+    }
+
+    return static_cast<size_t>(slot_char - '0');
+}
+
+} // namespace
 
 HotkeyController::HotkeyController(Services::HotkeyRegistry& registry,
                                    Services::ViewSettings& view_settings,
@@ -45,7 +78,84 @@ void HotkeyController::processKey(int key, int mods, bool editor_active) {
     handleAction(binding->action_id);
 }
 
+bool HotkeyController::handleBrushAction(std::string_view action) {
+    if (!brush_controller_) {
+        return false;
+    }
+
+    if (action == kBrushRefreshAction) {
+        brush_controller_->refreshCurrentBrush();
+        return true;
+    }
+
+    if (action == kBrushToggleSelectionAction) {
+        brush_controller_->toggleSelectionTool();
+        return true;
+    }
+
+    if (action == kBrushRestoreAction) {
+        brush_controller_->restoreLastBrush();
+        return true;
+    }
+
+    if (action == kBrushVariationPrevAction) {
+        brush_controller_->cycleBrushVariation(-1);
+        return true;
+    }
+
+    if (action == kBrushVariationNextAction) {
+        brush_controller_->cycleBrushVariation(1);
+        return true;
+    }
+
+    if (action == kRotateItemAction) {
+        if (rotateSelectedItem()) {
+            if (auto *session = tab_manager_.getActiveSession()) {
+                session->setModified(true);
+            }
+        }
+        return true;
+    }
+
+    if (const auto slot = parseBrushSlotIndex(action, kBrushSlotPrefix)) {
+        brush_controller_->recallBrushSlot(*slot);
+        return true;
+    }
+
+    if (const auto slot = parseBrushSlotIndex(action, kBrushStoreSlotPrefix)) {
+        brush_controller_->storeBrushSlot(*slot);
+        return true;
+    }
+
+    return false;
+}
+
+bool HotkeyController::rotateSelectedItem() {
+    auto *session = tab_manager_.getActiveSession();
+    if (!session || !brush_controller_) {
+        return false;
+    }
+
+    const auto &selection = session->getSelectionService();
+    const auto entries = selection.getAllEntries();
+    if (entries.size() != 1) {
+        return false;
+    }
+
+    const auto &entry = entries.front();
+    if (entry.getType() != Domain::Selection::EntityType::Item || !entry.entity_ptr) {
+        return false;
+    }
+
+    const auto *item = static_cast<const Domain::Item *>(entry.entity_ptr);
+    return brush_controller_->rotateItemAt(entry.getPosition(), item);
+}
+
 void HotkeyController::handleAction(const std::string& action) {
+    if (handleBrushAction(action)) {
+        return;
+    }
+
     EditorSession* session = tab_manager_.getActiveSession();
     
     // Edit operations

@@ -1,68 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <materials>
-
-    <!-- ============================================== -->
-    <!-- BORDERS                                        -->
-    <!-- Border definitions used by brushes             -->
-    <!-- ============================================== -->
+    <metaitem id="80" />
+    <metaitem id="81" />
+    <metaitem id="82" />
+    <metaitem id="83" />
+    <metaitem id="84" />
+    <metaitem id="85" />
+    <metaitem id="86" />
+    <metaitem id="87" />
+    <metaitem id="88" />
+    <metaitem id="89" />
     <borders>
-        <!-- Load all XML files from default folder -->
         <include folder="borders/" />
     </borders>
-
-    <!-- ============================================== -->
-    <!-- BRUSHES                                        -->
-    <!-- Brush definitions (ground, walls, doodads)     -->
-    <!-- ============================================== -->
     <brushes>
-        <!-- Load all XML files from default folder -->
         <include folder="brushes/" />
-        
-        <!-- Or load specific files -->
-        <!-- <include file="brushes/custom_brushes.xml" /> -->
     </brushes>
-
-    <!-- ============================================== -->
-    <!-- CREATURES                                      -->
-    <!-- Monster and NPC definitions                    -->
-    <!-- ============================================== -->
     <creatures>
-        <!-- Load all XML files from default folder -->
         <include folder="creatures/" />
     </creatures>
-
-    <!-- ============================================== -->
-    <!-- ITEMS                                          -->
-    <!-- Item definitions                               -->
-    <!-- ============================================== -->
     <items>
-        <!-- Load all XML files from default folder -->
         <include folder="items/" />
     </items>
-
-    <!-- ============================================== -->
-    <!-- TILESETS                                       -->
-    <!-- Tileset definitions (collections of brushes,   -->
-    <!-- creatures, items for the palette UI)           -->
-    <!-- ============================================== -->
     <tilesets>
-        <!-- Load all tilesets from subfolders -->
         <include folder="tilesets/" subfolders="true" />
-        
-        <!-- Or load from specific folders -->
-        <!-- <include folder="tilesets/creatures/" /> -->
-        <!-- <include folder="tilesets/terrain/" /> -->
-        
-        <!-- Or load specific files -->
-        <!-- <include file="tilesets/my_custom_tileset.xml" /> -->
     </tilesets>
-
-    <!-- ============================================== -->
-    <!-- PALETTES                                       -->
-    <!-- User-defined palette configurations            -->
-    <!-- ============================================== -->
     <palettes>
         <include file="palettes.xml" />
     </palettes>
-
 </materials>

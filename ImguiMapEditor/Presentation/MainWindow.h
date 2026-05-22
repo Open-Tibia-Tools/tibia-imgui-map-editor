@@ -15,6 +15,7 @@
 #include "UI/Windows/IngameBoxWindow.h"
 #include <functional>
 #include <memory>
+#include <optional>
 
 namespace MapEditor::Rendering {
 class MapRenderer;
@@ -82,6 +83,47 @@ public:
   void setBrowseTileCallback(
       std::function<void(const Domain::Position &, uint16_t)> callback) {
     context_menu_.setBrowseTileCallback(std::move(callback));
+  }
+
+  void setSelectBrushCallback(UI::MapContextMenu::SelectBrushCallback callback) {
+    context_menu_.setSelectBrushCallback(std::move(callback));
+  }
+
+  void setRotateItemCallback(UI::MapContextMenu::RotateItemCallback callback) {
+    context_menu_.setRotateItemCallback(std::move(callback));
+  }
+
+  void setCanRotateItemCallback(
+      UI::MapContextMenu::CanRotateItemCallback callback) {
+    context_menu_.setCanRotateItemCallback(std::move(callback));
+  }
+
+  void setSwitchDoorCallback(UI::MapContextMenu::SwitchDoorCallback callback) {
+    context_menu_.setSwitchDoorCallback(std::move(callback));
+  }
+
+  void setCanSwitchDoorCallback(
+      UI::MapContextMenu::CanSwitchDoorCallback callback) {
+    context_menu_.setCanSwitchDoorCallback(std::move(callback));
+  }
+
+  void setDoorStateCallback(UI::MapContextMenu::DoorStateCallback callback) {
+    context_menu_.setDoorStateCallback(std::move(callback));
+  }
+
+  void setSpawnPropertiesCallback(
+      UI::MapContextMenu::SpawnPropertiesCallback callback) {
+    context_menu_.setSpawnPropertiesCallback(std::move(callback));
+  }
+
+  void setCreaturePropertiesCallback(
+      UI::MapContextMenu::CreaturePropertiesCallback callback) {
+    context_menu_.setCreaturePropertiesCallback(std::move(callback));
+  }
+
+  void setCanSelectBrushCallback(
+      UI::MapContextMenu::CanSelectBrushCallback callback) {
+    context_menu_.setCanSelectBrushCallback(std::move(callback));
   }
 
   // === Editor-state modal dialogs ===

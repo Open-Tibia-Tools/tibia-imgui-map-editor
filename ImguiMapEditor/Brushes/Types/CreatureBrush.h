@@ -14,6 +14,9 @@ namespace MapEditor::Brushes {
         const std::string& getName() const override { return name_; }
         BrushType getType() const override { return BrushType::Creature; }
         uint32_t getLookId() const override { return static_cast<uint32_t>(outfit_.lookType); } // Used for preview
+        BrushPreviewDescriptor getPreviewDescriptor() const override {
+            return BrushPreviewDescriptor::creature(outfit_);
+        }
         
         void draw(Domain::ChunkedMap& map, Domain::Tile* tile, const DrawContext& ctx) override;
         void undraw(Domain::ChunkedMap& map, Domain::Tile* tile) override;

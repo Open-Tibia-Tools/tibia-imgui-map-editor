@@ -3,6 +3,7 @@
 #include "Item.h"
 #include "Position.h"
 #include "Spawn.h"
+#include "../Brushes/Core/BrushId.h"
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -87,6 +88,8 @@ public:
   const Item *getItem(size_t index) const;
   Item *getItem(size_t index);
   void addItem(std::unique_ptr<Item> item); // Sorts based on item properties
+  void insertItem(size_t index,
+                  std::unique_ptr<Item> item); // Inserts at explicit stack slot
   void addItemDirect(
       std::unique_ptr<Item> item); // Appends without sorting (for undo/redo)
   std::unique_ptr<Item> removeItem(size_t index);
@@ -135,6 +138,41 @@ public:
   void setHouseId(uint32_t id) { house_id_ = id; }
   bool isHouseTile() const { return house_id_ != 0; }
 
+  bool hasOptionalBorder() const { return optional_border_; }
+  void setOptionalBorder(bool enabled) { optional_border_ = enabled; }
+
+  Brushes::BrushId getGroundBrushId() const { return ground_brush_id_; }
+  void setGroundBrushId(Brushes::BrushId brushId) { ground_brush_id_ = brushId; }
+
+  Brushes::BrushId getOptionalBorderBrushId() const {
+    return optional_border_brush_id_;
+  }
+  void setOptionalBorderBrushId(Brushes::BrushId brushId) {
+    optional_border_brush_id_ = brushId;
+  }
+
+  Brushes::BrushId getSpawnBrushId() const { return spawn_brush_id_; }
+  void setSpawnBrushId(Brushes::BrushId brushId) { spawn_brush_id_ = brushId; }
+
+  Brushes::BrushId getCreatureBrushId() const { return creature_brush_id_; }
+  void setCreatureBrushId(Brushes::BrushId brushId) { creature_brush_id_ = brushId; }
+
+  Brushes::BrushId getHouseBrushId() const { return house_brush_id_; }
+  void setHouseBrushId(Brushes::BrushId brushId) { house_brush_id_ = brushId; }
+
+  Brushes::BrushId getHouseExitBrushId() const { return house_exit_brush_id_; }
+  void setHouseExitBrushId(Brushes::BrushId brushId) {
+    house_exit_brush_id_ = brushId;
+  }
+  uint32_t getHouseExitHouseId() const { return house_exit_house_id_; }
+  void setHouseExitHouseId(uint32_t houseId) { house_exit_house_id_ = houseId; }
+
+  Brushes::BrushId getWaypointBrushId() const { return waypoint_brush_id_; }
+  void setWaypointBrushId(Brushes::BrushId brushId) { waypoint_brush_id_ = brushId; }
+
+  Brushes::BrushId getZoneBrushId(TileFlag flag) const;
+  void setZoneBrushId(TileFlag flag, Brushes::BrushId brushId);
+
   // Spawn association
   void setSpawn(std::unique_ptr<Spawn>
                     spawn); // Defined in Tile.cpp (needs Chunk definition)
@@ -168,6 +206,20 @@ private:
   std::vector<std::unique_ptr<Item>> items_;
   TileFlag flags_ = TileFlag::None;
   uint32_t house_id_ = 0;
+  bool optional_border_ = false;
+  Brushes::BrushId ground_brush_id_ = Brushes::InvalidBrushId;
+  Brushes::BrushId optional_border_brush_id_ = Brushes::InvalidBrushId;
+  Brushes::BrushId spawn_brush_id_ = Brushes::InvalidBrushId;
+  Brushes::BrushId creature_brush_id_ = Brushes::InvalidBrushId;
+  Brushes::BrushId house_brush_id_ = Brushes::InvalidBrushId;
+  Brushes::BrushId house_exit_brush_id_ = Brushes::InvalidBrushId;
+  uint32_t house_exit_house_id_ = 0;
+  Brushes::BrushId waypoint_brush_id_ = Brushes::InvalidBrushId;
+  Brushes::BrushId protection_zone_brush_id_ = Brushes::InvalidBrushId;
+  Brushes::BrushId no_pvp_brush_id_ = Brushes::InvalidBrushId;
+  Brushes::BrushId no_logout_brush_id_ = Brushes::InvalidBrushId;
+  Brushes::BrushId pvp_zone_brush_id_ = Brushes::InvalidBrushId;
+  Brushes::BrushId refresh_brush_id_ = Brushes::InvalidBrushId;
 
   // Creature spawn attached to this tile (from OTBM_SPAWNS or RME spawns.xml)
   std::unique_ptr<Spawn> spawn_;

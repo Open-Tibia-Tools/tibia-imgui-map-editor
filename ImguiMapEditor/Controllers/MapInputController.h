@@ -39,7 +39,7 @@ public:
   /**
    * Handle left mouse button click.
    * @param pos World position clicked
-   * @param mods Key modifiers (Ctrl, Shift)
+   * @param mods Key modifiers (Ctrl, Shift, Alt)
    * @param pixel_offset Sub-tile pixel offset for pixel-perfect mode
    * @param session Current editor session
    */
@@ -57,7 +57,8 @@ public:
   /**
    * Handle left mouse drag start.
    */
-  void onLeftDragStart(const Domain::Position &pos, EditorSession *session);
+  void onLeftDragStart(const Domain::Position &pos, int mods,
+                       EditorSession *session);
 
   /**
    * Handle left mouse drag end (for item moving).
@@ -72,7 +73,8 @@ public:
   /**
    * Handle right mouse click (context menu).
    */
-  void onRightClick(const Domain::Position &pos, EditorSession *session);
+  void onRightClick(const Domain::Position &pos, int mods,
+                    const glm::vec2 &pixel_offset, EditorSession *session);
 
   /**
    * Handle double click (properties).
@@ -120,6 +122,7 @@ public:
    * Check if a brush is currently active.
    */
   bool hasBrush() const;
+  bool toggleSelectionTool();
 
 private:
   Domain::SelectionSettings &settings_;

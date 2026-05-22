@@ -67,9 +67,9 @@ public:
     SprReader(const SprReader&) = delete;
     SprReader& operator=(const SprReader&) = delete;
     
-    // Move OK
-    SprReader(SprReader&&) = default;
-    SprReader& operator=(SprReader&&) = default;
+    // Move disabled: std::mutex makes the reader non-movable.
+    SprReader(SprReader&&) = delete;
+    SprReader& operator=(SprReader&&) = delete;
     
     /**
      * Open a .spr file

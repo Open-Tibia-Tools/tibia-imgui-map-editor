@@ -1,4 +1,6 @@
 #include "MapLoadingService.h"
+#include "Brushes/BrushRegistry.h"
+#include "Brushes/Types/CreatureBrush.h"
 #include "IO/HouseXmlReader.h"
 #include "IO/Otbm/OtbmReader.h"
 #include "IO/SecReader.h"
@@ -12,7 +14,7 @@ namespace Services {
 
 MapLoadingService::MapLoadingService(ClientVersionRegistry &version_registry,
                                      ViewSettings &view_settings,
-                                     Brushes::BrushRegistry &brush_registry,
+                                     MapEditor::Brushes::BrushRegistry &brush_registry,
                                      TilesetService &tileset_service)
     : version_registry_(version_registry), view_settings_(view_settings),
       brush_registry_(brush_registry), tileset_service_(tileset_service) {}
@@ -464,21 +466,42 @@ bool MapLoadingService::loadClientData(
     spdlog::warn("No items.xml loaded. Item names may be missing.");
   }
 
+  brush_registry_.setClientDataService(client_data_service_.get());
+  tileset_service_.setClientDataService(client_data_service_.get());
+
+  if (client_data_service_) {
+    for (const auto &creature : client_data_service_->getCreatures()) {
+      if (!creature) {
+        continue;
+      }
+
+      auto *existingBrush = brush_registry_.getBrush(creature->name);
+      if (!existingBrush) {
+        auto brush = std::make_unique<MapEditor::Brushes::CreatureBrush>(
+            creature->name, creature->outfit);
+        existingBrush = brush.get();
+        brush_registry_.addBrush(std::move(brush));
+      }
+      brush_registry_.registerCreatureBinding(creature->name, existingBrush);
+    }
+  }
+
   // Use injected TilesetService instead of creating locally
   // Always use the application's data folder for tilesets and palettes,
   // NOT the map directory - these are app resources, not per-map resources
   std::filesystem::path app_data_path =
       std::filesystem::current_path() / "data";
 
-  bool tilesets_loaded = tileset_service_.loadTilesets(app_data_path);
+  bool tilesets_loaded = tileset_service_.loadMaterials(app_data_path);
   if (!tilesets_loaded) {
-    spdlog::warn("No tilesets found. The palette will be empty.");
-  }
-
-  // Load palettes (must be after tilesets since palettes reference tilesets)
-  bool palettes_loaded = tileset_service_.loadPalettes(app_data_path);
-  if (!palettes_loaded) {
-    spdlog::warn("No palettes loaded. Ribbon palette buttons will be empty.");
+    spdlog::warn("materials.xml could not be loaded. Falling back to direct tileset/palette loading.");
+    tilesets_loaded = tileset_service_.loadTilesets(app_data_path);
+    if (!tilesets_loaded) {
+      spdlog::warn("No tilesets found. The palette will be empty.");
+    }
+    if (!tileset_service_.loadPalettes(app_data_path)) {
+      spdlog::warn("No palettes loaded. Ribbon palette buttons will be empty.");
+    }
   }
 
   // Create sprite manager with the loaded sprites
@@ -545,18 +568,28 @@ Domain::Position MapLoadingService::findCameraCenter() const {
 bool MapLoadingService::tryLoadCreatures(
     const std::filesystem::path &map_dir,
     const std::filesystem::path &client_path) {
-  return tryLoadResource("creatures.xml", map_dir, client_path,
-                         [this](const std::filesystem::path &path) {
-                           return client_data_service_->loadCreatureData(path);
-                         });
+  const auto load = [this](const std::filesystem::path &path) {
+    return client_data_service_->loadCreatureData(path);
+  };
+
+  if (tryLoadResource("creatures.xml", map_dir, client_path, load)) {
+    return true;
+  }
+  return tryLoadResource(std::filesystem::path("creatures") / "creatures.xml",
+                         map_dir, client_path, load);
 }
 
 bool MapLoadingService::tryLoadItems(const std::filesystem::path &map_dir,
                                      const std::filesystem::path &client_path) {
-  return tryLoadResource("items.xml", map_dir, client_path,
-                         [this](const std::filesystem::path &path) {
-                           return client_data_service_->loadItemData(path);
-                         });
+  const auto load = [this](const std::filesystem::path &path) {
+    return client_data_service_->loadItemData(path);
+  };
+
+  if (tryLoadResource("items.xml", map_dir, client_path, load)) {
+    return true;
+  }
+  return tryLoadResource(std::filesystem::path("items") / "items.xml", map_dir,
+                         client_path, load);
 }
 
 } // namespace Services

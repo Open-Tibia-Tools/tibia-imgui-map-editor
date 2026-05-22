@@ -1,21 +1,47 @@
 #include "ConfigService.h"
 #include <fstream>
+#include <cstdlib>
 #include <spdlog/spdlog.h>
 
 namespace MapEditor {
 namespace Services {
 
+namespace {
+
+std::optional<std::string> getEnvironmentVariable(const char *name) {
+  if (!name || name[0] == '\0') {
+    return std::nullopt;
+  }
+
+#ifdef _WIN32
+  char *value = nullptr;
+  size_t length = 0;
+  if (_dupenv_s(&value, &length, name) != 0 || !value) {
+    return std::nullopt;
+  }
+
+  std::string result{value};
+  std::free(value);
+  return result;
+#else
+  if (const char *value = std::getenv(name); value) {
+    return std::string{value};
+  }
+  return std::nullopt;
+#endif
+}
+
+} // namespace
+
 ConfigService::ConfigService() {
     // Default config path in user's home directory
     #ifdef _WIN32
-    const char* appdata = std::getenv("APPDATA");
-    if (appdata) {
-        config_path_ = std::filesystem::path(appdata) / "TibiaMapEditor" / "config.json";
+    if (const auto appdata = getEnvironmentVariable("APPDATA"); appdata) {
+        config_path_ = std::filesystem::path(*appdata) / "TibiaMapEditor" / "config.json";
     }
     #else
-    const char* home = std::getenv("HOME");
-    if (home) {
-        config_path_ = std::filesystem::path(home) / ".config" / "TibiaMapEditor" / "config.json";
+    if (const auto home = getEnvironmentVariable("HOME"); home) {
+        config_path_ = std::filesystem::path(*home) / ".config" / "TibiaMapEditor" / "config.json";
     }
     #endif
 }

@@ -1,14 +1,25 @@
 #include "TilesetService.h"
 
 #include "../Brushes/BrushRegistry.h"
+#include "../IO/MaterialsXmlReader.h"
 #include "../IO/PaletteXmlReader.h"
 #include "../IO/TilesetXmlReader.h"
+#include "Brushes/BorderLookupService.h"
+#include "Brushes/CarpetLookupService.h"
+#include "Brushes/TableLookupService.h"
+#include "Brushes/WallLookupService.h"
 #include <spdlog/spdlog.h>
 
 namespace MapEditor::Services {
 
-TilesetService::TilesetService(Brushes::BrushRegistry &brushRegistry)
-    : brushRegistry_(brushRegistry) {}
+TilesetService::TilesetService(MapEditor::Brushes::BrushRegistry &brushRegistry)
+    : brushRegistry_(brushRegistry),
+      borderLookup_(std::make_unique<MapEditor::Services::Brushes::BorderLookupService>()),
+      wallLookup_(std::make_unique<MapEditor::Services::Brushes::WallLookupService>()),
+      tableLookup_(std::make_unique<MapEditor::Services::Brushes::TableLookupService>()),
+      carpetLookup_(std::make_unique<MapEditor::Services::Brushes::CarpetLookupService>()) {}
+
+TilesetService::~TilesetService() = default;
 
 bool TilesetService::loadTilesets(const std::filesystem::path &dataPath) {
   // Look for tileset XML files in the data directory
@@ -62,6 +73,27 @@ bool TilesetService::loadPalettes(const std::filesystem::path &dataPath) {
                paletteRegistry_.getPaletteNames().size());
 
   return true;
+}
+
+bool TilesetService::loadMaterials(const std::filesystem::path &dataPath) {
+  const auto materialsPath = dataPath / "materials.xml";
+  if (!std::filesystem::exists(materialsPath)) {
+    spdlog::warn("[TilesetService] materials.xml not found at: {}",
+                 materialsPath.string());
+    return false;
+  }
+
+  tilesetRegistry_.clear();
+  paletteRegistry_.clear();
+  brushRegistry_.clear();
+  brushRegistry_.setClientDataService(clientData_);
+
+  IO::MaterialsXmlReader reader(brushRegistry_, tilesetRegistry_, paletteRegistry_,
+                                borderLookup_.get(), wallLookup_.get(),
+                                tableLookup_.get(), carpetLookup_.get(),
+                                clientData_);
+  loaded_ = reader.load(materialsPath);
+  return loaded_;
 }
 
 } // namespace MapEditor::Services

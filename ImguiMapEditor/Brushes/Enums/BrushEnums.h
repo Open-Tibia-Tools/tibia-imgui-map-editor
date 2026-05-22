@@ -56,15 +56,15 @@ constexpr std::string_view CENTER = "center";
 enum class EdgeType : uint8_t {
   None = 0,
   N = 1,      // "n" - north horizontal
-  S = 2,      // "s" - south horizontal
-  E = 3,      // "e" - east horizontal
+  E = 2,      // "e" - east horizontal
+  S = 3,      // "s" - south horizontal
   W = 4,      // "w" - west horizontal
-  CNE = 5,    // "cne" - corner northeast (outer)
-  CNW = 6,    // "cnw" - corner northwest (outer)
-  CSE = 7,    // "cse" - corner southeast (outer)
-  CSW = 8,    // "csw" - corner southwest (outer)
-  DNE = 9,    // "dne" - diagonal northeast (inner)
-  DNW = 10,   // "dnw" - diagonal northwest (inner)
+  CNW = 5,    // "cnw" - corner northwest (outer)
+  CNE = 6,    // "cne" - corner northeast (outer)
+  CSW = 7,    // "csw" - corner southwest (outer)
+  CSE = 8,    // "cse" - corner southeast (outer)
+  DNW = 9,    // "dnw" - diagonal northwest (inner)
+  DNE = 10,   // "dne" - diagonal northeast (inner)
   DSE = 11,   // "dse" - diagonal southeast (inner)
   DSW = 12,   // "dsw" - diagonal southwest (inner)
   Center = 13 // "center" - carpet center only
@@ -80,13 +80,13 @@ enum class EdgeType : uint8_t {
  * vertical, west
  */
 enum class TableAlign : uint8_t {
-  Alone = 0,      // "alone"
-  North = 1,      // "north"
-  South = 2,      // "south"
-  East = 3,       // "east"
-  West = 4,       // "west"
-  Horizontal = 5, // "horizontal"
-  Vertical = 6    // "vertical"
+  North = 0,      // "north"
+  South = 1,      // "south"
+  East = 2,       // "east"
+  West = 3,       // "west"
+  Horizontal = 4, // "horizontal"
+  Vertical = 5,   // "vertical"
+  Alone = 6       // "alone"
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -99,22 +99,24 @@ enum class TableAlign : uint8_t {
  * NOTE: XML uses spaced strings like "east T", "north end"
  */
 enum class WallAlign : uint8_t {
-  Pole = 0,               // "pole"
-  Corner = 1,             // "corner" (northwest diagonal)
-  Horizontal = 2,         // "horizontal"
-  Vertical = 3,           // "vertical"
-  NorthEnd = 4,           // "north end"
-  SouthEnd = 5,           // "south end"
-  EastEnd = 6,            // "east end"
-  WestEnd = 7,            // "west end"
-  NorthT = 8,             // "north T"
-  SouthT = 9,             // "south T"
-  EastT = 10,             // "east T"
-  WestT = 11,             // "west T"
-  Intersection = 12,      // "intersection"
-  NortheastDiagonal = 13, // "northeast diagonal"
-  SouthwestDiagonal = 14, // "southwest diagonal"
-  Untouchable = 15        // internal only
+  Pole = 0,                // "pole"
+  SouthEnd = 1,            // "south end"
+  EastEnd = 2,             // "east end"
+  NorthwestDiagonal = 3,   // "corner" / "northwest diagonal"
+  Corner = NorthwestDiagonal,
+  WestEnd = 4,             // "west end"
+  NortheastDiagonal = 5,   // "northeast diagonal"
+  Horizontal = 6,          // "horizontal"
+  SouthT = 7,              // "south T"
+  NorthEnd = 8,            // "north end"
+  Vertical = 9,            // "vertical"
+  SouthwestDiagonal = 10,  // "southwest diagonal"
+  EastT = 11,              // "east T"
+  SoutheastDiagonal = 12,  // "southeast diagonal"
+  WestT = 13,              // "west T"
+  NorthT = 14,             // "north T"
+  Intersection = 15,       // "intersection"
+  Untouchable = 16         // internal only
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

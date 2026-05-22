@@ -210,8 +210,10 @@ set(SERVICES_SOURCES
     Services/Preview/DragPreviewProvider.cpp
     Services/Preview/BrushPreviewFactory.cpp
     Services/Preview/CreaturePreviewProvider.cpp
+    Services/Preview/DoodadBrushPreviewProvider.cpp
     Services/Preview/SpawnPreviewProvider.cpp
     Services/Preview/ZoneBrushPreviewProvider.cpp
+    Services/Preview/MultiItemBrushPreviewProvider.cpp
     Services/Map/MapLoadingService.cpp
     Services/Map/MapSavingService.cpp
     Services/Map/MapCleanupService.cpp
@@ -282,6 +284,8 @@ set(UI_SOURCES
     UI/Windows/MinimapWindow.cpp
     UI/Windows/PaletteWindow.cpp
     UI/Windows/PaletteWindowManager.cpp
+    UI/Utils/BrushPreviewRenderer.cpp
+    UI/Utils/BrushPreviewResolver.cpp
     UI/Utils/PreviewUtils.cpp
 )
 
@@ -346,11 +350,20 @@ set(BRUSHES_SOURCES
     Brushes/Behaviors/ItemPlacement.cpp
     Brushes/Behaviors/WeightedSelection.cpp
     Brushes/Types/RawBrush.cpp
+    Brushes/Types/BrushUtils.cpp
+    Brushes/Types/GroundBrush.cpp
+    Brushes/Types/DoodadBrush.cpp
+    Brushes/Types/WallBrush.cpp
+    Brushes/Types/TableBrush.cpp
+    Brushes/Types/CarpetBrush.cpp
+    Brushes/Types/DoorBrush.cpp
     Brushes/Types/CreatureBrush.cpp
     Brushes/Types/SpawnBrush.cpp
     Brushes/Types/FlagBrush.cpp
     Brushes/Types/EraserBrush.cpp
     Brushes/Types/HouseBrush.cpp
+    Brushes/Types/HouseExitBrush.cpp
+    Brushes/Types/OptionalBorderBrush.cpp
     Brushes/Types/WaypointBrush.cpp
     # Phase 0: Enumerations
     Brushes/Enums/BrushEnums.cpp
@@ -382,63 +395,78 @@ add_executable(${PROJECT_NAME}
     ${IMGUI_SOURCES}
 )
 
-option(TME_UNITY_BUILD "Enable unity build for faster compilation." OFF)
-set_target_properties(${PROJECT_NAME} PROPERTIES UNITY_BUILD ${TME_UNITY_BUILD})
-
-# Include directories
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${IMGUI_DIR}
-    ${IMGUI_DIR}/backends
-    ${CMAKE_CURRENT_SOURCE_DIR}/ext/fontawesome6
-    ${CMAKE_CURRENT_SOURCE_DIR}/ext/imguinotify
-    ${CMAKE_CURRENT_SOURCE_DIR}/ext/stb
-    ${Stb_INCLUDE_DIR}
+set(BRUSH_SMOKE_SOURCES
+    ${DOMAIN_SOURCES}
+    ${RENDERING_SOURCES}
+    ${IO_SOURCES}
+    ${SERVICES_SOURCES}
+    ${UI_SOURCES}
+    ${PLATFORM_SOURCES}
+    ${APPLICATION_SOURCES}
+    ${CONTROLLER_SOURCES}
+    ${PRESENTATION_SOURCES}
+    ${RIBBON_SOURCES}
+    ${BRUSHES_SOURCES}
+    Application.cpp
+    Tests/BrushSmoke.cpp
+    ${IMGUI_SOURCES}
 )
 
-# Link libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    glad::glad
-    glfw
-    glm::glm
-    spdlog::spdlog
-    nlohmann_json::nlohmann_json
-    pugixml::pugixml
-    lz4::lz4
-    Boost::boost
-    fmt::fmt
-    ZLIB::ZLIB
-    # stb is header-only - included via find_package(stb) which sets up include paths
+add_executable(BrushSmoke
+    ${BRUSH_SMOKE_SOURCES}
 )
 
-# Link nfd (vcpkg uses nfd::nfd, local build uses nfd)
-if(NFD_LOCAL)
-    target_link_libraries(${PROJECT_NAME} PRIVATE nfd)
-else()
-    target_link_libraries(${PROJECT_NAME} PRIVATE nfd::nfd)
-endif()
-
-# Platform-specific settings
-if(WIN32)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE
-        NOMINMAX
-        WIN32_LEAN_AND_MEAN
+function(configure_tme_target target_name)
+    target_include_directories(${target_name} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
+        ${IMGUI_DIR}
+        ${IMGUI_DIR}/backends
+        ${CMAKE_CURRENT_SOURCE_DIR}/ext/fontawesome6
+        ${CMAKE_CURRENT_SOURCE_DIR}/ext/imguinotify
+        ${CMAKE_CURRENT_SOURCE_DIR}/ext/stb
+        ${Stb_INCLUDE_DIR}
     )
-    # Hide console window in release builds (disabled - using main() not WinMain)
-    # if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    #     set_target_properties(${PROJECT_NAME} PROPERTIES
-    #         WIN32_EXECUTABLE TRUE
-    #     )
-    # endif()
-endif()
 
-if(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE /FS /W0)
-endif()
+    target_link_libraries(${target_name} PRIVATE
+        glad::glad
+        glfw
+        glm::glm
+        spdlog::spdlog
+        nlohmann_json::nlohmann_json
+        pugixml::pugixml
+        lz4::lz4
+        Boost::boost
+        fmt::fmt
+        ZLIB::ZLIB
+    )
+
+    if(NFD_LOCAL)
+        target_link_libraries(${target_name} PRIVATE nfd)
+    else()
+        target_link_libraries(${target_name} PRIVATE nfd::nfd)
+    endif()
+
+    if(WIN32)
+        target_compile_definitions(${target_name} PRIVATE
+            NOMINMAX
+            WIN32_LEAN_AND_MEAN
+        )
+    endif()
+
+    if(MSVC)
+        target_compile_options(${target_name} PRIVATE /FS /W0)
+    endif()
+endfunction()
+
+configure_tme_target(${PROJECT_NAME})
+configure_tme_target(BrushSmoke)
+target_compile_definitions(BrushSmoke PRIVATE
+    BRUSH_SMOKE_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+)
 
 # Copy data files
-set(COPY_DATA_COMMANDS
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data/shaders"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data/fonts"
@@ -454,20 +482,10 @@ set(COPY_DATA_COMMANDS
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data/shaders"
-)
-
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ext/fontawesome6/fa-solid-900.ttf")
-    list(APPEND COPY_DATA_COMMANDS
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/ext/fontawesome6/fa-solid-900.ttf"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data/fonts/fa-solid-900.ttf"
-    )
-else()
-    message(WARNING "Missing fontawesome6 TTF: ext/fontawesome6/fa-solid-900.ttf (skipping copy).")
-endif()
-
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    ${COPY_DATA_COMMANDS}
+    # Copy fonts
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/ext/fontawesome6/fa-solid-900.ttf"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data/fonts/fa-solid-900.ttf"
     COMMENT "Copying data files..."
 )
 

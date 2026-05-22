@@ -17,6 +17,7 @@ Item::Item(const Item& other)
     , client_id_(other.client_id_)
     , type_(other.type_)
     , data_(other.data_)
+    , owner_brush_id_(other.owner_brush_id_)
 {
     // Deep copy extended attributes if they exist
     if (other.extended_) {
@@ -46,6 +47,7 @@ Item& Item::operator=(const Item& other) {
         client_id_ = other.client_id_;
         type_ = other.type_;
         data_ = other.data_;
+        owner_brush_id_ = other.owner_brush_id_;
         
         // Deep copy extended attributes
         if (other.extended_) {

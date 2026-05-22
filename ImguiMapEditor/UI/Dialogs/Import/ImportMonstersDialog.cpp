@@ -1,4 +1,5 @@
 #include "ImportMonstersDialog.h"
+#include "../../../Utils/StringCopy.h"
 #include <imgui.h>
 #include <nfd.hpp>
 #include <cstring>
@@ -41,7 +42,7 @@ ImportMonstersDialog::Result ImportMonstersDialog::render() {
             nfdfilteritem_t filterItem[1] = {{"XML Files", "xml"}};
             nfdresult_t nfdResult = NFD::OpenDialog(outPath, filterItem, 1);
             if (nfdResult == NFD_OKAY) {
-                std::strncpy(path_buffer_, outPath.get(), sizeof(path_buffer_) - 1);
+                ::MapEditor::Utils::copyTruncate(path_buffer_, outPath.get());
                 options_.source_path = path_buffer_;
             }
         }

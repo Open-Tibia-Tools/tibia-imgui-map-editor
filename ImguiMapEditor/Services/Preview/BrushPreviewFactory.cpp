@@ -1,12 +1,23 @@
 #include "BrushPreviewFactory.h"
+#include "MultiItemBrushPreviewProvider.h"
+#include "PreviewTypes.h"
+#include "Brushes/Types/CarpetBrush.h"
 #include "Brushes/Types/CreatureBrush.h"
+#include "Brushes/Types/DoodadBrush.h"
+#include "Brushes/Types/DoorBrush.h"
 #include "Brushes/Types/EraserBrush.h"
 #include "Brushes/Types/FlagBrush.h"
+#include "Brushes/Types/GroundBrush.h"
 #include "Brushes/Types/HouseBrush.h"
+#include "Brushes/Types/HouseExitBrush.h"
+#include "Brushes/Types/OptionalBorderBrush.h"
 #include "Brushes/Types/RawBrush.h"
 #include "Brushes/Types/SpawnBrush.h"
+#include "Brushes/Types/TableBrush.h"
 #include "Brushes/Types/WaypointBrush.h"
+#include "Brushes/Types/WallBrush.h"
 #include "CreaturePreviewProvider.h"
+#include "DoodadBrushPreviewProvider.h"
 #include "IPreviewProvider.h"
 #include "RawBrushPreviewProvider.h"
 #include "SpawnPreviewProvider.h"
@@ -45,6 +56,55 @@ BrushPreviewFactory::createProvider(const Brushes::IBrush *brush,
   if (auto *spawnBrush = dynamic_cast<const Brushes::SpawnBrush *>(brush)) {
     spdlog::debug("[BrushPreviewFactory] Creating SpawnPreviewProvider");
     return std::make_unique<SpawnPreviewProvider>(settings);
+  }
+
+  auto makeSingleItemPreview =
+      [settings](uint16_t itemId) -> std::unique_ptr<IPreviewProvider> {
+    if (itemId == 0) {
+      return std::unique_ptr<IPreviewProvider>{};
+    }
+    PreviewTileData tile(0, 0, 0);
+    tile.addItem(itemId);
+    std::vector<PreviewTileData> tiles;
+    tiles.push_back(std::move(tile));
+    return std::make_unique<MultiItemBrushPreviewProvider>(std::move(tiles),
+                                                           settings, true);
+  };
+
+  if (auto *groundBrush = dynamic_cast<const Brushes::GroundBrush *>(brush)) {
+    return makeSingleItemPreview(groundBrush->getPreviewItemId());
+  }
+
+  if (auto *wallBrush = dynamic_cast<const Brushes::WallBrush *>(brush)) {
+    return makeSingleItemPreview(wallBrush->getPreviewItemId());
+  }
+
+  if (auto *carpetBrush = dynamic_cast<const Brushes::CarpetBrush *>(brush)) {
+    return makeSingleItemPreview(carpetBrush->getPreviewItemId());
+  }
+
+  if (auto *tableBrush = dynamic_cast<const Brushes::TableBrush *>(brush)) {
+    return makeSingleItemPreview(tableBrush->getPreviewItemId());
+  }
+
+  if (auto *doorBrush = dynamic_cast<const Brushes::DoorBrush *>(brush)) {
+    return makeSingleItemPreview(static_cast<uint16_t>(doorBrush->getLookId()));
+  }
+
+  if (auto *doodadBrush = dynamic_cast<const Brushes::DoodadBrush *>(brush)) {
+    return std::make_unique<DoodadBrushPreviewProvider>(*doodadBrush, settings);
+  }
+
+  if (auto *optionalBrush =
+          dynamic_cast<const Brushes::OptionalBorderBrush *>(brush)) {
+    (void)optionalBrush;
+    return std::make_unique<ZoneBrushPreviewProvider>(0x80D7C45A, settings);
+  }
+
+  if (auto *houseExitBrush =
+          dynamic_cast<const Brushes::HouseExitBrush *>(brush)) {
+    (void)houseExitBrush;
+    return std::make_unique<ZoneBrushPreviewProvider>(0x80FFAA44, settings);
   }
 
   // Flag Brush -> ZoneBrushPreviewProvider (yellow for zone flags)

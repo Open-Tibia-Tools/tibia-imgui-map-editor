@@ -1,4 +1,5 @@
 #include "PropertyPanelRenderer.h"
+#include "../../../Utils/StringCopy.h"
 #include "Domain/Item.h"
 #include "Domain/ItemType.h"
 #include "Domain/Spawn.h"
@@ -134,7 +135,7 @@ void PropertyPanelRenderer::loadValuesFromContext() {
         // Text
         std::string text = item_->getText();
         if (!text.empty()) {
-            std::strncpy(edit_.text, text.c_str(), sizeof(edit_.text) - 1);
+            ::MapEditor::Utils::copyTruncate(edit_.text, text);
         }
     }
     

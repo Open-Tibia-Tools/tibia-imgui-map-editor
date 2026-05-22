@@ -14,11 +14,11 @@ namespace MapEditor::Brushes {
 
 EdgeType parseEdgeName(std::string_view name) {
   static const std::unordered_map<std::string_view, EdgeType> map = {
-      {"n", EdgeType::N},          {"s", EdgeType::S},
-      {"e", EdgeType::E},          {"w", EdgeType::W},
-      {"cne", EdgeType::CNE},      {"cnw", EdgeType::CNW},
-      {"cse", EdgeType::CSE},      {"csw", EdgeType::CSW},
-      {"dne", EdgeType::DNE},      {"dnw", EdgeType::DNW},
+      {"n", EdgeType::N},          {"e", EdgeType::E},
+      {"s", EdgeType::S},          {"w", EdgeType::W},
+      {"cnw", EdgeType::CNW},      {"cne", EdgeType::CNE},
+      {"csw", EdgeType::CSW},      {"cse", EdgeType::CSE},
+      {"dnw", EdgeType::DNW},      {"dne", EdgeType::DNE},
       {"dse", EdgeType::DSE},      {"dsw", EdgeType::DSW},
       {"center", EdgeType::Center}};
   auto it = map.find(name);
@@ -29,24 +29,24 @@ std::string_view edgeTypeToString(EdgeType type) {
   switch (type) {
   case EdgeType::N:
     return "n";
-  case EdgeType::S:
-    return "s";
   case EdgeType::E:
     return "e";
+  case EdgeType::S:
+    return "s";
   case EdgeType::W:
     return "w";
-  case EdgeType::CNE:
-    return "cne";
   case EdgeType::CNW:
     return "cnw";
-  case EdgeType::CSE:
-    return "cse";
+  case EdgeType::CNE:
+    return "cne";
   case EdgeType::CSW:
     return "csw";
-  case EdgeType::DNE:
-    return "dne";
+  case EdgeType::CSE:
+    return "cse";
   case EdgeType::DNW:
     return "dnw";
+  case EdgeType::DNE:
+    return "dne";
   case EdgeType::DSE:
     return "dse";
   case EdgeType::DSW:
@@ -112,8 +112,10 @@ WallAlign parseWallType(std::string_view name) {
       {"east T", WallAlign::EastT},
       {"west T", WallAlign::WestT},
       {"intersection", WallAlign::Intersection},
+      {"northwest diagonal", WallAlign::NorthwestDiagonal},
       {"northeast diagonal", WallAlign::NortheastDiagonal},
-      {"southwest diagonal", WallAlign::SouthwestDiagonal}};
+      {"southwest diagonal", WallAlign::SouthwestDiagonal},
+      {"southeast diagonal", WallAlign::SoutheastDiagonal}};
   auto it = map.find(name);
   return it != map.end() ? it->second : WallAlign::Pole;
 }
@@ -122,34 +124,36 @@ std::string_view wallAlignToString(WallAlign align) {
   switch (align) {
   case WallAlign::Pole:
     return "pole";
-  case WallAlign::Corner:
+  case WallAlign::NorthwestDiagonal:
     return "corner";
-  case WallAlign::Horizontal:
-    return "horizontal";
-  case WallAlign::Vertical:
-    return "vertical";
-  case WallAlign::NorthEnd:
-    return "north end";
   case WallAlign::SouthEnd:
     return "south end";
   case WallAlign::EastEnd:
     return "east end";
+  case WallAlign::NortheastDiagonal:
+    return "northeast diagonal";
+  case WallAlign::Horizontal:
+    return "horizontal";
+  case WallAlign::SouthT:
+    return "south T";
+  case WallAlign::NorthEnd:
+    return "north end";
+  case WallAlign::Vertical:
+    return "vertical";
+  case WallAlign::SouthwestDiagonal:
+    return "southwest diagonal";
+  case WallAlign::EastT:
+    return "east T";
+  case WallAlign::SoutheastDiagonal:
+    return "southeast diagonal";
   case WallAlign::WestEnd:
     return "west end";
   case WallAlign::NorthT:
     return "north T";
-  case WallAlign::SouthT:
-    return "south T";
-  case WallAlign::EastT:
-    return "east T";
   case WallAlign::WestT:
     return "west T";
   case WallAlign::Intersection:
     return "intersection";
-  case WallAlign::NortheastDiagonal:
-    return "northeast diagonal";
-  case WallAlign::SouthwestDiagonal:
-    return "southwest diagonal";
   case WallAlign::Untouchable:
     return "untouchable";
   default:

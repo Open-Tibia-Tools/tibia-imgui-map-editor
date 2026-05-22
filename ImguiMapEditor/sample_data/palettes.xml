@@ -1,98 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
 <palettes>
-
-    <!-- ============================================== -->
-    <!-- PALETTE: All Creatures                         -->
-    <!-- Loads every creature tileset from the folder   -->
-    <!-- ============================================== -->
-    <palette name="All Creatures">
+    <palette name="Terrain">
         <tileset>
-            <include folder="tilesets/creatures/" />
+            <include file="tilesets/terrain/Nature_terrain.xml" />
+            <include file="tilesets/terrain/Cave_terrain.xml" />
+            <include file="tilesets/terrain/Snow_terrain.xml" />
+            <include file="tilesets/terrain/Town_terrain.xml" />
+            <include file="tilesets/terrain/Roofs_terrain.xml" />
+            <include file="tilesets/terrain/Stairs_terrain.xml" />
+            <include file="tilesets/terrain/Walls_terrain.xml" />
         </tileset>
     </palette>
-
-    <!-- ============================================== -->
-    <!-- PALETTE: Dungeon Builder                       -->
-    <!-- Hand-picked tilesets for dungeon creation      -->
-    <!-- ============================================== -->
-    <palette name="Dungeon Builder">
+    <palette name="Doodad">
         <tileset>
-            <!-- Cave environment -->
-            <include file="tilesets/collections/Cave Dungeon_Cave Dungeon_collections.xml" />
-
-            <!-- Undead creatures only (single tileset from file) -->
-            <include file="tilesets/creatures/Undead_Undead_creatures.xml" tileset="Undead" />
-
-            <!-- Bugs and spiders -->
-            <include file="tilesets/creatures/Bugs and Spiders_Bugs and Spiders_creatures.xml" />
-
-            <!-- Containers for loot -->
-            <include file="tilesets/items/Containers_Containers_items.xml" />
+            <include file="tilesets/doodad/Nature_doodad.xml" />
+            <include file="tilesets/doodad/Snow_doodad.xml" />
+            <include file="tilesets/doodad/Hangables_doodad.xml" />
+            <include file="tilesets/doodad/Interior_doodad.xml" />
+            <include file="tilesets/doodad/Beds_doodad.xml" />
+            <include file="tilesets/doodad/Statues_doodad.xml" />
+            <include file="tilesets/doodad/Exterior_doodad.xml" />
+            <include file="tilesets/doodad/Signs_doodad.xml" />
+            <include file="tilesets/doodad/Splash_doodad.xml" />
+            <include file="tilesets/doodad/Magic Fields_doodad.xml" />
+            <include file="tilesets/doodad/Trash_doodad.xml" />
+            <include file="tilesets/doodad_and_raw/Corpses_doodad_and_raw.xml" />
+            <include file="tilesets/doodad/Architecture_doodad.xml" />
         </tileset>
     </palette>
-
-    <!-- ============================================== -->
-    <!-- PALETTE: Nature & Outdoors                     -->
-    <!-- Everything for outdoor/nature maps             -->
-    <!-- ============================================== -->
-    <palette name="Nature Pack">
+    <palette name="Collection">
+        <tileset />
+    </palette>
+    <palette name="Item">
         <tileset>
-            <!-- All terrain types -->
-            <include folder="tilesets/terrain/" />
-
-            <!-- Animals only -->
-            <include file="tilesets/creatures/Animals_Animals_creatures.xml" tileset="Animals" />
-
-            <!-- Forest decorations -->
-            <include file="tilesets/collections/Forest_Forest_collections.xml" />
-
-            <!-- Jungle decorations -->
-            <include file="tilesets/collections/Jungle_Jungle_collections.xml" />
-
-            <!-- Tropical decorations -->
-            <include file="tilesets/collections/Tropical_Tropical_collections.xml" />
+            <include file="tilesets/items_and_raw/Equipment_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Ornaments_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Tools_items_and_raw.xml" />
+            <include file="tilesets/items/Tools_items.xml" />
+            <include file="tilesets/items_and_raw/Weapons_items_and_raw.xml" />
+            <include file="tilesets/items/Weapons (Magic)_items.xml" />
+            <include file="tilesets/items_and_raw/Shields_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Trinkets_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Fluid Containers_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Jewelry_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Containers_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Writeables_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Food_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Runes_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Addon and Quest Items_items_and_raw.xml" />
         </tileset>
     </palette>
-
-    <!-- ============================================== -->
-    <!-- PALETTE: Desert Theme                          -->
-    <!-- Desert-specific assets                         -->
-    <!-- ============================================== -->
-    <palette name="Desert Theme">
+    <palette name="Creature">
         <tileset>
-            <include file="tilesets/collections/Desert_Desert_collections.xml" tileset="Desert" />
+            <include file="tilesets/creatures/Others_creatures.xml" />
         </tileset>
     </palette>
-
-    <!-- ============================================== -->
-    <!-- PALETTE: Boss Encounters                       -->
-    <!-- Just the bosses for special encounters         -->
-    <!-- ============================================== -->
-    <palette name="Boss Encounters">
+    <palette name="Raw">
         <tileset>
-            <include file="tilesets/creatures/Bosses_Bosses_creatures.xml" tileset="Bosses" />
-            <include file="tilesets/creatures/Magic_Magic_creatures.xml" tileset="Magic" />
+            <include file="tilesets/raw/Grounds_raw.xml" />
+            <include file="tilesets/raw/Nature_raw.xml" />
+            <include file="tilesets/raw/Roofs_raw.xml" />
+            <include file="tilesets/raw/Boats_raw.xml" />
+            <include file="tilesets/raw/Sea_raw.xml" />
+            <include file="tilesets/raw/Hangables_raw.xml" />
+            <include file="tilesets/raw/Interior_raw.xml" />
+            <include file="tilesets/raw/Exterior_raw.xml" />
+            <include file="tilesets/raw/Splash_raw.xml" />
+            <include file="tilesets/items_and_raw/Equipment_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Ornaments_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Tools_items_and_raw.xml" />
+            <include file="tilesets/raw/Tools_raw.xml" />
+            <include file="tilesets/items_and_raw/Weapons_items_and_raw.xml" />
+            <include file="tilesets/raw/Weapons_raw.xml" />
+            <include file="tilesets/items_and_raw/Shields_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Trinkets_items_and_raw.xml" />
+            <include file="tilesets/raw/Trinkets_raw.xml" />
+            <include file="tilesets/items_and_raw/Fluid Containers_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Jewelry_items_and_raw.xml" />
+            <include file="tilesets/raw/Magic Fields_raw.xml" />
+            <include file="tilesets/items_and_raw/Containers_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Writeables_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Food_items_and_raw.xml" />
+            <include file="tilesets/items_and_raw/Runes_items_and_raw.xml" />
+            <include file="tilesets/doodad_and_raw/Corpses_doodad_and_raw.xml" />
+            <include file="tilesets/raw/Stairs ~002f Ramps ~002f Ladders_raw.xml" />
+            <include file="tilesets/items_and_raw/Addon and Quest Items_items_and_raw.xml" />
+            <include file="tilesets/raw/Architecture_raw.xml" />
+            <include file="tilesets/raw/Walls_raw.xml" />
+            <include file="tilesets/raw/Borders_raw.xml" />
+            <include file="tilesets/raw/Blank_raw.xml" />
+            <include file="tilesets/raw/Others_raw.xml" />
         </tileset>
     </palette>
-
-    <!-- ============================================== -->
-    <!-- PALETTE: All Items                             -->
-    <!-- Every item tileset                             -->
-    <!-- ============================================== -->
-    <palette name="All Items">
-        <tileset>
-            <include folder="tilesets/items/" />
-        </tileset>
-    </palette>
-
-    <!-- ============================================== -->
-    <!-- PALETTE: Complete (Everything)                 -->
-    <!-- Loads absolutely everything recursively        -->
-    <!-- ============================================== -->
-    <palette name="Complete">
-        <tileset>
-            <include folder="tilesets/" subfolders="true" />
-        </tileset>
-    </palette>
-
 </palettes>

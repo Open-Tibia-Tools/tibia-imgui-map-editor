@@ -2,6 +2,7 @@
 #include "Services/ViewSettings.h"
 #include <functional>
 #include <string>
+#include <string_view>
 
 // Forward declarations
 namespace MapEditor {
@@ -11,6 +12,9 @@ class IngameBoxWindow;
 }
 namespace Services {
 class HotkeyRegistry;
+}
+namespace Brushes {
+class BrushController;
 }
 namespace AppLogic {
 class MapTabManager;
@@ -53,15 +57,21 @@ public:
     void setCloseMapCallback(ActionCallback cb) { on_close_map_ = std::move(cb); }
     void setEditTownsCallback(ActionCallback cb) { on_edit_towns_ = std::move(cb); }
     void setMapPropertiesCallback(ActionCallback cb) { on_map_properties_ = std::move(cb); }
+    void setBrushController(Brushes::BrushController* brush_controller) {
+        brush_controller_ = brush_controller;
+    }
     
 private:
     void handleAction(const std::string& action);
+    bool handleBrushAction(std::string_view action);
+    bool rotateSelectedItem();
     
     Services::HotkeyRegistry& registry_;
     Services::ViewSettings& view_settings_;
     UI::MapPanel* map_panel_;
     UI::IngameBoxWindow& ingame_box_;
     MapTabManager& tab_manager_;
+    Brushes::BrushController* brush_controller_ = nullptr;
     
     ActionCallback on_save_;
     ActionCallback on_quick_search_;

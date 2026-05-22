@@ -1,7 +1,10 @@
 #pragma once
 
+#include "BrushId.h"
+#include "Domain/Outfit.h"
 #include <cstdint>
 #include <string>
+#include <utility>
 
 namespace MapEditor::Domain {
 class ChunkedMap;
@@ -12,9 +15,12 @@ struct Position;
 
 namespace MapEditor::Services {
 class BrushSettingsService;
+class ClientDataService;
 } // namespace MapEditor::Services
 
 namespace MapEditor::Brushes {
+
+class BrushRegistry;
 
 // ============================================================================
 // Brush Type Enumeration
@@ -44,6 +50,54 @@ enum class BrushType {
   Placeholder     // For missing/undefined brushes
 };
 
+enum class BrushPreviewKind : uint8_t {
+  None,
+  ServerItem,
+  ClientSprite,
+  Creature,
+  Symbolic,
+};
+
+struct BrushPreviewDescriptor {
+  BrushPreviewKind kind = BrushPreviewKind::None;
+  uint32_t numericId = 0;
+  Domain::Outfit outfit {};
+  BrushType symbolicType = BrushType::Placeholder;
+  std::string label;
+
+  [[nodiscard]] static BrushPreviewDescriptor serverItem(uint32_t itemId) {
+    return {.kind = BrushPreviewKind::ServerItem, .numericId = itemId};
+  }
+
+  [[nodiscard]] static BrushPreviewDescriptor clientSprite(uint32_t spriteId) {
+    return {.kind = BrushPreviewKind::ClientSprite, .numericId = spriteId};
+  }
+
+  [[nodiscard]] static BrushPreviewDescriptor creature(
+      const Domain::Outfit &creatureOutfit) {
+    return {.kind = BrushPreviewKind::Creature, .outfit = creatureOutfit};
+  }
+
+  [[nodiscard]] static BrushPreviewDescriptor symbolic(BrushType type,
+                                                       std::string text = {}) {
+    return {.kind = BrushPreviewKind::Symbolic,
+            .symbolicType = type,
+            .label = std::move(text)};
+  }
+
+  [[nodiscard]] bool isExplicit() const {
+    return kind != BrushPreviewKind::None;
+  }
+};
+
+[[nodiscard]] inline BrushPreviewDescriptor
+defaultPreviewDescriptor(BrushType type, uint32_t lookId, std::string label) {
+  if (lookId != 0) {
+    return BrushPreviewDescriptor::serverItem(lookId);
+  }
+  return BrushPreviewDescriptor::symbolic(type, std::move(label));
+}
+
 // ============================================================================
 // Draw Context
 // ============================================================================
@@ -53,9 +107,14 @@ enum class BrushType {
  */
 struct DrawContext {
   int variation = 0;       // Which size/variant to use (for alternates)
+  uint32_t modifiers = 0;  // GLFW modifier bitmask
   bool isDragging = false; // Part of a drag stroke
+  bool specialAction = false; // wx-style single-tile special click behavior
   bool forcePlace = false; // Ignore blocking/duplicate checks
   Services::BrushSettingsService *brushSettings = nullptr; // For spawn settings
+  Services::ClientDataService *clientData = nullptr;
+  BrushRegistry *brushRegistry = nullptr;
+  BrushId ownerBrushId = InvalidBrushId;
 };
 
 // ============================================================================
@@ -94,6 +153,13 @@ public:
    */
   virtual uint32_t getLookId() const = 0;
 
+  /**
+   * Get explicit preview information for palette rendering.
+   */
+  virtual BrushPreviewDescriptor getPreviewDescriptor() const {
+    return defaultPreviewDescriptor(getType(), getLookId(), getName());
+  }
+
   // ─── Capabilities ─────────────────────────────────────────────────────
 
   /**
@@ -109,6 +175,27 @@ public:
    * Whether the brush supports drag-painting.
    */
   virtual bool isDraggable() const { return true; }
+
+  /**
+   * Whether this brush should be shown in palette/context-discovery views.
+   * Collection brushes and palette-bound brushes may opt in explicitly.
+   */
+  virtual bool visibleInPalette() const { return false; }
+
+  /**
+   * Mark the brush as visible in palette/discovery views.
+   */
+  virtual void flagAsVisible() {}
+
+  /**
+   * Whether this brush belongs to a collection tileset.
+   */
+  virtual bool hasCollection() const { return false; }
+
+  /**
+   * Mark the brush as part of a collection tileset.
+   */
+  virtual void setCollection() {}
 
   /**
    * Whether placing this brush should trigger border recalculation.

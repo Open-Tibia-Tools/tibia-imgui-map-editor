@@ -8,12 +8,54 @@ namespace Domain {
 
 Tile::Tile(const Position &pos) : position_(pos) {}
 
+Brushes::BrushId Tile::getZoneBrushId(TileFlag flag) const {
+  switch (flag) {
+  case TileFlag::ProtectionZone:
+    return protection_zone_brush_id_;
+  case TileFlag::NoPvp:
+    return no_pvp_brush_id_;
+  case TileFlag::NoLogout:
+    return no_logout_brush_id_;
+  case TileFlag::PvpZone:
+    return pvp_zone_brush_id_;
+  case TileFlag::Refresh:
+    return refresh_brush_id_;
+  case TileFlag::None:
+    return Brushes::InvalidBrushId;
+  }
+  return Brushes::InvalidBrushId;
+}
+
+void Tile::setZoneBrushId(TileFlag flag, Brushes::BrushId brushId) {
+  switch (flag) {
+  case TileFlag::ProtectionZone:
+    protection_zone_brush_id_ = brushId;
+    break;
+  case TileFlag::NoPvp:
+    no_pvp_brush_id_ = brushId;
+    break;
+  case TileFlag::NoLogout:
+    no_logout_brush_id_ = brushId;
+    break;
+  case TileFlag::PvpZone:
+    pvp_zone_brush_id_ = brushId;
+    break;
+  case TileFlag::Refresh:
+    refresh_brush_id_ = brushId;
+    break;
+  case TileFlag::None:
+    break;
+  }
+}
+
 void Tile::setGround(std::unique_ptr<Item> item) {
   ground_ = std::move(item);
+  ground_brush_id_ = ground_ ? ground_->getOwnerBrushId() : Brushes::InvalidBrushId;
   markDirty();
 }
 
 std::unique_ptr<Item> Tile::removeGround() {
+  ground_brush_id_ = Brushes::InvalidBrushId;
   markDirty();
   return std::move(ground_);
 }
@@ -90,6 +132,21 @@ void Tile::addItem(std::unique_ptr<Item> item) {
   markDirty();
 }
 
+void Tile::insertItem(size_t index, std::unique_ptr<Item> item) {
+  if (!item) {
+    return;
+  }
+
+  if (index >= items_.size()) {
+    items_.push_back(std::move(item));
+  } else {
+    items_.insert(items_.begin() + static_cast<ptrdiff_t>(index),
+                  std::move(item));
+  }
+
+  markDirty();
+}
+
 std::unique_ptr<Item> Tile::removeItem(size_t index) {
   if (index >= items_.size()) {
     return nullptr;
@@ -147,6 +204,20 @@ std::unique_ptr<Tile> Tile::clone() const {
 
   tile->flags_ = flags_;
   tile->house_id_ = house_id_;
+  tile->optional_border_ = optional_border_;
+  tile->ground_brush_id_ = ground_brush_id_;
+  tile->optional_border_brush_id_ = optional_border_brush_id_;
+  tile->spawn_brush_id_ = spawn_brush_id_;
+  tile->creature_brush_id_ = creature_brush_id_;
+  tile->house_brush_id_ = house_brush_id_;
+  tile->house_exit_brush_id_ = house_exit_brush_id_;
+  tile->house_exit_house_id_ = house_exit_house_id_;
+  tile->waypoint_brush_id_ = waypoint_brush_id_;
+  tile->protection_zone_brush_id_ = protection_zone_brush_id_;
+  tile->no_pvp_brush_id_ = no_pvp_brush_id_;
+  tile->no_logout_brush_id_ = no_logout_brush_id_;
+  tile->pvp_zone_brush_id_ = pvp_zone_brush_id_;
+  tile->refresh_brush_id_ = refresh_brush_id_;
 
   if (spawn_) {
     // Spawn is a simple struct, copy it
@@ -194,6 +265,9 @@ void Tile::setSpawn(std::unique_ptr<Spawn> spawn) {
   bool had_spawn = (spawn_ != nullptr);
   spawn_ = std::move(spawn);
   bool has_spawn = (spawn_ != nullptr);
+  if (!has_spawn) {
+    spawn_brush_id_ = Brushes::InvalidBrushId;
+  }
 
   if (parent_chunk_) {
     parent_chunk_->invalidateSpawns();
@@ -211,6 +285,7 @@ std::unique_ptr<Spawn> Tile::removeSpawn() {
     parent_chunk_->invalidateSpawns();
     parent_chunk_->updateSpawnCount(-1);
   }
+  spawn_brush_id_ = Brushes::InvalidBrushId;
   return std::move(spawn_);
 }
 
@@ -218,6 +293,9 @@ void Tile::setCreature(std::unique_ptr<Creature> creature) {
   bool had_creature = (creature_ != nullptr);
   creature_ = std::move(creature);
   bool has_creature = (creature_ != nullptr);
+  if (!has_creature) {
+    creature_brush_id_ = Brushes::InvalidBrushId;
+  }
 
   if (parent_chunk_) {
     // Only update count if existence changed

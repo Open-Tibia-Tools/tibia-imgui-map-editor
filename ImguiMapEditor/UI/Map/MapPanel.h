@@ -100,6 +100,7 @@ public:
     view_settings_ = &settings;
   }
   void setEditorSession(AppLogic::EditorSession *session);
+  AppLogic::EditorSession *getEditorSession() const { return session_; }
   void setInputController(AppLogic::MapInputController *controller) {
     input_controller_ = controller;
   }

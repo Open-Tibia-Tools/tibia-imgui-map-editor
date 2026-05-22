@@ -532,6 +532,9 @@ public:
   void addTown(uint32_t id, const std::string &name,
                const Position &temple_pos);
   void addWaypoint(const std::string &name, const Position &pos);
+  bool upsertWaypoint(const std::string &name, const Position &pos);
+  bool removeWaypointAt(const Position &pos);
+  bool removeWaypointByName(const std::string &name);
 
   // Town CRUD operations
   void removeTown(uint32_t id);
@@ -580,6 +583,14 @@ public:
   const std::vector<Town> &getTowns() const { return towns_; }
   std::vector<Town> &getTowns() { return towns_; } // Mutable for dialog editing
   const std::vector<Waypoint> &getWaypoints() const { return waypoints_; }
+  Waypoint *getWaypointAtMutable(const Position &pos) {
+    uint64_t key = positionToKey(pos);
+    auto it = waypoint_lookup_.find(key);
+    if (it == waypoint_lookup_.end() || it->second >= waypoints_.size()) {
+      return nullptr;
+    }
+    return &waypoints_[it->second];
+  }
 
   /**
    * O(1) lookup of waypoint at a specific position.

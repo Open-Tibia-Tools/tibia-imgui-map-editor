@@ -10,6 +10,7 @@ class xml_node;
 }
 
 namespace MapEditor::Domain::Tileset {
+class Tileset;
 class TilesetRegistry;
 }
 
@@ -59,9 +60,9 @@ private:
 
   /**
    * Process <tileset><include .../></tileset> children.
-   * Collects tileset names from includes.
+   * Resolves concrete tileset instances from includes.
    */
-  std::vector<std::string>
+  std::vector<Domain::Tileset::Tileset *>
   processTilesetIncludes(const pugi::xml_node &tilesetNode,
                          const std::filesystem::path &basePath);
 

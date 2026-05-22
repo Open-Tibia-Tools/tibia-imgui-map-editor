@@ -1,11 +1,18 @@
 #include "BrushSizePanel.h"
+#include "../../Utils/StringCopy.h"
 
+#include "Brushes/BrushController.h"
 #include "Services/BrushSettingsService.h"
-#include "UI/Utils/UIUtils.hpp"
+#include "Brushes/Types/WaypointBrush.h"
 #include "ext/fontawesome6/IconsFontAwesome6.h"
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <format>
 #include <imgui.h>
 #include <set>
+#include <string>
+#include <string_view>
 
 namespace MapEditor {
 namespace UI {
@@ -14,9 +21,62 @@ namespace Panels {
 // Green highlight color for active toggles
 static const ImVec4 ACTIVE_TOGGLE_COLOR = ImVec4(0.2f, 0.7f, 0.3f, 1.0f);
 
+namespace {
+
+[[nodiscard]] bool supportsPreviewBorder(const Brushes::IBrush *brush) {
+  if (!brush) {
+    return false;
+  }
+
+  if (brush->hasCollection()) {
+    return true;
+  }
+
+  switch (brush->getType()) {
+  case Brushes::BrushType::Raw:
+  case Brushes::BrushType::Ground:
+  case Brushes::BrushType::Wall:
+  case Brushes::BrushType::WallDecoration:
+  case Brushes::BrushType::Table:
+  case Brushes::BrushType::Carpet:
+  case Brushes::BrushType::Door:
+    return true;
+  default:
+    return false;
+  }
+}
+
+[[nodiscard]] bool supportsLockDoors(const Brushes::IBrush *brush) {
+  return brush && brush->getType() == Brushes::BrushType::Door;
+}
+
+[[nodiscard]] bool supportsThickness(const Brushes::IBrush *brush) {
+  return brush && brush->getType() == Brushes::BrushType::Doodad;
+}
+
+[[nodiscard]] bool supportsSpawnSettings(const Brushes::IBrush *brush) {
+  return brush &&
+         (brush->getType() == Brushes::BrushType::Spawn ||
+          brush->getType() == Brushes::BrushType::Creature);
+}
+
+[[nodiscard]] bool supportsHouseAssignment(const Brushes::IBrush *brush) {
+  return brush &&
+         (brush->getType() == Brushes::BrushType::House ||
+          brush->getType() == Brushes::BrushType::HouseExit);
+}
+
+[[nodiscard]] bool supportsWaypointName(const Brushes::IBrush *brush) {
+  return brush && brush->getType() == Brushes::BrushType::Waypoint;
+}
+
+} // namespace
+
 BrushSizePanel::BrushSizePanel(Services::BrushSettingsService *brushService,
+                               Brushes::BrushController *brushController,
                                SaveCallback onSave)
-    : service_(brushService), onSave_(std::move(onSave)) {
+    : service_(brushService), controller_(brushController),
+      onSave_(std::move(onSave)) {
   // Initialize 11×11 custom grid
   customGrid_.resize(GRID_SIZE, std::vector<bool>(GRID_SIZE, false));
   // Set center cell as default
@@ -32,52 +92,248 @@ void BrushSizePanel::render(bool *p_visible) {
     return;
   }
 
-  ImGui::SetNextWindowSize(ImVec2(200, 320), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(360.0f, 320.0f), ImGuiCond_FirstUseEver);
 
-  if (ImGui::Begin(ICON_FA_PAINTBRUSH " Brush Settings", p_visible)) {
-    bool isCustomMode =
-        (service_->getBrushType() == Services::BrushType::Custom);
+  if (ImGui::Begin(ICON_FA_PAINTBRUSH " Tool Options", p_visible)) {
+    renderToolbar();
 
-    // Calculate layout
-    float topRowHeight = 30.0f;
-    float controlsHeight = isCustomMode ? 55.0f : 50.0f;
-    float bottomButtonsHeight = isCustomMode ? 30.0f : 0.0f;
-    float headerHeight = 24.0f;
-    float separatorHeight = 8.0f * (isCustomMode ? 4 : 3);
-
-    float totalFixed = topRowHeight + controlsHeight + bottomButtonsHeight +
-                       headerHeight + separatorHeight;
-    float availableForPreview = ImGui::GetContentRegionAvail().y - totalFixed;
-
-    // Top row: Shape buttons + separator + symmetric toggle
-    renderTopRow();
     ImGui::Separator();
+    renderSizeSliders();
 
-    // Size sliders OR custom brush controls
-    if (isCustomMode) {
-      renderCustomBrushControls();
-    } else {
-      renderSizeSliders();
-    }
     ImGui::Separator();
+    renderBrushOptions();
 
-    // Preview section (interactive in Custom mode)
-    renderPreviewSection(std::max(80.0f, availableForPreview), isCustomMode);
-
-    // Bottom buttons (only in Custom mode)
-    if (isCustomMode) {
+    if (ImGui::CollapsingHeader(ICON_FA_SHAPES " Advanced Brush Editor")) {
+      renderTopRow();
       ImGui::Separator();
-      renderBottomButtons();
+      renderCustomBrushControls();
+      ImGui::Separator();
+      renderPreviewSection(140.0f,
+                           service_->getBrushType() == Services::BrushType::Custom);
+      if (service_->getBrushType() == Services::BrushType::Custom) {
+        ImGui::Separator();
+        renderBottomButtons();
+      }
     }
   }
   ImGui::End();
+}
+
+void BrushSizePanel::renderToolbar() {
+  if (!controller_) {
+    ImGui::TextDisabled("Brush shortcuts unavailable");
+    return;
+  }
+
+  const auto *currentBrush = controller_->getCurrentBrush();
+  if (currentBrush) {
+    ImGui::TextDisabled("Active: %s", currentBrush->getName().c_str());
+  } else {
+    ImGui::TextDisabled("Active: Selection");
+  }
+
+  auto renderBrushButton = [&](const char *id, const char *icon,
+                               [[maybe_unused]] const char *tooltip, bool active,
+                               const std::function<void()> &onClick) {
+    ImGui::PushID(id);
+    if (active) {
+      ImGui::PushStyleColor(ImGuiCol_Button, ACTIVE_TOGGLE_COLOR);
+    }
+    if (ImGui::Button(icon, ImVec2(26.0f, 0.0f))) {
+      onClick();
+    }
+    if (active) {
+      ImGui::PopStyleColor();
+    }
+    ImGui::PopID();
+  };
+
+  const auto *spawnBrush = controller_->getSpawnBrush();
+  const auto *pzBrush = controller_->getPZBrush();
+  const auto *noPvpBrush = controller_->getNoPvpBrush();
+  const auto *noLogoutBrush = controller_->getNoLogoutBrush();
+  const auto *pvpBrush = controller_->getPvpZoneBrush();
+  const auto *eraserBrush = controller_->getEraserBrush();
+  const auto *houseBrush = controller_->getHouseBrush();
+  const auto *houseExitBrush = controller_->getHouseExitBrush();
+  const auto *waypointBrush = controller_->getWaypointBrush();
+  const auto *optionalBorderBrush = controller_->getOptionalBorderBrush();
+  const auto *normalDoorBrush = controller_->getNormalDoorBrush();
+  const auto *normalAltDoorBrush = controller_->getNormalAltDoorBrush();
+  const auto *lockedDoorBrush = controller_->getLockedDoorBrush();
+  const auto *questDoorBrush = controller_->getQuestDoorBrush();
+  const auto *magicDoorBrush = controller_->getMagicDoorBrush();
+  const auto *archwayBrush = controller_->getArchwayBrush();
+  const auto *windowBrush = controller_->getWindowBrush();
+  const auto *hatchWindowBrush = controller_->getHatchWindowBrush();
+
+  auto hasSame = [&](const Brushes::IBrush *brush) {
+    return brush && controller_->isCurrentBrush(brush);
+  };
+
+  auto hasSameEither = [&](const Brushes::IBrush *brush,
+                           const Brushes::IBrush *alternate) {
+    return hasSame(brush) || hasSame(alternate);
+  };
+
+  renderBrushButton("spawn", ICON_FA_LOCATION_DOT, "Spawn brush",
+                    hasSame(spawnBrush),
+                    [this]() { controller_->activateSpawnBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("pz", ICON_FA_SHIELD_HALVED, "Protection Zone brush",
+                    hasSame(pzBrush), [this]() { controller_->activatePZBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("nopvp", ICON_FA_HAND, "No PvP brush", hasSame(noPvpBrush),
+                    [this]() { controller_->activateNoPvpBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("nologout", ICON_FA_DOOR_CLOSED, "No Logout brush",
+                    hasSame(noLogoutBrush),
+                    [this]() { controller_->activateNoLogoutBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("pvp", ICON_FA_SKULL, "PvP Zone brush", hasSame(pvpBrush),
+                    [this]() { controller_->activatePvpZoneBrush(); });
+
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("eraser", ICON_FA_ERASER, "Eraser brush",
+                    hasSame(eraserBrush),
+                    [this]() { controller_->activateEraserBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("house", ICON_FA_HOUSE, "House brush", hasSame(houseBrush),
+                    [this]() { controller_->activateHouseBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("house_exit", ICON_FA_RIGHT_FROM_BRACKET,
+                    "House exit brush", hasSame(houseExitBrush),
+                    [this]() { controller_->activateHouseExitBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("waypoint", ICON_FA_LOCATION_PIN, "Waypoint brush",
+                    hasSame(waypointBrush),
+                    [this]() { controller_->activateWaypointBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("opt_border", ICON_FA_BORDER_ALL, "Optional border brush",
+                    hasSame(optionalBorderBrush),
+                    [this]() { controller_->activateOptionalBorderBrush(); });
+
+  ImGui::NewLine();
+  renderBrushButton("door_normal", ICON_FA_DOOR_OPEN, "Normal door brush",
+                    hasSameEither(normalDoorBrush, normalAltDoorBrush),
+                    [this]() { controller_->activateNormalDoorBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("door_locked", ICON_FA_KEY, "Locked door brush",
+                    hasSame(lockedDoorBrush),
+                    [this]() { controller_->activateLockedDoorBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("door_quest", ICON_FA_SCROLL, "Quest door brush",
+                    hasSame(questDoorBrush),
+                    [this]() { controller_->activateQuestDoorBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("door_magic", ICON_FA_WAND_MAGIC_SPARKLES,
+                    "Magic door brush", hasSame(magicDoorBrush),
+                    [this]() { controller_->activateMagicDoorBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("door_arch", ICON_FA_ARCHWAY, "Archway brush",
+                    hasSame(archwayBrush),
+                    [this]() { controller_->activateArchwayBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("door_window", ICON_FA_WINDOW_MAXIMIZE, "Window brush",
+                    hasSame(windowBrush),
+                    [this]() { controller_->activateWindowBrush(); });
+  ImGui::SameLine(0.0f, 4.0f);
+  renderBrushButton("door_hatch_window", ICON_FA_WINDOW_MAXIMIZE,
+                    "Hatch window brush", hasSame(hatchWindowBrush),
+                    [this]() { controller_->activateHatchWindowBrush(); });
+}
+
+void BrushSizePanel::renderBrushOptions() {
+  const auto *currentBrush = controller_ ? controller_->getCurrentBrush() : nullptr;
+  if (!currentBrush) {
+    ImGui::TextDisabled("No active brush");
+    return;
+  }
+
+  bool showedSection = false;
+
+  const auto beginSection = [&]() {
+    if (showedSection) {
+      ImGui::Separator();
+    }
+    showedSection = true;
+  };
+
+  if (supportsSpawnSettings(currentBrush)) {
+    beginSection();
+    renderSpawnSection();
+  }
+
+  if (supportsHouseAssignment(currentBrush)) {
+    beginSection();
+    uint32_t houseId = currentBrush->getType() == Brushes::BrushType::House
+                           ? controller_->getHouseBrush()->getHouseId()
+                           : controller_->getHouseExitBrush()->getHouseId();
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+    if (ImGui::InputScalar("House ID", ImGuiDataType_U32, &houseId)) {
+      controller_->getHouseBrush()->setHouseId(houseId);
+      controller_->getHouseExitBrush()->setHouseId(houseId);
+    }
+    ImGui::TextDisabled("Shared house assignment for House and House Exit.");
+  }
+
+  if (supportsWaypointName(currentBrush)) {
+    beginSection();
+    auto *waypointBrush = controller_->getWaypointBrush();
+    if (waypointBrush && cachedWaypointBrush_ != waypointBrush) {
+      cachedWaypointBrush_ = waypointBrush;
+      ::MapEditor::Utils::copyTruncate(waypointNameBuffer_,
+                                       waypointBrush->getWaypointName());
+    }
+
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+    if (ImGui::InputText("Waypoint Name", waypointNameBuffer_,
+                         static_cast<int>(sizeof(waypointNameBuffer_))) &&
+        waypointBrush) {
+      waypointBrush->setWaypointName(waypointNameBuffer_);
+    }
+    ImGui::TextDisabled("Used by selection and saving.");
+  }
+
+  if (supportsThickness(currentBrush)) {
+    beginSection();
+    float thickness = controller_->getBrushThickness();
+    ImGui::TextUnformatted("Thickness");
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+    if (ImGui::SliderFloat("##Thickness", &thickness, 0.0f, 1.0f, "%.2f")) {
+      controller_->setBrushThickness(thickness);
+    }
+    ImGui::TextDisabled("Doodad placement weight.");
+  }
+
+  if (supportsLockDoors(currentBrush)) {
+    beginSection();
+    bool lockDoors = service_->getLockDoors();
+    if (ImGui::Checkbox("Lock Doors", &lockDoors)) {
+      service_->setLockDoors(lockDoors);
+    }
+    ImGui::TextDisabled("Applies locked preference while painting doors.");
+  }
+
+  if (supportsPreviewBorder(currentBrush)) {
+    beginSection();
+    bool previewBorder = service_->getPreviewBorder();
+    if (ImGui::Checkbox("Preview Border", &previewBorder)) {
+      service_->setPreviewBorder(previewBorder);
+    }
+    ImGui::TextDisabled("Controls outline/autoborder-style preview generation.");
+  }
+
+  if (!showedSection) {
+    ImGui::TextDisabled("No brush-specific options");
+  }
 }
 
 void BrushSizePanel::renderTopRow() {
   auto currentType = service_->getBrushType();
 
   auto renderShapeBtn = [&](const char *icon, Services::BrushType type,
-                            const char *tooltip) {
+                            [[maybe_unused]] const char *tooltip) {
     bool isSelected = (currentType == type);
     if (isSelected) {
       ImGui::PushStyleColor(ImGuiCol_Button, ACTIVE_TOGGLE_COLOR);
@@ -92,7 +348,6 @@ void BrushSizePanel::renderTopRow() {
     if (isSelected) {
       ImGui::PopStyleColor();
     }
-    Utils::SetTooltipOnHover(tooltip);
     ImGui::SameLine();
   };
 
@@ -118,68 +373,48 @@ void BrushSizePanel::renderTopRow() {
   if (symmetricSize_) {
     ImGui::PopStyleColor();
   }
-  Utils::SetTooltipOnHover(
-      symmetricSize_ ? "Symmetric: W=H linked (click to unlock)"
-                     : "Asymmetric: W and H independent (click to link)");
 }
 
 void BrushSizePanel::renderSizeSliders() {
-  service_->setBrushSizeMode(Services::BrushSizeMode::CustomDimensions);
-
-  int width = service_->getCustomWidth();
-  int height = service_->getCustomHeight();
-
-  // Width row
-  ImGui::Text(ICON_FA_ARROWS_LEFT_RIGHT);
-  Utils::SetTooltipOnHover("Width");
-  ImGui::SameLine();
-  if (ImGui::SmallButton(ICON_FA_MINUS "##W")) {
-    width = std::max(1, width - 1);
-    if (symmetricSize_)
-      height = width;
-    service_->setCustomDimensions(width, height);
-  }
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 28);
-  if (ImGui::SliderInt("##W", &width, Services::BrushSettingsService::MIN_SIZE,
-                       Services::BrushSettingsService::MAX_SIZE, "%d")) {
-    if (symmetricSize_)
-      height = width;
-    service_->setCustomDimensions(width, height);
-  }
-  ImGui::SameLine();
-  if (ImGui::SmallButton(ICON_FA_PLUS "##W")) {
-    width = std::min(10, width + 1);
-    if (symmetricSize_)
-      height = width;
-    service_->setCustomDimensions(width, height);
+  if (service_->getBrushSizeMode() != Services::BrushSizeMode::Standard) {
+    service_->setBrushSizeMode(Services::BrushSizeMode::Standard);
   }
 
-  // Height row
-  ImGui::Text(ICON_FA_ARROWS_UP_DOWN);
-  Utils::SetTooltipOnHover("Height");
+  const auto discreteSizes =
+      Services::BrushSettingsService::getStandardSizeProgression();
+  int size = service_->getStandardSize();
+  ImGui::TextUnformatted("Brush Size");
   ImGui::SameLine();
-  if (ImGui::SmallButton(ICON_FA_MINUS "##H")) {
-    height = std::max(1, height - 1);
-    if (symmetricSize_)
-      width = height;
-    service_->setCustomDimensions(width, height);
+  ImGui::TextDisabled("(discrete, Alt + wheel)");
+
+  if (ImGui::Button(ICON_FA_MINUS "##BrushSizeDown")) {
+    service_->decreaseSize();
+    size = service_->getStandardSize();
   }
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 28);
-  if (ImGui::SliderInt("##H", &height, Services::BrushSettingsService::MIN_SIZE,
-                       Services::BrushSettingsService::MAX_SIZE, "%d")) {
-    if (symmetricSize_)
-      width = height;
-    service_->setCustomDimensions(width, height);
+  ImGui::SameLine(0.0f, 4.0f);
+
+  std::string sizeLabel = std::to_string(size);
+  ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 34.0f);
+  if (ImGui::BeginCombo("##BrushSizeDiscrete", sizeLabel.c_str())) {
+    for (const auto discreteSize : discreteSizes) {
+      const bool selected = size == discreteSize;
+      const std::string optionLabel = std::format("{}x{}", discreteSize,
+                                                  discreteSize);
+      if (ImGui::Selectable(optionLabel.c_str(), selected)) {
+        service_->setStandardSize(discreteSize);
+      }
+      if (selected) {
+        ImGui::SetItemDefaultFocus();
+      }
+    }
+    ImGui::EndCombo();
   }
-  ImGui::SameLine();
-  if (ImGui::SmallButton(ICON_FA_PLUS "##H")) {
-    height = std::min(10, height + 1);
-    if (symmetricSize_)
-      width = height;
-    service_->setCustomDimensions(width, height);
+  ImGui::SameLine(0.0f, 4.0f);
+
+  if (ImGui::Button(ICON_FA_PLUS "##BrushSizeUp")) {
+    service_->increaseSize();
   }
+  ImGui::TextDisabled("wx-style size steps are shared by the active brush family.");
 }
 
 void BrushSizePanel::renderCustomBrushControls() {
@@ -223,8 +458,7 @@ void BrushSizePanel::renderCustomBrushControls() {
 
   // Brush name input (always visible)
   char nameBuffer[64];
-  strncpy(nameBuffer, editingBrushName_.c_str(), sizeof(nameBuffer) - 1);
-  nameBuffer[sizeof(nameBuffer) - 1] = '\0';
+  ::MapEditor::Utils::copyTruncate(nameBuffer, editingBrushName_);
 
   // Pulsing green border when in "new" mode
   if (isNewBrushMode_) {
@@ -275,7 +509,6 @@ void BrushSizePanel::renderBottomButtons() {
     isNewBrushMode_ = true;
     service_->selectCustomBrush(""); // Deselect current
   }
-  Utils::SetTooltipOnHover("New brush");
 
   ImGui::SameLine();
 
@@ -286,7 +519,6 @@ void BrushSizePanel::renderBottomButtons() {
       isNewBrushMode_ = false;
     }
   }
-  Utils::SetTooltipOnHover("Save brush");
 
   ImGui::SameLine();
 
@@ -298,7 +530,6 @@ void BrushSizePanel::renderBottomButtons() {
     customGrid_[GRID_SIZE / 2][GRID_SIZE / 2] = true;
     syncGridToService();
   }
-  Utils::SetTooltipOnHover("Clear grid");
 
   ImGui::SameLine();
 
@@ -307,7 +538,6 @@ void BrushSizePanel::renderBottomButtons() {
   if (ImGui::Button(ICON_FA_TRASH "##Delete", ImVec2(buttonWidth, 0))) {
     deleteCurrentBrush();
   }
-  Utils::SetTooltipOnHover("Delete brush");
   ImGui::EndDisabled();
 }
 
@@ -444,7 +674,6 @@ void BrushSizePanel::renderPresetButtons() {
   if (ImGui::Button(ICON_FA_DIAMOND, ImVec2(buttonWidth, 0))) {
     applyPreset("diamond");
   }
-  Utils::SetTooltipOnHover("Diamond shape");
 }
 
 void BrushSizePanel::loadSelectedBrushToGrid() {
@@ -516,6 +745,8 @@ void BrushSizePanel::deleteCurrentBrush() {
 }
 
 void BrushSizePanel::applyPreset(const char *preset) {
+  const std::string_view presetName = preset ? preset : "";
+
   // Clear grid
   for (auto &row : customGrid_) {
     std::fill(row.begin(), row.end(), false);
@@ -523,21 +754,21 @@ void BrushSizePanel::applyPreset(const char *preset) {
 
   int center = GRID_SIZE / 2;
 
-  if (strcmp(preset, "clear") == 0) {
+  if (presetName == "clear") {
     customGrid_[center][center] = true; // Always at least one
-  } else if (strcmp(preset, "3x3") == 0) {
+  } else if (presetName == "3x3") {
     for (int dy = -1; dy <= 1; ++dy) {
       for (int dx = -1; dx <= 1; ++dx) {
         customGrid_[center + dy][center + dx] = true;
       }
     }
-  } else if (strcmp(preset, "5x5") == 0) {
+  } else if (presetName == "5x5") {
     for (int dy = -2; dy <= 2; ++dy) {
       for (int dx = -2; dx <= 2; ++dx) {
         customGrid_[center + dy][center + dx] = true;
       }
     }
-  } else if (strcmp(preset, "diamond") == 0) {
+  } else if (presetName == "diamond") {
     // Diamond pattern
     customGrid_[center][center] = true;
     customGrid_[center - 1][center] = true;
@@ -581,42 +812,27 @@ void BrushSizePanel::autoSaveBrushes() {
 }
 
 void BrushSizePanel::renderSpawnSection() {
-  if (ImGui::CollapsingHeader(ICON_FA_LOCATION_DOT " Spawn Settings",
-                              ImGuiTreeNodeFlags_DefaultOpen)) {
-    // Auto-create spawn checkbox
-    bool autoSpawn = service_->getAutoCreateSpawn();
-    if (ImGui::Checkbox("Auto-create spawn", &autoSpawn)) {
-      service_->setAutoCreateSpawn(autoSpawn);
+  ImGui::TextUnformatted("Spawn Settings");
+  bool autoSpawn = service_->getAutoCreateSpawn();
+  if (ImGui::Checkbox("Auto-create spawn", &autoSpawn)) {
+    service_->setAutoCreateSpawn(autoSpawn);
+  }
+  ImGui::TextDisabled("Creature brushes can create a spawn automatically.");
+
+  if (autoSpawn) {
+    ImGui::Indent(10.0f);
+
+    const int radius = service_->getStandardSize();
+    ImGui::Text("Spawn Radius: %d", radius);
+    ImGui::TextDisabled("Follows current brush size for wx parity.");
+
+    int time = service_->getDefaultSpawnTime();
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+    if (ImGui::InputInt("Spawn Time", &time, 10, 60)) {
+      service_->setDefaultSpawnTime(std::clamp(time, 1, 86400));
     }
-    Utils::SetTooltipOnHover(
-        "When placing creatures, automatically create a spawn point");
 
-    // Only show radius/timer if auto-spawn is enabled OR it's useful context
-    if (autoSpawn) {
-      ImGui::Indent(10.0f);
-
-      // Spawn radius slider
-      int radius = service_->getDefaultSpawnRadius();
-      ImGui::Text(ICON_FA_CIRCLE_NOTCH);
-      Utils::SetTooltipOnHover("Spawn radius (tiles)");
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-      if (ImGui::SliderInt("##SpawnRadius", &radius, 1, 10, "Radius: %d")) {
-        service_->setDefaultSpawnRadius(radius);
-      }
-
-      // Spawn timer input
-      int time = service_->getDefaultSpawnTime();
-      ImGui::Text(ICON_FA_CLOCK);
-      Utils::SetTooltipOnHover("Spawn timer (seconds)");
-      ImGui::SameLine();
-      ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-      if (ImGui::InputInt("##SpawnTime", &time, 10, 60)) {
-        service_->setDefaultSpawnTime(std::clamp(time, 1, 86400));
-      }
-
-      ImGui::Unindent(10.0f);
-    }
+    ImGui::Unindent(10.0f);
   }
 }
 

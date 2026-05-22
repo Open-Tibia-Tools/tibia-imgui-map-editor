@@ -51,7 +51,7 @@ struct ViewSettings {
   // === Placeholders (menu only, no rendering yet) ===
   bool show_minimap_window = false;
   bool show_browse_tile = false;    // Browse Tile dockable window
-  bool show_brush_settings = true;  // Brush Settings dockable window
+  bool show_brush_settings = true;  // Tool Options dockable window
   bool show_search_results = false; // Search Results dockable window
   bool show_waypoints = false;
   bool show_wall_hooks = false;

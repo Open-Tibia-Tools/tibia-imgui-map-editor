@@ -1,5 +1,6 @@
 #include "MapPropertiesDialog.h"
 #include "Presentation/NotificationHelper.h"
+#include "../../../Utils/StringCopy.h"
 #include <IconsFontAwesome6.h>
 #include <algorithm>
 #include <imgui.h>
@@ -154,9 +155,7 @@ void MapPropertiesDialog::loadFromMap() {
     return;
 
   // Description
-  strncpy(description_buffer_, map_->getDescription().c_str(),
-          sizeof(description_buffer_) - 1);
-  description_buffer_[sizeof(description_buffer_) - 1] = '\0';
+  ::MapEditor::Utils::copyTruncate(description_buffer_, map_->getDescription());
 
   // Dimensions
   width_ = map_->getWidth();
@@ -168,13 +167,9 @@ void MapPropertiesDialog::loadFromMap() {
   client_version_ = version.client_version;
 
   // External files
-  strncpy(house_filename_, map_->getHouseFile().c_str(),
-          sizeof(house_filename_) - 1);
-  house_filename_[sizeof(house_filename_) - 1] = '\0';
+  ::MapEditor::Utils::copyTruncate(house_filename_, map_->getHouseFile());
 
-  strncpy(spawn_filename_, map_->getSpawnFile().c_str(),
-          sizeof(spawn_filename_) - 1);
-  spawn_filename_[sizeof(spawn_filename_) - 1] = '\0';
+  ::MapEditor::Utils::copyTruncate(spawn_filename_, map_->getSpawnFile());
 }
 
 void MapPropertiesDialog::applyToMap() {

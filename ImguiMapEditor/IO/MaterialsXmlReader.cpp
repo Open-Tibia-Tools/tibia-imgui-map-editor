@@ -1,8 +1,14 @@
 #include "MaterialsXmlReader.h"
 
+#include "Brushes/BrushRegistry.h"
+#include "Brushes/Data/BorderBlock.h"
+#include "Brushes/Enums/BrushEnums.h"
+#include "Brushes/Types/CreatureBrush.h"
+#include "IO/BrushXmlReader.h"
 #include "IO/PaletteXmlReader.h"
 #include "IO/TilesetXmlReader.h"
 #include "IO/XmlUtils.h"
+#include "Services/ClientDataService.h"
 #include <pugixml.hpp>
 #include <spdlog/spdlog.h>
 
@@ -13,9 +19,16 @@ namespace fs = std::filesystem;
 MaterialsXmlReader::MaterialsXmlReader(
     Brushes::BrushRegistry &brushRegistry,
     Domain::Tileset::TilesetRegistry &tilesetRegistry,
-    Domain::Palette::PaletteRegistry &paletteRegistry)
+    Domain::Palette::PaletteRegistry &paletteRegistry,
+    Services::Brushes::BorderLookupService *borderLookup,
+    Services::Brushes::WallLookupService *wallLookup,
+    Services::Brushes::TableLookupService *tableLookup,
+    Services::Brushes::CarpetLookupService *carpetLookup,
+    Services::ClientDataService *clientData)
     : brushRegistry_(brushRegistry), tilesetRegistry_(tilesetRegistry),
-      paletteRegistry_(paletteRegistry) {}
+      paletteRegistry_(paletteRegistry), borderLookup_(borderLookup),
+      wallLookup_(wallLookup), tableLookup_(tableLookup),
+      carpetLookup_(carpetLookup), clientData_(clientData) {}
 
 bool MaterialsXmlReader::load(const fs::path &path) {
   if (!fs::exists(path)) {
@@ -67,9 +80,33 @@ void MaterialsXmlReader::processBordersNode(const pugi::xml_node &node,
   spdlog::debug("[MaterialsXmlReader] Processing borders section");
 
   processIncludes(node, basePath, [this](const fs::path &file) {
-    // TODO: Implement BorderXmlReader when needed
-    spdlog::debug("[MaterialsXmlReader] Would load border file: {}",
-                  file.string());
+    pugi::xml_document doc;
+    std::string error;
+    const auto root = XmlUtils::loadXmlFile(file, "materials", doc, error);
+    if (!root) {
+      spdlog::warn("[MaterialsXmlReader] {}", error);
+      return;
+    }
+
+    for (const auto borderNode : root.children("border")) {
+      const auto borderId = borderNode.attribute("id").as_uint(0);
+      if (borderId == 0) {
+        continue;
+      }
+
+      Brushes::BorderBlock block;
+      block.setGroup(borderNode.attribute("group").as_uint(0));
+      for (const auto borderItem : borderNode.children("borderitem")) {
+        const auto edge = Brushes::parseEdgeName(borderItem.attribute("edge").as_string());
+        const auto itemId = borderItem.attribute("item").as_uint(
+            borderItem.attribute("id").as_uint(0));
+        const auto chance = borderItem.attribute("chance").as_uint(1);
+        if (edge != Brushes::EdgeType::None && itemId != 0) {
+          block.addItem(edge, itemId, chance);
+        }
+      }
+      brushRegistry_.registerBorderTemplate(borderId, std::move(block));
+    }
   });
 }
 
@@ -77,11 +114,11 @@ void MaterialsXmlReader::processBrushesNode(const pugi::xml_node &node,
                                             const fs::path &basePath) {
   spdlog::debug("[MaterialsXmlReader] Processing brushes section");
 
-  processIncludes(node, basePath, [this](const fs::path &file) {
-    // TODO: Implement BrushXmlReader when needed
-    spdlog::debug("[MaterialsXmlReader] Would load brush file: {}",
-                  file.string());
-  });
+  BrushXmlReader reader({&brushRegistry_, borderLookup_, wallLookup_, tableLookup_,
+                         carpetLookup_, clientData_});
+
+  processIncludes(node, basePath,
+                  [&reader](const fs::path &file) { reader.loadFile(file); });
 }
 
 void MaterialsXmlReader::processCreaturesNode(const pugi::xml_node &node,
@@ -89,9 +126,24 @@ void MaterialsXmlReader::processCreaturesNode(const pugi::xml_node &node,
   spdlog::debug("[MaterialsXmlReader] Processing creatures section");
 
   processIncludes(node, basePath, [this](const fs::path &file) {
-    // TODO: Load creatures from file - integrate with CreatureXmlReader
-    spdlog::debug("[MaterialsXmlReader] Would load creature file: {}",
-                  file.string());
+    if (clientData_) {
+      if (clientData_->loadCreatureData(file)) {
+        for (const auto &creature : clientData_->getCreatures()) {
+          if (!creature) {
+            continue;
+          }
+
+          auto *brush = brushRegistry_.getBrush(creature->name);
+          if (!brush) {
+            auto creatureBrush = std::make_unique<Brushes::CreatureBrush>(
+                creature->name, creature->outfit);
+            brush = creatureBrush.get();
+            brushRegistry_.addBrush(std::move(creatureBrush));
+          }
+          brushRegistry_.registerCreatureBinding(creature->name, brush);
+        }
+      }
+    }
   });
 }
 
@@ -100,9 +152,9 @@ void MaterialsXmlReader::processItemsNode(const pugi::xml_node &node,
   spdlog::debug("[MaterialsXmlReader] Processing items section");
 
   processIncludes(node, basePath, [this](const fs::path &file) {
-    // TODO: Load items from file - integrate with existing item loading
-    spdlog::debug("[MaterialsXmlReader] Would load item file: {}",
-                  file.string());
+    if (clientData_) {
+      clientData_->loadItemData(file);
+    }
   });
 }
 

@@ -7,6 +7,7 @@
 #include <variant>
 #include <unordered_map>
 #include <optional>
+#include "../Brushes/Core/BrushId.h"
 #include "Position.h"
 
 namespace MapEditor {
@@ -147,6 +148,9 @@ public:
     
     const ItemType* getType() const { return type_; }
     void setType(const ItemType* type) { type_ = type; }
+
+    Brushes::BrushId getOwnerBrushId() const { return owner_brush_id_; }
+    void setOwnerBrushId(Brushes::BrushId brushId) { owner_brush_id_ = brushId; }
     
     // ========== Container Support ==========
     
@@ -193,6 +197,7 @@ private:
     
     // Container items
     std::vector<std::unique_ptr<Item>> container_items_;
+    Brushes::BrushId owner_brush_id_ = Brushes::InvalidBrushId;
 };
 
 } // namespace Domain

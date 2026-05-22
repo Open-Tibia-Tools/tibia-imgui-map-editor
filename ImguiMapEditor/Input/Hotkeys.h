@@ -34,7 +34,7 @@ inline constexpr Binding GHOST_LOWER_FLOORS{
     GLFW_KEY_L, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT, "Ghost Lower Floors"};
 inline constexpr Binding SHOW_ALL_FLOORS{GLFW_KEY_W, GLFW_MOD_CONTROL,
                                          "Show All Floors"};
-inline constexpr Binding SHOW_SHADE{GLFW_KEY_Q, 0, "Show Shade"};
+inline constexpr Binding SHOW_SHADE{GLFW_KEY_F9, 0, "Show Shade"};
 
 // Overlay Toggles
 inline constexpr Binding SHOW_SPAWNS{GLFW_KEY_S, 0, "Show Spawns"};

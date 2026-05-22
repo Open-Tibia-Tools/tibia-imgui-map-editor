@@ -2,6 +2,7 @@
 
 #include "Tileset.h"
 #include <algorithm>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -48,6 +49,17 @@ public:
     auto it = std::find_if(
         tilesets_.begin(), tilesets_.end(),
         [&name](const auto &tileset) { return tileset->getName() == name; });
+    return it != tilesets_.end() ? it->get() : nullptr;
+  }
+
+  Tileset *getTilesetBySourceFile(const std::filesystem::path &path) const {
+    const auto absolutePath = std::filesystem::absolute(path);
+    auto it = std::find_if(tilesets_.begin(), tilesets_.end(),
+                           [&absolutePath](const auto &tileset) {
+                             return std::filesystem::absolute(
+                                        tileset->getSourceFile()) ==
+                                    absolutePath;
+                           });
     return it != tilesets_.end() ? it->get() : nullptr;
   }
 
