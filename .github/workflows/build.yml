@@ -1,0 +1,102 @@
+name: Build RME
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-24.04
+
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-linux
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            ccache \
+            pkg-config \
+            libglu1-mesa-dev \
+            freeglut3-dev \
+            libxmu-dev \
+            libxi-dev \
+            libgtk-3-dev \
+            libx11-dev \
+            libxkbcommon-dev \
+            libsecret-1-dev \
+            libgcrypt20-dev \
+            libsystemd-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            autoconf \
+            automake \
+            autoconf-archive \
+            libtool \
+            libltdl-dev \
+            nasm \
+            curl \
+            zip \
+            unzip \
+            tar
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: '6bc1613f18f850c60d906575296f982c6dfcc9e0'
+
+      - name: Cache vcpkg installed packages
+        uses: actions/cache@v4
+        with:
+          path: ImguiMapEditor/build/vcpkg_installed
+          key: vcpkg-installed-${{ runner.os }}-${{ hashFiles('ImguiMapEditor/vcpkg.json') }}
+          restore-keys: |
+            vcpkg-installed-${{ runner.os }}-
+
+      - name: Setup ccache
+        run: |
+          echo "/usr/lib/ccache" >> $GITHUB_PATH
+          mkdir -p ~/.ccache
+          ccache --max-size=500M
+          ccache --set-config=compression=true
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-rme-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            ccache-rme-${{ runner.os }}-
+
+      - name: Build RME
+        run: |
+          cmake -S ImguiMapEditor -B ImguiMapEditor/build -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build ImguiMapEditor/build --parallel
+
+      - name: Show ccache stats
+        run: ccache --show-stats
+
+      - name: Upload RME binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: rme-linux
+          path: |
+            ImguiMapEditor/build/TibiaMapEditor
+            ImguiMapEditor/build/data
+          retention-days: 30

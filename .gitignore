@@ -26,3 +26,6 @@ build*.txt
 /Map_Viewer_Readonly
 Map_Viewer_Readonly
 RME_Readonly
+
+/ImguiMapEditor/build-ninja
+/ImguiMapEditor/sample_data

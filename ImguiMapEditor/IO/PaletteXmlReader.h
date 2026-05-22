@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 namespace pugi {
 class xml_node;

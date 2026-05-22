@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
 
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
 project(TibiaMapEditor VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -16,7 +20,7 @@ find_package(lz4 CONFIG REQUIRED)
 find_package(Boost REQUIRED)
 find_package(fmt REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(stb REQUIRED)
+find_package(Stb REQUIRED)
 
 # nativefiledialog-extended: Try vcpkg first, fallback to local ext/ for Conan
 find_package(nfd CONFIG QUIET)
@@ -390,6 +394,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/ext/fontawesome6
     ${CMAKE_CURRENT_SOURCE_DIR}/ext/imguinotify
     ${CMAKE_CURRENT_SOURCE_DIR}/ext/stb
+    ${Stb_INCLUDE_DIR}
 )
 
 # Link libraries
