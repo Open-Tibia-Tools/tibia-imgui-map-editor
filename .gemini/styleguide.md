@@ -264,7 +264,7 @@ Refactor immediately when:
 
 ```
 ☐ Same logic appears in 2+ places
-☐ Function exceeds 50 lines
+☐ Function exceeds 100 lines
 ☐ File exceeds 500 lines
 ☐ Application.cpp gains ANY business logic
 ☐ You copy-paste ANY code
@@ -283,7 +283,7 @@ Before submitting ANY code:
 ☐ Existing utilities were checked and reused
 ☐ New code follows existing patterns
 ☐ Headers are properly organized
-☐ No monolithic functions (>50 lines)
+☐ No monolithic functions (>100 lines)
 ☐ RAII principles followed for all OpenGL objects
 ☐ Proper ownership semantics (unique_ptr/shared_ptr/raw pointers)
 ☐ Const-correctness maintained
