@@ -100,10 +100,10 @@ If similar code found:
 
 ### Include Order
 1. Precompiled header (if applicable)
-2. Corresponding `.hpp` file
+2. Corresponding `.h` file
 3. C++ Standard Library (`<vector>`, `<algorithm>`, `<format>`)
 4. Third-party libs (`<glad/glad.h>`, `<imgui.h>`, `<glm/glm.hpp>`)
-5. Project headers (`"core/Log.hpp"`)
+5. Project headers (`"core/Log.h"`)
 
 </file_organization>
 

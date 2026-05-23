@@ -1,14 +1,17 @@
 #include "ClientAssetDetector.h"
 #include "Core/Config.h"
-#include "IO/Readers/DatReaderBase.h"
-#include "IO/Readers/DatReaderFactory.h"
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <fstream>
 #include <span>
-#include <spdlog/spdlog.h>
 #include <vector>
+
+#include <spdlog/spdlog.h>
+
+#include "IO/Readers/DatReaderBase.h"
+#include "IO/Readers/DatReaderFactory.h"
 
 namespace MapEditor {
 namespace Services {
@@ -96,15 +99,16 @@ collectSpriteSamples(std::ifstream &file, bool extended, uint32_t &sprite_count)
 
   file.seekg(4 + (extended ? sizeof(uint32_t) : sizeof(uint16_t)), std::ios::beg);
 
+  std::vector<uint32_t> offsets(sprite_count);
+  file.read(reinterpret_cast<char *>(offsets.data()), sprite_count * sizeof(uint32_t));
+  if (!file)
+    return std::nullopt;
+
   std::vector<uint32_t> sample_offsets;
   sample_offsets.reserve(kMaxSampleOffsets);
 
   uint32_t prev_nonzero = 0;
-  for (uint32_t id = 1; id <= sprite_count; ++id) {
-    uint32_t offset = 0;
-    file.read(reinterpret_cast<char *>(&offset), 4);
-    if (!file)
-      return std::nullopt;
+  for (uint32_t offset : offsets) {
     if (offset == 0)
       continue;
     if (offset < header_size || offset > file_size - 5)
@@ -147,6 +151,9 @@ std::optional<SpriteProbeResult> probeSpriteStructure(const std::filesystem::pat
   result.extended = extended;
   result.sprite_count = sprite_count;
 
+  file.seekg(0, std::ios::end);
+  const auto spr_file_size = static_cast<size_t>(file.tellg());
+
   for (uint32_t off : *offsets) {
     file.seekg(off + 3, std::ios::beg); // skip RGB transparent color
     if (!file)
@@ -157,8 +164,7 @@ std::optional<SpriteProbeResult> probeSpriteStructure(const std::filesystem::pat
     if (!file)
       return std::nullopt;
 
-    if (static_cast<size_t>(file.tellg()) + compressed_size >
-        static_cast<size_t>(file.seekg(0, std::ios::end).tellg())) {
+    if (static_cast<size_t>(file.tellg()) + compressed_size > spr_file_size) {
       return std::nullopt;
     }
     file.seekg(off + 3 + 2, std::ios::beg);

@@ -1,6 +1,7 @@
 #include "ClientVersionPersistence.h"
 #include <fstream>
 #include <iomanip>
+#include <limits>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 #include <sstream>
@@ -58,7 +59,13 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
       const std::string &dat_str = client["datSignature"].get<std::string>();
       if (!dat_str.empty()) {
         try {
-          dat_sig = std::stoul(dat_str, nullptr, 16);
+          unsigned long parsed = std::stoul(dat_str, nullptr, 16);
+          if (parsed > std::numeric_limits<uint32_t>::max()) {
+            spdlog::warn("datSignature '{}' for client {} exceeds uint32_t range",
+                         dat_str, version_number);
+          } else {
+            dat_sig = static_cast<uint32_t>(parsed);
+          }
         } catch (const std::exception &e) {
           spdlog::warn("Invalid datSignature '{}' for client {}: {}", dat_str,
                        version_number, e.what());
@@ -69,7 +76,13 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
       const std::string &spr_str = client["sprSignature"].get<std::string>();
       if (!spr_str.empty()) {
         try {
-          spr_sig = std::stoul(spr_str, nullptr, 16);
+          unsigned long parsed = std::stoul(spr_str, nullptr, 16);
+          if (parsed > std::numeric_limits<uint32_t>::max()) {
+            spdlog::warn("sprSignature '{}' for client {} exceeds uint32_t range",
+                         spr_str, version_number);
+          } else {
+            spr_sig = static_cast<uint32_t>(parsed);
+          }
         } catch (const std::exception &e) {
           spdlog::warn("Invalid sprSignature '{}' for client {}: {}", spr_str,
                        version_number, e.what());

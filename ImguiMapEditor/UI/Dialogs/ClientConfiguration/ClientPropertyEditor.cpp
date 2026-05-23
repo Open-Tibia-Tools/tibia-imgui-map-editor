@@ -20,6 +20,9 @@ constexpr const char *kAutoProps[] = {
 };
 constexpr size_t kAutoCount = sizeof(kAutoProps) / sizeof(kAutoProps[0]);
 
+constexpr uint32_t kOtbmVersionMin = 1;
+constexpr uint32_t kOtbmVersionMax = 4;
+
 bool isAutoProp(const char *name) {
   for (size_t i = 0; i < kAutoCount; ++i)
     if (std::strcmp(kAutoProps[i], name) == 0)
@@ -492,7 +495,7 @@ void ClientPropertyEditor::renderCompatibilitySection() {
       while (std::getline(iss, tok, ',')) {
         try {
           uint32_t v = static_cast<uint32_t>(std::stoul(tok));
-          if (v >= 1 && v <= 4)
+          if (v >= kOtbmVersionMin && v <= kOtbmVersionMax)
             otbm.push_back(v);
         } catch (...) {}
       }
