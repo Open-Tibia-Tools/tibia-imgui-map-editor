@@ -41,12 +41,13 @@ jobs:
         uses: 'actions/checkout@v4' # ratchet:exclude
 
       - name: 'Write OAuth credentials'
-        if: ${{ secrets.GOOGLE_OAUTH != '' }}
         env:
           GOOGLE_OAUTH: ${{ secrets.GOOGLE_OAUTH }}
         run: |
-          mkdir -p ~/.gemini
-          echo "$GOOGLE_OAUTH" > ~/.gemini/oauth_creds.json
+          if [ -n "$GOOGLE_OAUTH" ]; then
+            mkdir -p ~/.gemini
+            echo "$GOOGLE_OAUTH" > ~/.gemini/oauth_creds.json
+          fi
 
       - name: 'Run Gemini CLI'
         id: 'run_gemini'

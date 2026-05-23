@@ -42,12 +42,13 @@ jobs:
         uses: 'actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8' # ratchet:actions/checkout@v6
 
       - name: 'Write OAuth credentials'
-        if: ${{ secrets.GOOGLE_OAUTH != '' }}
         env:
           GOOGLE_OAUTH: ${{ secrets.GOOGLE_OAUTH }}
         run: |
-          mkdir -p ~/.gemini
-          echo "$GOOGLE_OAUTH" > ~/.gemini/oauth_creds.json
+          if [ -n "$GOOGLE_OAUTH" ]; then
+            mkdir -p ~/.gemini
+            echo "$GOOGLE_OAUTH" > ~/.gemini/oauth_creds.json
+          fi
 
       - name: 'Run Gemini pull request review'
         uses: 'google-github-actions/run-gemini-cli@v0' # ratchet:exclude
