@@ -126,6 +126,11 @@ jobs:
           github_issue_number: '${{ steps.find_issues.outputs.issue_numbers }}'
           settings: |-
             {
+              "security": {
+                "auth": {
+                  "selectedType": "oauth-personal"
+                }
+              },
               "model": {
                 "maxSessionTurns": 25
               },

@@ -83,6 +83,11 @@ jobs:
           github_issue_number: '${{ github.event.issue.number }}'
           settings: |-
             {
+              "security": {
+                "auth": {
+                  "selectedType": "oauth-personal"
+                }
+              },
               "model": {
                 "maxSessionTurns": 25
               },
