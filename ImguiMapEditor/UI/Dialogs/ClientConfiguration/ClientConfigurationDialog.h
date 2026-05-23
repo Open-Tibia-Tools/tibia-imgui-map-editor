@@ -2,6 +2,7 @@
 
 #include "Domain/ClientVersion.h"
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -30,13 +31,17 @@ public:
 private:
   int getMajorGroup(uint32_t version) const;
   bool matchesFilter(const Domain::ClientVersion &version) const;
-  void populateTreeData();
-  void renderToolbar();
-  void renderLeftPane();
-  void renderRightPane();
-  void renderFooter();
+  void populateVersionData();
   void selectClient(uint32_t version);
   void runAssetDetection();
+
+  void renderTitleBar();
+  void renderToolbar();
+  void renderBody();
+  void renderLeftSidebar();
+  void renderVersionList();
+  void renderRightPanel();
+  void renderFooterStatus();
 
   void addClient();
   void duplicateClient();
@@ -50,21 +55,22 @@ private:
   bool is_open_ = false;
 
   uint32_t active_version_ = 0;
+  int active_tab_ = 0;
   char search_buf_[128] = {};
   std::string search_filter_;
 
-  struct TreeGroup {
-    int major_version;
+  struct VersionGroup {
+    int major;
     std::string label;
-    std::vector<uint32_t> client_versions;
+    std::vector<uint32_t> versions;
   };
-  std::vector<TreeGroup> tree_groups_;
+  std::vector<VersionGroup> version_groups_;
+
+  std::vector<uint32_t> filtered_versions_;
 
   std::unordered_set<uint32_t> pending_deleted_;
   std::string validation_error_;
-  bool check_signatures_ = true;
 
-  // Extracted property editor component (owns buffers, detection state, color states)
   std::unique_ptr<ClientPropertyEditor> editor_;
 };
 

@@ -220,9 +220,37 @@ void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
     Utils::ScopedFlag loading(is_loading_);
     loadMapFromPath(path, version);
   } else {
+    std::string reason;
+    if (!client_version) {
+      reason = "Client version " + std::to_string(version) + " not found.";
+    } else if (client_version->getClientPath().empty()) {
+      reason = "No client path configured for version " +
+               std::to_string(version) + ".";
+    } else if (!std::filesystem::exists(client_version->getClientPath())) {
+      reason = "Client path does not exist:\n" +
+               client_version->getClientPath().string();
+    } else {
+      auto missing = [](const std::filesystem::path &p) -> std::string {
+        return std::filesystem::exists(p) ? "" : p.filename().string();
+      };
+      std::vector<std::string> missing_files;
+      auto dat = missing(client_version->getDatPath());
+      auto spr = missing(client_version->getSprPath());
+      auto otb = missing(client_version->getOtbPath());
+      auto srv = missing(client_version->getClientPath() / "items.srv");
+      if (!dat.empty()) missing_files.push_back(dat);
+      if (!spr.empty()) missing_files.push_back(spr);
+      if (!otb.empty() && !srv.empty()) missing_files.push_back(otb + "/" + srv);
+      for (size_t i = 0; i < missing_files.size(); ++i) {
+        if (i > 0) reason += ", ";
+        reason += missing_files[i];
+      }
+      reason += " missing from:\n" + client_version->getClientPath().string() +
+                "\nPlease add missing files or configure the correct client path.";
+    }
     notify(NotificationType::Error,
            "Client version " + std::to_string(version) +
-               " not configured. Please restart and configure the client.");
+               " not configured.\n" + reason);
   }
 }
 

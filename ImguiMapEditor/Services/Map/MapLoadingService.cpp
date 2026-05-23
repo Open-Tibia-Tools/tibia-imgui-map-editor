@@ -415,9 +415,14 @@ bool MapLoadingService::loadClientData(
 
   // Validate required files exist
   if (!version_info->validateFiles()) {
+    std::string missing_list;
+    if (!std::filesystem::exists(dat_path)) missing_list += " Tibia.dat";
+    if (!std::filesystem::exists(spr_path)) missing_list += " Tibia.spr";
+    if (!std::filesystem::exists(otb_path) && !std::filesystem::exists(srv_path))
+      missing_list += " items.otb";
     spdlog::error(
-        "Client files not found for version {}. Please configure client path.",
-        client_version);
+        "Client files not found for version {} in path '{}'. Missing:{}",
+        client_version, version_info->getClientPath().string(), missing_list);
     spdlog::error("Required files: Tibia.dat, Tibia.spr, and items.otb (or "
                   "items.srv for 7.x)");
     return false;

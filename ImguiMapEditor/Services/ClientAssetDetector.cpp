@@ -1,5 +1,7 @@
 #include "ClientAssetDetector.h"
 #include "Core/Config.h"
+#include "IO/Readers/DatReaderBase.h"
+#include "IO/Readers/DatReaderFactory.h"
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -182,7 +184,8 @@ std::optional<SpriteProbeResult> probeSpriteStructure(const std::filesystem::pat
 Domain::ClientAssetDetectionResult
 ClientAssetDetector::detect(const std::filesystem::path &client_path,
                             const std::string &metadata_file,
-                            const std::string &sprites_file) {
+                            const std::string &sprites_file,
+                            const std::map<uint32_t, Domain::ClientVersion> *versions) {
   Domain::ClientAssetDetectionResult result;
 
   if (!std::filesystem::exists(client_path)) {
@@ -196,6 +199,30 @@ ClientAssetDetector::detect(const std::filesystem::path &client_path,
   if (std::filesystem::exists(dat_path)) {
     result.metadata_file_name = std::filesystem::path(dat_path).filename().string();
     result.dat_signature = readU32FromFile(dat_path, result.warnings);
+
+    // DAT probing: try parsing with known version readers
+    if (versions && result.dat_signature) {
+      for (const auto &[ver_num, cv] : *versions) {
+        if (cv.getDatSignature() != *result.dat_signature)
+          continue;
+        try {
+          auto reader = IO::DatReaderFactory::create(ver_num);
+          auto dat_result = reader->read(dat_path, *result.dat_signature);
+          if (dat_result.success) {
+            result.extended = reader->usesExtendedSprites();
+            result.frame_durations = reader->hasFrameDurations();
+            result.frame_groups = reader->hasFrameGroups();
+            spdlog::info("DAT probe matched version {}: extended={} frameDurations={} frameGroups={}",
+                         ver_num, *result.extended, *result.frame_durations, *result.frame_groups);
+            break;
+          }
+        } catch (...) {
+          continue;
+        }
+      }
+      if (!result.extended)
+        result.warnings.push_back("DAT probing could not determine features.");
+    }
   } else {
     result.warnings.push_back("DAT file not found: " + dat_path.string());
   }
@@ -222,7 +249,13 @@ ClientAssetDetector::detect(const std::filesystem::path &client_path,
           });
 
       if (best->opaque_matches > 0 || best->alpha_matches > 0) {
-        result.extended = best->extended;
+        // Cross-validate with DAT result
+        if (result.extended && *result.extended != best->extended) {
+          result.warnings.push_back("DAT and SPR disagree on extended flag. DAT takes precedence.");
+          result.extended = *result.extended;
+        } else {
+          result.extended = best->extended;
+        }
       }
 
       if (best->alpha_matches > best->opaque_matches) {

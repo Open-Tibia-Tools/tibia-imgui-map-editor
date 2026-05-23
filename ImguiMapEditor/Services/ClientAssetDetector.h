@@ -13,7 +13,8 @@ public:
   static Domain::ClientAssetDetectionResult
   detect(const std::filesystem::path &client_path,
          const std::string &metadata_file,
-         const std::string &sprites_file);
+         const std::string &sprites_file,
+         const std::map<uint32_t, Domain::ClientVersion> *versions = nullptr);
 
   static uint32_t
   detectVersion(const std::filesystem::path &folder,

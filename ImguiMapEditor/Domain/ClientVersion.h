@@ -21,9 +21,11 @@ public:
 
   // Version identifiers
   uint32_t getVersion() const { return version_; }
+  void setVersion(uint32_t v) { version_ = v; }
   const std::string &getName() const { return name_; }
   void setName(const std::string &v) { name_ = v; }
-  uint32_t getOtbVersion() const { return otb_version_; } // otbId - OTBM minor
+  uint32_t getOtbVersion() const { return otb_version_; }
+  void setOtbVersion(uint32_t v) { otb_version_ = v; }
   uint32_t getOtbMajor() const { return otb_major_; }     // Items major version
 
   // OTBM versions supported (replaces single otbm_version_)

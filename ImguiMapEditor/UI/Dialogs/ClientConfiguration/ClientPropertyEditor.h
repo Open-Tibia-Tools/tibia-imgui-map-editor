@@ -33,14 +33,18 @@ public:
   void applyDetectionResult(const Domain::ClientAssetDetectionResult &result);
 
   void render();
+  void renderStatusBar();
 
 private:
   void renderIdentitySection();
   void renderFilesSection();
-  void renderAutoDetectedFileInputs();
   void renderCompatibilitySection();
   void renderSignaturesSection();
   void renderFeaturesSection();
+  void renderAutoDetectedFileInputs();
+
+  void beginSection(const char *title);
+  void endSection();
 
   Services::ClientVersionRegistry *registry_ = nullptr;
   uint32_t active_version_ = 0;

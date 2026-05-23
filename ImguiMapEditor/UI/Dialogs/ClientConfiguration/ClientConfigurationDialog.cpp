@@ -26,6 +26,26 @@ std::string toLower(std::string s) {
   return s;
 }
 
+void pushCompactStyle() {
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 6.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 5.0f));
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f, 6.0f));
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(6.0f, 4.0f));
+}
+
+void popCompactStyle() { ImGui::PopStyleVar(5); }
+
+constexpr ImVec4 kBlueAccent = ImVec4(0.19f, 0.44f, 0.84f, 1.0f);
+constexpr ImVec4 kBlueHover = ImVec4(0.25f, 0.50f, 0.92f, 1.0f);
+constexpr ImVec4 kBlueActive = ImVec4(0.15f, 0.38f, 0.76f, 1.0f);
+constexpr ImVec4 kRedDelete = ImVec4(0.78f, 0.14f, 0.20f, 1.0f);
+constexpr ImVec4 kRedHover = ImVec4(0.86f, 0.20f, 0.27f, 1.0f);
+constexpr ImVec4 kGreenStatus = ImVec4(0.43f, 0.82f, 0.43f, 1.0f);
+constexpr ImVec4 kTextOffWhite = ImVec4(0.85f, 0.87f, 0.91f, 1.0f);
+constexpr ImVec4 kTextMuted = ImVec4(0.67f, 0.70f, 0.75f, 1.0f);
+constexpr ImVec4 kBgDark = ImVec4(0.12f, 0.13f, 0.15f, 0.94f);
+
 } // namespace
 
 ClientConfigurationDialog::ClientConfigurationDialog()
@@ -39,6 +59,7 @@ void ClientConfigurationDialog::open(Services::ClientVersionRegistry &registry,
   config_ = &config;
   is_open_ = true;
   active_version_ = 0;
+  active_tab_ = 0;
   search_buf_[0] = '\0';
   search_filter_.clear();
   pending_deleted_.clear();
@@ -52,7 +73,16 @@ void ClientConfigurationDialog::open(Services::ClientVersionRegistry &registry,
     active_version_ = registry_->getVersionsMap().begin()->first;
   }
 
-  populateTreeData();
+  populateVersionData();
+
+
+  int def_group = getMajorGroup(active_version_);
+  for (size_t i = 0; i < version_groups_.size(); ++i) {
+    if (version_groups_[i].major == def_group) {
+      active_tab_ = static_cast<int>(i);
+      break;
+    }
+  }
 
   if (active_version_ != 0) {
     auto *cv = registry_->getVersion(active_version_);
@@ -83,8 +113,8 @@ bool ClientConfigurationDialog::matchesFilter(const Domain::ClientVersion &ver) 
   return haystack.find(search_filter_) != std::string::npos;
 }
 
-void ClientConfigurationDialog::populateTreeData() {
-  tree_groups_.clear();
+void ClientConfigurationDialog::populateVersionData() {
+  version_groups_.clear();
   std::map<int, std::vector<uint32_t>> grouped;
 
   for (const auto &[ver_num, cv] : registry_->getVersionsMap()) {
@@ -97,19 +127,29 @@ void ClientConfigurationDialog::populateTreeData() {
 
   for (auto &[major, vers] : grouped) {
     std::sort(vers.begin(), vers.end());
-    tree_groups_.push_back(
-        {major, std::format("{} ({})", (major >= 1000)
-                                           ? std::format("{}.{}", major, 0)
-                                       : (major >= 100)
-                                           ? std::format("{}.x", major)
-                                           : std::format("{}.x", major),
-                            vers.size()),
-         std::move(vers)});
+    std::string label;
+    if (major >= 1000)
+      label = std::format("{}.{}", major, 0);
+    else if (major >= 100)
+      label = std::format("{}.x", major);
+    else
+      label = std::format("{}.x", major);
+    version_groups_.push_back({major, label, std::move(vers)});
   }
-  std::sort(tree_groups_.begin(), tree_groups_.end(),
-            [](const TreeGroup &a, const TreeGroup &b) {
-              return a.major_version < b.major_version;
+
+  std::sort(version_groups_.begin(), version_groups_.end(),
+            [](const VersionGroup &a, const VersionGroup &b) {
+              return a.major < b.major;
             });
+
+  if (!version_groups_.empty()) {
+    if (active_tab_ >= static_cast<int>(version_groups_.size()))
+      active_tab_ = 0;
+    filtered_versions_ = version_groups_[active_tab_].versions;
+  } else {
+    filtered_versions_.clear();
+    active_tab_ = 0;
+  }
 }
 
 void ClientConfigurationDialog::selectClient(uint32_t version) {
@@ -130,19 +170,17 @@ void ClientConfigurationDialog::selectClient(uint32_t version) {
 void ClientConfigurationDialog::runAssetDetection() {
   if (active_version_ == 0 || !registry_)
     return;
-
   auto *cv = registry_->getVersion(active_version_);
   if (!cv)
     return;
-
   editor_->syncToClient(*cv);
 
   auto result = Services::ClientAssetDetector::detect(
-      cv->getClientPath(), cv->getMetadataFile(), cv->getSpritesFile());
+      cv->getClientPath(), cv->getMetadataFile(), cv->getSpritesFile(),
+      &registry_->getVersionsMap());
 
   editor_->applyDetectionResult(result);
   editor_->syncToClient(*cv);
-
   for (const auto &w : result.warnings)
     spdlog::warn("Asset detection: {}", w);
 }
@@ -150,8 +188,7 @@ void ClientConfigurationDialog::runAssetDetection() {
 void ClientConfigurationDialog::addClient() {
   std::string new_name = "New Client";
   int counter = 1;
-  bool unique = false;
-  while (!unique) {
+  for (bool unique = false; !unique;) {
     unique = true;
     for (const auto &[num, ver] : registry_->getVersionsMap()) {
       if (ver.getName() == new_name) {
@@ -163,10 +200,8 @@ void ClientConfigurationDialog::addClient() {
   }
 
   uint32_t new_version = 99999;
-  for (const auto &[num, _] : registry_->getVersionsMap()) {
-    if (num >= new_version + 1)
-      new_version = num + 1;
-  }
+  while (registry_->getVersionsMap().count(new_version))
+    ++new_version;
 
   Domain::ClientVersion cv(new_version, new_name, 0);
   cv.setDataDirectory("1287");
@@ -177,7 +212,7 @@ void ClientConfigurationDialog::addClient() {
 
   registry_->addClient(cv);
   registry_->backupVersion(new_version);
-  populateTreeData();
+  populateVersionData();
   selectClient(new_version);
 }
 
@@ -211,7 +246,7 @@ void ClientConfigurationDialog::duplicateClient() {
 
   registry_->addClient(clone);
   registry_->backupVersion(new_version);
-  populateTreeData();
+  populateVersionData();
   selectClient(new_version);
 }
 
@@ -220,12 +255,11 @@ void ClientConfigurationDialog::deleteClient(uint32_t version) {
     return;
   pending_deleted_.insert(version);
   editor_->clearPropertyStates(version);
-  populateTreeData();
+  populateVersionData();
   if (active_version_ == version) {
     active_version_ = 0;
-    if (!tree_groups_.empty() && !tree_groups_[0].client_versions.empty()) {
-      selectClient(tree_groups_[0].client_versions[0]);
-    }
+    if (!filtered_versions_.empty())
+      selectClient(filtered_versions_[0]);
   }
 }
 
@@ -235,17 +269,12 @@ bool ClientConfigurationDialog::validateBeforeSave() {
     if (pending_deleted_.count(num))
       continue;
     if (cv.getName().empty()) {
-      validation_error_ = std::format(
-          "Client version {} has an empty name. "
-          "Every client must have a name.",
-          num);
+      validation_error_ = std::format("Client version {} has an empty name.", num);
       return false;
     }
     if (!names.insert(cv.getName()).second) {
-      validation_error_ = std::format(
-          "Duplicate client name: \"{}\". "
-          "Each client must have a unique name.",
-          cv.getName());
+      validation_error_ =
+          std::format("Duplicate client name: \"{}\".", cv.getName());
       return false;
     }
   }
@@ -255,12 +284,10 @@ bool ClientConfigurationDialog::validateBeforeSave() {
 bool ClientConfigurationDialog::saveAll() {
   if (!registry_)
     return false;
-
   if (!validateBeforeSave()) {
     ImGui::OpenPopup("Validation Error");
     return false;
   }
-
   for (auto id : pending_deleted_)
     registry_->removeClient(id);
 
@@ -278,17 +305,14 @@ bool ClientConfigurationDialog::saveAll() {
     if (auto *cv = registry_->getVersion(num))
       cv->clearDirty();
   }
-
   for (const auto &[num, _] : registry_->getVersionsMap())
     editor_->markAllPendingAsSaved(num);
 
   pending_deleted_.clear();
-
   if (config_) {
     registry_->savePathsToConfig(*config_);
     config_->save();
   }
-
   spdlog::info("Saved {} client versions", registry_->getVersionsMap().size());
   return true;
 }
@@ -302,54 +326,53 @@ void ClientConfigurationDialog::discardChanges() {
       }
     }
   }
-
   pending_deleted_.clear();
   search_filter_.clear();
   search_buf_[0] = '\0';
-
-  populateTreeData();
-
+  populateVersionData();
   if (active_version_ != 0) {
     auto *cv = registry_->getVersion(active_version_);
     if (cv) {
       editor_->syncFromClient(*cv);
       editor_->setActiveVersion(active_version_);
     }
-  } else if (!tree_groups_.empty() && !tree_groups_[0].client_versions.empty()) {
-    selectClient(tree_groups_[0].client_versions[0]);
+  } else if (!filtered_versions_.empty()) {
+    selectClient(filtered_versions_[0]);
   }
 }
+
+// Render
 
 bool ClientConfigurationDialog::render() {
   if (!is_open_ || !registry_)
     return false;
 
   ImGuiIO &io = ImGui::GetIO();
-  ImVec2 win_size(960, 650);
+  ImVec2 win_size(1180, 780);
   ImVec2 win_pos((io.DisplaySize.x - win_size.x) * 0.5f,
                  (io.DisplaySize.y - win_size.y) * 0.5f);
   ImGui::SetNextWindowPos(win_pos, ImGuiCond_Appearing);
   ImGui::SetNextWindowSize(win_size, ImGuiCond_Appearing);
-  ImGui::SetNextWindowSizeConstraints(ImVec2(700, 400), ImVec2(FLT_MAX, FLT_MAX));
+  ImGui::SetNextWindowSizeConstraints(ImVec2(900, 500), ImVec2(FLT_MAX, FLT_MAX));
+
+  pushCompactStyle();
 
   bool open = true;
   ImGui::Begin("Client Configuration", &open,
-               ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
+               ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings |
+                   ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize);
 
-  // Keyboard shortcuts
   if (ImGui::IsKeyPressed(ImGuiKey_Escape))
     is_open_ = false;
   if (ImGui::IsKeyPressed(ImGuiKey_S) && io.KeyCtrl) {
     if (saveAll())
-      populateTreeData();
+      populateVersionData();
   }
 
+  renderTitleBar();
   renderToolbar();
   ImGui::Separator();
-  renderLeftPane();
-  ImGui::SameLine();
-  renderRightPane();
-  renderFooter();
+  renderBody();
 
   if (ImGui::BeginPopupModal("Validation Error", nullptr,
                              ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -362,138 +385,215 @@ bool ClientConfigurationDialog::render() {
   }
 
   ImGui::End();
+  popCompactStyle();
 
   if (!open)
     is_open_ = false;
-
   return is_open_;
 }
 
-void ClientConfigurationDialog::renderToolbar() {
-  if (ImGui::Button(ICON_FA_PLUS " Add", ImVec2(80, 0)))
-    addClient();
-  ImGui::SameLine();
-  if (ImGui::Button(ICON_FA_COPY " Duplicate", ImVec2(100, 0)))
-    duplicateClient();
-  ImGui::SameLine();
+void ClientConfigurationDialog::renderTitleBar() {
+  float title_height = 32.0f;
+  ImGui::BeginChild("##titlebar", ImVec2(0, title_height), ImGuiChildFlags_None);
 
-  bool can_delete = (active_version_ != 0);
-  if (!can_delete)
-    ImGui::BeginDisabled();
-  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.55f, 0.15f, 0.15f, 1.0f));
-  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.25f, 0.25f, 1.0f));
-  if (ImGui::Button(ICON_FA_TRASH " Delete", ImVec2(80, 0)))
+  ImGui::SetCursorPosY(6);
+  ImGui::SetCursorPosX(10);
+  ImGui::TextColored(kTextOffWhite, "Client Configuration");
+
+  float close_x = ImGui::GetWindowWidth() - 30;
+  ImGui::SetCursorPos(ImVec2(close_x, 4));
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.6f));
+  if (ImGui::Button(ICON_FA_XMARK "##close", ImVec2(24, 24)))
+    is_open_ = false;
+  ImGui::PopStyleColor(2);
+
+  ImGui::EndChild();
+}
+
+void ClientConfigurationDialog::renderToolbar() {
+  float toolbar_h = 48.0f;
+  ImGui::BeginChild("##toolbar", ImVec2(0, toolbar_h), ImGuiChildFlags_None);
+
+  ImGui::SetCursorPosY(6);
+
+  ImGui::PushStyleColor(ImGuiCol_Button, kBlueAccent);
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kBlueHover);
+  ImGui::PushStyleColor(ImGuiCol_ButtonActive, kBlueActive);
+  if (ImGui::Button(ICON_FA_PLUS "  Add", ImVec2(100, 32)))
+    addClient();
+  ImGui::PopStyleColor(3);
+
+  ImGui::SameLine();
+  if (ImGui::Button(ICON_FA_COPY "  Duplicate", ImVec2(120, 32)))
+    duplicateClient();
+
+  ImGui::SameLine();
+  ImGui::PushStyleColor(ImGuiCol_Button, kRedDelete);
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kRedHover);
+  if (ImGui::Button(ICON_FA_TRASH "  Delete", ImVec2(100, 32)))
     deleteClient(active_version_);
   ImGui::PopStyleColor(2);
-  if (!can_delete)
-    ImGui::EndDisabled();
 
-  ImGui::SameLine();
-  float right_x = ImGui::GetContentRegionMax().x;
-  ImGui::SetCursorPosX(right_x - 170);
-  ImGui::SetNextItemWidth(145);
-  if (ImGui::InputTextWithHint("##search", ICON_FA_MAGNIFYING_GLASS " Search...",
+  ImGui::EndChild();
+}
+
+void ClientConfigurationDialog::renderBody() {
+  float body_h = ImGui::GetContentRegionAvail().y - 48.0f;
+  ImGui::BeginChild("##body", ImVec2(0, body_h), ImGuiChildFlags_None);
+
+  renderLeftSidebar();
+  ImGui::SameLine(0, 8);
+  renderRightPanel();
+
+  ImGui::EndChild();
+  renderFooterStatus();
+}
+
+void ClientConfigurationDialog::renderLeftSidebar() {
+  ImGui::BeginChild("##leftbar", ImVec2(320, 0), ImGuiChildFlags_Borders);
+
+  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+  ImGui::SetCursorPosX(10);
+  ImGui::TextColored(kTextMuted, "Select Version Group");
+
+  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4);
+
+  if (!version_groups_.empty()) {
+    float btn_w = 72.0f;
+    int cols = 3;
+    for (size_t i = 0; i < version_groups_.size(); ++i) {
+      if (i > 0 && i % cols != 0)
+        ImGui::SameLine();
+      bool active = (static_cast<int>(i) == active_tab_);
+      if (active) {
+        ImGui::PushStyleColor(ImGuiCol_Button, kBlueAccent);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kBlueHover);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, kBlueActive);
+      }
+      if (ImGui::Button(version_groups_[i].label.c_str(), ImVec2(btn_w, 0))) {
+        active_tab_ = static_cast<int>(i);
+        filtered_versions_ = version_groups_[i].versions;
+      }
+      if (active)
+        ImGui::PopStyleColor(3);
+    }
+  }
+
+  ImGui::Separator();
+
+
+  ImGui::Columns(2, "##ver_cols", false);
+  ImGui::SetColumnWidth(0, 180);
+  ImGui::TextColored(kTextMuted, "Name");
+  ImGui::NextColumn();
+  ImGui::TextColored(kTextMuted, "Version");
+  ImGui::Columns(1);
+  ImGui::Separator();
+
+  renderVersionList();
+
+
+  ImGui::SetNextItemWidth(-1);
+  if (ImGui::InputTextWithHint("##search_bottom", ICON_FA_MAGNIFYING_GLASS " Search...",
                                search_buf_, sizeof(search_buf_))) {
     search_filter_ = toLower(search_buf_);
-    populateTreeData();
+    populateVersionData();
   }
-  ImGui::SameLine();
-  if (search_buf_[0] != '\0') {
-    if (ImGui::Button(ICON_FA_XMARK "##clear_search")) {
-      search_buf_[0] = '\0';
-      search_filter_.clear();
-      populateTreeData();
-    }
-  } else {
-    ImGui::Dummy(ImVec2(20, 0));
-  }
-}
-
-void ClientConfigurationDialog::renderFooter() {
-  ImGui::Checkbox("Validate Signatures", &check_signatures_);
-
-  float btn_x = ImGui::GetContentRegionMax().x - 300;
-  ImGui::SameLine(btn_x);
-  if (ImGui::Button("Save", ImVec2(80, 0))) {
-    if (saveAll())
-      populateTreeData();
-  }
-  ImGui::SameLine();
-  if (ImGui::Button("Discard", ImVec2(80, 0)))
-    discardChanges();
-  ImGui::SameLine();
-  if (ImGui::Button("Close", ImVec2(80, 0)))
-    is_open_ = false;
-}
-
-void ClientConfigurationDialog::renderLeftPane() {
-  ImGui::BeginChild("left_pane", ImVec2(250.0f, 0), ImGuiChildFlags_None);
-
-  if (ImGui::BeginChild("tree_inner", ImVec2(0, -30), ImGuiChildFlags_None)) {
-    if (tree_groups_.empty()) {
-      ImGui::TextDisabled("No matching clients");
-    }
-    for (auto &group : tree_groups_) {
-      ImGuiTreeNodeFlags flags =
-          ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth |
-          ImGuiTreeNodeFlags_DefaultOpen;
-
-      if (ImGui::TreeNodeEx(group.label.c_str(), flags)) {
-        for (uint32_t ver_num : group.client_versions) {
-          auto *cv = registry_->getVersion(ver_num);
-          if (!cv)
-            continue;
-
-          bool sel = (active_version_ == ver_num);
-          std::string display =
-              std::format("{} ({})", cv->getName(), cv->getVersion());
-          if (cv->isDirty())
-            display += " *";
-
-          if (ImGui::Selectable(display.c_str(), sel))
-            selectClient(ver_num);
-
-          if (ImGui::BeginPopupContextItem(std::format("ctx_{}", ver_num).c_str())) {
-            if (ImGui::MenuItem("Duplicate"))
-              duplicateClient();
-            if (ImGui::MenuItem("Delete"))
-              deleteClient(ver_num);
-            ImGui::EndPopup();
-          }
-        }
-        ImGui::TreePop();
-      }
-    }
-  }
-  ImGui::EndChild();
-
-  ImGui::PushItemWidth(-1);
-  if (ImGui::BeginCombo("##default_version",
-                        std::format("{} Default Client",
-                                   ICON_FA_STAR).c_str())) {
-    for (const auto &[num, cv] : registry_->getVersionsMap()) {
-      if (pending_deleted_.count(num))
-        continue;
-      if (ImGui::Selectable(cv.getName().c_str(), cv.isDefault()))
-        registry_->setDefaultVersion(num);
-    }
-    ImGui::EndCombo();
-  }
-  ImGui::PopItemWidth();
 
   ImGui::EndChild();
 }
 
-void ClientConfigurationDialog::renderRightPane() {
-  ImGui::BeginChild("right_pane", ImVec2(0, -30), ImGuiChildFlags_None);
+void ClientConfigurationDialog::renderVersionList() {
+  ImGui::BeginChild("##verlist", ImVec2(0, -34), ImGuiChildFlags_None);
+  if (filtered_versions_.empty()) {
+    ImGui::TextDisabled("  No matching clients");
+  }
+  for (uint32_t ver_num : filtered_versions_) {
+    auto *cv = registry_->getVersion(ver_num);
+    if (!cv)
+      continue;
+
+    bool sel = (active_version_ == ver_num);
+    if (sel) {
+      ImGui::PushStyleColor(ImGuiCol_Header, kBlueAccent);
+      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, kBlueHover);
+    }
+
+    ImGui::PushID(static_cast<int>(ver_num));
+
+    ImGui::Columns(2, "##verlist_cols", false);
+    ImGui::SetColumnWidth(0, 180);
+
+    std::string name_display = cv->getName();
+    if (cv->isDirty())
+      name_display += " *";
+    if (ImGui::Selectable(name_display.c_str(), sel,
+                          ImGuiSelectableFlags_AllowDoubleClick |
+                              ImGuiSelectableFlags_SpanAllColumns)) {
+      selectClient(ver_num);
+    }
+
+    if (ImGui::BeginPopupContextItem(std::format("ctx_{}", ver_num).c_str())) {
+      if (ImGui::MenuItem("Duplicate"))
+        duplicateClient();
+      if (ImGui::MenuItem("Delete"))
+        deleteClient(ver_num);
+      ImGui::EndPopup();
+    }
+
+    ImGui::NextColumn();
+    ImGui::TextColored(kTextMuted, "%u", cv->getVersion());
+    ImGui::Columns(1);
+
+    ImGui::PopID();
+
+    if (sel)
+      ImGui::PopStyleColor(2);
+  }
+  ImGui::EndChild();
+}
+
+void ClientConfigurationDialog::renderRightPanel() {
+  ImGui::BeginChild("##rightpanel", ImVec2(0, 0), ImGuiChildFlags_Borders);
 
   if (active_version_ == 0) {
-    ImGui::TextWrapped("Select a client version from the list on the left "
+    ImGui::SetCursorPosY(40);
+    ImGui::TextColored(kTextMuted,
+                       "   Select a client version from the list on the left "
                        "to edit its identity, files, compatibility, and "
                        "feature flags.");
   } else {
     editor_->render();
+    editor_->renderStatusBar();
   }
+
+  ImGui::EndChild();
+}
+
+void ClientConfigurationDialog::renderFooterStatus() {
+  float footer_h = 42.0f;
+  ImGui::BeginChild("##footer", ImVec2(0, footer_h), ImGuiChildFlags_None);
+  ImGui::SetCursorPosY(8);
+
+  float btn_x = ImGui::GetWindowWidth() - 300;
+  ImGui::SameLine(btn_x);
+
+  ImGui::PushStyleColor(ImGuiCol_Button, kBlueAccent);
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kBlueHover);
+  if (ImGui::Button("Save", ImVec2(80, 28))) {
+    if (saveAll())
+      populateVersionData();
+  }
+  ImGui::PopStyleColor(2);
+
+  ImGui::SameLine();
+  if (ImGui::Button("Discard", ImVec2(80, 28)))
+    discardChanges();
+
+  ImGui::SameLine();
+  if (ImGui::Button("Close", ImVec2(80, 28)))
+    is_open_ = false;
 
   ImGui::EndChild();
 }
