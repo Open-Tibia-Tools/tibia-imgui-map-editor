@@ -29,3 +29,6 @@ RME_Readonly
 
 /ImguiMapEditor/build-ninja
 /ImguiMapEditor/sample_data
+
+.gemini/
+gha-creds-*.json
