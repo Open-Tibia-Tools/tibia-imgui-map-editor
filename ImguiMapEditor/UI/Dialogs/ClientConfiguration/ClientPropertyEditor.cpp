@@ -2,6 +2,7 @@
 #include <IconsFontAwesome6.h>
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstring>
 #include <format>
 #include <imgui.h>
