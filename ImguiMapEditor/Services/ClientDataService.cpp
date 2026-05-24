@@ -167,17 +167,6 @@ ClientDataService::load(const std::filesystem::path &client_path,
   if (progress)
     progress(100, "Done");
 
-  // ...
-
-  // Final success update
-  result.success = true;
-
-  loaded_ = true;
-  client_version_ = client_version;
-
-  if (progress)
-    progress(100, "Done");
-
   return result;
 }
 
