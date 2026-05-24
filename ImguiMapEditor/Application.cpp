@@ -168,6 +168,7 @@ void Application::wireCallbacks() {
       .quick_search = ui_.search_controller->getQuickSearchPopup(),
       .advanced_search = ui_.search_controller->getAdvancedSearchDialog(),
       .search_results = ui_.search_controller->getSearchResultsWidget(),
+      .search_controller = ui_.search_controller.get(),
       .cleanup_confirm = &dialogs_.cleanup_confirm,
       // Callbacks back to Application
       .quit_callback = [this]() { quit(); },
@@ -200,9 +201,17 @@ void Application::wireCallbacks() {
             Presentation::showNotification(type, message);
           }};
 
+  // Wire session-destroy callback to evict cached search results
+  if (session_lifecycle_ && ui_.search_controller) {
+    session_lifecycle_->setSessionDestroyCallback(
+        [sc = ui_.search_controller.get()](const AppLogic::EditorSession& session) {
+          if (auto* map = session.getMap()) {
+            sc->forgetSessionMap(map);
+          }
+        });
+  }
+
   callback_mediator_.wireAll(ctx);
-  // MainWindow dialog callbacks are wired in
-  // CallbackMediator::wireMapOperationCallbacks
 }
 
 void Application::onMapLoaded(
@@ -319,6 +328,11 @@ void Application::processEvents() {
 void Application::update() {
   // Update version manager resources (e.g. async sprite loading)
   version_manager_.update();
+
+  // Drain completed async search results on the main thread
+  if (ui_.search_controller) {
+    ui_.search_controller->processAsyncSearch();
+  }
 
   state_manager_.update();
 }

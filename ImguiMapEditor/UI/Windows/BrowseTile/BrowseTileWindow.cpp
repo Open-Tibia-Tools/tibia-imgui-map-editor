@@ -150,13 +150,19 @@ Domain::Item *BrowseTileWindow::getSelectedItem() {
 }
 
 void BrowseTileWindow::render(bool *p_visible) {
-  ImGuiWindowFlags flags = ImGuiWindowFlags_None;
+  if (p_visible) visible_ = *p_visible;
 
-  // Always call Begin/End for ImGui layout persistence (imgui.ini)
-  if (!ImGui::Begin("Browse Tile", p_visible, flags)) {
+  bool* vis_ptr = p_visible ? p_visible : &visible_;
+
+  if (p_visible && !*p_visible) return;
+
+  ImGuiWindowFlags flags = ImGuiWindowFlags_None;
+  if (!ImGui::Begin("Browse Tile", vis_ptr, flags)) {
     ImGui::End();
     return;
   }
+
+  visible_ = *vis_ptr;
 
   // Refresh tile from selection each frame
   refreshFromSelection();
@@ -167,6 +173,7 @@ void BrowseTileWindow::render(bool *p_visible) {
     ImGui::SetCursorPosX((content_size.x - text_width) * 0.5f);
     ImGui::SetCursorPosY(content_size.y * 0.5f);
     ImGui::TextDisabled("Select a single tile to browse");
+    visible_ = *vis_ptr;
     ImGui::End();
     return;
   }
@@ -315,6 +322,7 @@ void BrowseTileWindow::render(bool *p_visible) {
                 current_pos_.x, current_pos_.y, current_pos_.z);
   }
 
+  visible_ = *vis_ptr;
   ImGui::End();
 }
 

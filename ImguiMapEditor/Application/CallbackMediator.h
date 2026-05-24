@@ -27,6 +27,7 @@ class MapInputController;
 class EditorSession;
 class ItemPickerService;
 class MapSearchService;
+class SearchController;
 } // namespace AppLogic
 
 namespace Brushes {
@@ -136,6 +137,7 @@ public:
     UI::QuickSearchPopup *quick_search = nullptr;
     UI::AdvancedSearchDialog *advanced_search = nullptr;
     UI::SearchResultsWidget *search_results = nullptr;
+    AppLogic::SearchController *search_controller = nullptr;
     UI::ConfirmationDialog *cleanup_confirm = nullptr;
 
     // Callbacks back to Application (simple types only)

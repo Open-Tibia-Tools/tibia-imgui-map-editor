@@ -92,6 +92,8 @@ public:
 
   void screenToWorld(int screen_x, int screen_y, int32_t &world_x,
                      int32_t &world_y) const;
+  void worldToScreen(int32_t world_x, int32_t world_y, int &screen_x,
+                     int &screen_y) const;
 
 private:
   void buildFloorCache(int16_t floor);

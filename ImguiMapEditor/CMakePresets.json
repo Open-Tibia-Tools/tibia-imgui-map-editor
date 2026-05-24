@@ -47,6 +47,22 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }
+    },
+    {
+      "name": "x64-Release-Fast",
+      "displayName": "x64 Release Fast",
+      "inherits": "x64-Release",
+      "cacheVariables": {
+        "TME_ENABLE_ARCH_OPTIMIZATIONS": "ON"
+      }
+    },
+    {
+      "name": "x64-RelWithDebInfo-Fast",
+      "displayName": "x64 RelWithDebInfo Fast",
+      "inherits": "x64-RelWithDebInfo",
+      "cacheVariables": {
+        "TME_ENABLE_ARCH_OPTIMIZATIONS": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -61,6 +77,14 @@
     {
       "name": "build-relwithdebinfo",
       "configurePreset": "x64-RelWithDebInfo"
+    },
+    {
+      "name": "build-release-fast",
+      "configurePreset": "x64-Release-Fast"
+    },
+    {
+      "name": "build-relwithdebinfo-fast",
+      "configurePreset": "x64-RelWithDebInfo-Fast"
     }
   ]
 }
