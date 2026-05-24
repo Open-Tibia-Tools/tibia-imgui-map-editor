@@ -59,9 +59,15 @@ bool ClientVersion::validateFiles() const {
 
     switch (data_source_) {
     case ItemDataSource::OTB:
-        return std::filesystem::exists(getItemMetadataPath());
-    case ItemDataSource::SRV:
-        return std::filesystem::exists(getItemMetadataPath());
+    case ItemDataSource::SRV: {
+        auto path = getItemMetadataPath();
+        if (std::filesystem::exists(path)) {
+            return true;
+        }
+        // Fallback check in data/ directory
+        auto filename = (data_source_ == ItemDataSource::SRV) ? "items.srv" : "items.otb";
+        return std::filesystem::exists(std::filesystem::current_path() / "data" / filename);
+    }
     case ItemDataSource::DAT:
         return true;
     default:

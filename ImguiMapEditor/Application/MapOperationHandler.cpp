@@ -236,11 +236,17 @@ void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
       std::vector<std::string> missing_files;
       auto dat = missing(client_version->getDatPath());
       auto spr = missing(client_version->getSprPath());
-      auto otb = missing(client_version->getItemMetadataPath());
-      auto srv = missing(client_version->getClientPath() / "items.srv");
+
       if (!dat.empty()) missing_files.push_back(dat);
       if (!spr.empty()) missing_files.push_back(spr);
-      if (!otb.empty() && !srv.empty()) missing_files.push_back("items.otb or items.srv");
+
+      if (client_version->getDataSource() == Domain::ItemDataSource::OTB) {
+          auto otb = missing(client_version->getItemMetadataPath());
+          if (!otb.empty()) missing_files.push_back(otb);
+      } else if (client_version->getDataSource() == Domain::ItemDataSource::SRV) {
+          auto srv = missing(client_version->getItemMetadataPath());
+          if (!srv.empty()) missing_files.push_back(srv);
+      }
       for (size_t i = 0; i < missing_files.size(); ++i) {
         if (i > 0) reason += ", ";
         reason += missing_files[i];

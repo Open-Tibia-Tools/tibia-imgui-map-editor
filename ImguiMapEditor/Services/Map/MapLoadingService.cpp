@@ -394,38 +394,49 @@ bool MapLoadingService::loadClientData(
     }
   }
 
+  auto effective_source = source_override.value_or(version_info->getDataSource());
+  auto client_path = version_info->getClientPath();
+  auto metadata_filename = (effective_source == Domain::ItemDataSource::SRV) ? "items.srv" : "items.otb";
+
   // Debug: check what files exist
   auto dat_path = version_info->getDatPath();
   auto spr_path = version_info->getSprPath();
-  auto otb_path = version_info->getItemMetadataPath();
+  auto metadata_path = client_path / metadata_filename;
 
-  spdlog::info("Checking client files:");
+  spdlog::info("Checking client files (source mode: {}):",
+               (effective_source == Domain::ItemDataSource::SRV) ? "SRV" :
+               ((effective_source == Domain::ItemDataSource::DAT) ? "DAT-only" : "OTB"));
   spdlog::info("  DAT: {} -> {}", dat_path.string(),
                std::filesystem::exists(dat_path) ? "EXISTS" : "NOT FOUND");
   spdlog::info("  SPR: {} -> {}", spr_path.string(),
                std::filesystem::exists(spr_path) ? "EXISTS" : "NOT FOUND");
-  spdlog::info("  OTB: {} -> {}", otb_path.string(),
-               std::filesystem::exists(otb_path) ? "EXISTS" : "NOT FOUND");
 
-  // Also check for items.srv (ancient 7.x format)
-  auto srv_path = version_info->getClientPath() / "items.srv";
-  if (!std::filesystem::exists(otb_path) && std::filesystem::exists(srv_path)) {
-    spdlog::info("  SRV: {} -> EXISTS (will use as fallback)",
-                 srv_path.string());
+  if (effective_source != Domain::ItemDataSource::DAT) {
+      spdlog::info("  Metadata ({}): {} -> {}", metadata_filename, metadata_path.string(),
+                   std::filesystem::exists(metadata_path) ? "EXISTS" : "NOT FOUND");
   }
 
   // Validate required files exist
-  if (!version_info->validateFiles()) {
+  bool valid = true;
+  if (!std::filesystem::exists(dat_path) || !std::filesystem::exists(spr_path)) {
+      valid = false;
+  } else if (effective_source != Domain::ItemDataSource::DAT) {
+      if (!std::filesystem::exists(metadata_path) &&
+          !std::filesystem::exists(std::filesystem::current_path() / "data" / metadata_filename)) {
+          valid = false;
+      }
+  }
+
+  if (!valid) {
     std::string missing_list;
     if (!std::filesystem::exists(dat_path)) missing_list += " Tibia.dat";
     if (!std::filesystem::exists(spr_path)) missing_list += " Tibia.spr";
-    if (!std::filesystem::exists(otb_path) && !std::filesystem::exists(srv_path))
-      missing_list += " items.otb";
+    if (effective_source != Domain::ItemDataSource::DAT) {
+        if (!std::filesystem::exists(metadata_path)) missing_list += " " + std::string(metadata_filename);
+    }
     spdlog::error(
         "Client files not found for version {} in path '{}'. Missing:{}",
-        client_version, version_info->getClientPath().string(), missing_list);
-    spdlog::error("Required files: Tibia.dat, Tibia.spr, and items.otb (or "
-                  "items.srv for 7.x)");
+        client_version, client_path.string(), missing_list);
     return false;
   }
 
@@ -434,23 +445,20 @@ bool MapLoadingService::loadClientData(
     client_data_service_ = std::make_unique<Services::ClientDataService>();
   }
 
-  // Use OTB or SRV path from client version
-  // ClientDataService::load() handles format detection automatically
-  auto final_item_path = otb_path;
-  if (!std::filesystem::exists(final_item_path)) {
-    // Check for items.srv fallback (ancient 7.x format)
-    if (std::filesystem::exists(srv_path)) {
-      final_item_path = srv_path;
-      spdlog::info("Using items.srv (ancient format) instead of items.otb");
-    } else {
-      final_item_path = std::filesystem::path("data") / "items.otb";
-    }
+  // Resolve final metadata path
+  std::filesystem::path final_metadata_path;
+  if (effective_source != Domain::ItemDataSource::DAT) {
+      final_metadata_path = metadata_path;
+      if (!std::filesystem::exists(final_metadata_path)) {
+          final_metadata_path = std::filesystem::path("data") / metadata_filename;
+          spdlog::info("Using metadata from editor data directory: {}", final_metadata_path.string());
+      }
   }
 
   // Load client data
   auto result = client_data_service_->load(
-      version_info->getClientPath(), final_item_path, client_version,
-      source_override.value_or(version_info->getDataSource()),
+      client_path, final_metadata_path, client_version,
+      effective_source,
       [](int percent, const std::string &status) {
         spdlog::info("Loading: {}% - {}", percent, status);
       });
