@@ -80,6 +80,18 @@ public:
      * @param limit Maximum results
      * @return Vector of matching ItemType pointers
      */
+    /**
+     * Single-pass multi-mode search. Checks server ID, client ID, and name
+     * (fuzzy) in one map scan. When query is numeric, all three modes apply;
+     * when text, only name mode. Returns combined deduplicated results.
+     */
+    std::vector<Domain::Search::MapSearchResult> searchMulti(
+        const std::string& query,
+        bool search_items,
+        bool search_creatures,
+        size_t limit = 100000
+    ) const;
+
     std::vector<const Domain::ItemType*> searchItemDatabase(
         const std::string& query,
         const Domain::Search::TypeFilter& types,

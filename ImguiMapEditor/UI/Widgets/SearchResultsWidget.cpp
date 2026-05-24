@@ -374,8 +374,10 @@ void SearchResultsWidget::renderResultRow(size_t result_idx, const Domain::Searc
     ImGui::Text("%d, %d, %d", result.position.x, result.position.y, result.position.z);
     ImGui::PopStyleColor();
 
-    // Restore cursor to where Selectable left it — clipper-compatible
+    // Restore cursor to after the Selectable and submit Dummy to register the
+    // full row height as content area (silences SetCursorPos boundary warnings)
     ImGui::SetCursorPos(cursor_end);
+    ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 0));
     ImGui::PopID();
 }
 

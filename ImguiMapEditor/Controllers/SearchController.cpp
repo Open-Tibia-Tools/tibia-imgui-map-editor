@@ -112,29 +112,15 @@ void SearchController::searchWriteableAsync() {
 }
 
 void SearchController::searchTextAsync(const std::string& query, bool search_items, bool search_creatures) {
-    if (!map_search_service_ || query.empty() || async_search_active_) return;
+    if (!map_search_service_ || query.empty()) return;
 
-    bool is_number = std::all_of(query.begin(), query.end(),
-        [](unsigned char c) { return std::isdigit(c) != 0; });
+    if (async_search_active_) {
+        pending_text_search_ = PendingTextSearch{query, search_items, search_creatures};
+        return;
+    }
 
-    launchAsync([service = map_search_service_.get(), query, search_items,
-                 search_creatures, is_number]() {
-        std::vector<Domain::Search::MapSearchResult> results;
-        static constexpr size_t limit = 100000;
-
-        auto append = [&](const auto& source) {
-            if (results.size() >= limit) return;
-            auto needed = limit - results.size();
-            std::ranges::copy(source | std::views::take(needed), std::back_inserter(results));
-        };
-
-        if (is_number) {
-            append(service->search(query, Services::MapSearchMode::ByServerId, search_items, false, limit));
-            append(service->search(query, Services::MapSearchMode::ByClientId, search_items, false, limit));
-        }
-        append(service->search(query, Services::MapSearchMode::ByName, search_items, search_creatures, limit));
-
-        return results;
+    launchAsync([service = map_search_service_.get(), query, search_items, search_creatures]() {
+        return service->searchMulti(query, search_items, search_creatures);
     });
 }
 
@@ -172,11 +158,20 @@ void SearchController::processAsyncSearch() {
     } catch (const std::exception& e) {
         spdlog::error("Async search failed: {}", e.what());
     } catch (...) {
+        // Catch-all safety net — prevents exceptions from the background
+        // thread escaping into the main loop's update() and crashing the app.
         spdlog::error("Async search failed: unknown error");
     }
 
     async_search_active_ = false;
     async_search_map_ = nullptr;
+
+    // Launch pending search if queued
+    if (pending_text_search_) {
+        auto pending = std::move(*pending_text_search_);
+        pending_text_search_.reset();
+        searchTextAsync(pending.query, pending.search_items, pending.search_creatures);
+    }
 }
 
 } // namespace AppLogic

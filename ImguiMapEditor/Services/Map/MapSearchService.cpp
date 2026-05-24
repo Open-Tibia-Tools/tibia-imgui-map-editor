@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <cctype>
 #include <format>
+#include <functional>
+#include <unordered_set>
 
 namespace MapEditor::Services {
 
@@ -82,6 +84,86 @@ std::vector<Domain::Search::MapSearchResult> MapSearchService::search(
         }
     });
     
+    return results;
+}
+
+std::vector<Domain::Search::MapSearchResult> MapSearchService::searchMulti(
+    const std::string& query, bool search_items, bool search_creatures, size_t limit) const {
+
+    std::vector<Domain::Search::MapSearchResult> results;
+    if (!map_ || query.empty()) return results;
+
+    std::string query_lower = toLower(query);
+    uint16_t search_id = 0;
+    bool is_numeric = false;
+
+    try {
+        search_id = static_cast<uint16_t>(std::stoi(query));
+        is_numeric = true;
+    } catch (...) {}
+
+    // Dedup key: position hash + server_id
+    std::unordered_set<uint64_t> seen;
+
+    map_->forEachTile([&](const Domain::Tile* tile) {
+        if (!tile || results.size() >= limit) return;
+
+        std::function<void(const Domain::Item*, bool)> checkAndAdd;
+        checkAndAdd = [&](const Domain::Item* item, bool in_container) {
+            if (!item || results.size() >= limit) return;
+
+            const Domain::ItemType* type = item->getType();
+            uint64_t key = (static_cast<uint64_t>(tile->getPosition().pack()) << 16) | item->getServerId();
+            if (seen.count(key)) return;
+
+            bool match = false;
+            if (is_numeric) {
+                if (item->getServerId() == search_id) match = true;
+                else if (type && type->client_id == search_id) match = true;
+            }
+            if (!match && type && !type->name.empty()) {
+                match = matchesFuzzy(type->name, query_lower);
+            }
+
+            if (match) {
+                seen.insert(key);
+                Domain::Search::MapSearchResult result;
+                result.position = tile->getPosition();
+                result.item_id = item->getServerId();
+                result.display_name = type && !type->name.empty() ? type->name : std::format("Item {}", item->getServerId());
+                result.info_line = std::format("ID: {}", item->getServerId());
+                result.is_in_container = in_container;
+                results.push_back(std::move(result));
+            }
+
+            for (const auto& child : item->getContainerItems()) {
+                if (results.size() >= limit) return;
+                checkAndAdd(child.get(), true);
+            }
+        };
+
+        if (search_items) {
+            if (auto* ground = tile->getGround()) checkAndAdd(ground, false);
+            for (const auto& item_ptr : tile->getItems()) {
+                if (results.size() >= limit) return;
+                checkAndAdd(item_ptr.get(), false);
+            }
+        }
+
+        if (search_creatures && tile->hasCreature()) {
+            auto* creature = tile->getCreature();
+            if (creature && matchesFuzzy(creature->name, query_lower)) {
+                Domain::Search::MapSearchResult result;
+                result.position = tile->getPosition();
+                result.item_id = 0;
+                result.creature_name = creature->name;
+                result.display_name = creature->name;
+                result.info_line = "Creature";
+                results.push_back(result);
+            }
+        }
+    });
+
     return results;
 }
 

@@ -4,6 +4,7 @@
 #include "Services/ViewSettings.h"
 #include <future>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace MapEditor {
@@ -110,6 +111,14 @@ private:
     std::future<std::vector<Domain::Search::MapSearchResult>> async_search_future_;
     bool async_search_active_ = false;
     const Domain::ChunkedMap* async_search_map_ = nullptr;
+
+    // Pending search queue (stored when a new query arrives while one is running)
+    struct PendingTextSearch {
+        std::string query;
+        bool search_items = true;
+        bool search_creatures = true;
+    };
+    std::optional<PendingTextSearch> pending_text_search_;
 };
 
 } // namespace AppLogic
