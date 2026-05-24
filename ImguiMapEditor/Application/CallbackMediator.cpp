@@ -199,6 +199,10 @@ void CallbackMediator::wireTabCallbacks(Context &ctx) {
       ctx.ingame_box->restoreState(*session);
       ctx.browse_tile->restoreState(*session);
 
+      if (ctx.search_results) {
+          ctx.search_results->setActiveMap(session->getMap());
+      }
+
       ctx.browse_tile->setMap(session->getMap(),
                               ctx.version_manager->getClientData(),
                               ctx.version_manager->getSpriteManager());

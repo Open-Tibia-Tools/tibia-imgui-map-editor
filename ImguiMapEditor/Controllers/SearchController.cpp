@@ -133,6 +133,12 @@ void SearchController::searchTextAsync(const std::string& query, bool search_ite
     });
 }
 
+void SearchController::forgetSessionMap(const Domain::ChunkedMap* map) {
+    if (search_results_widget_) {
+        search_results_widget_->forgetMap(map);
+    }
+}
+
 void SearchController::cancelAsyncSearch() {
     if (async_search_active_ && async_search_future_.valid()) {
         async_search_future_.wait();

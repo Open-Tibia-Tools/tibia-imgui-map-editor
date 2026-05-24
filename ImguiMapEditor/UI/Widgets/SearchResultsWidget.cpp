@@ -26,6 +26,7 @@ void SearchResultsWidget::setResults(const std::vector<Domain::Search::MapSearch
     selected_index_ = results_.empty() ? -1 : 0;
     filter_buffer_[0] = '\0';
     filter_dirty_ = true;
+    if (active_map_) saveState();
 }
 
 void SearchResultsWidget::clear() {
@@ -38,10 +39,62 @@ void SearchResultsWidget::clear() {
     search_buffer_[0] = '\0';
     filter_buffer_[0] = '\0';
     filter_dirty_ = true;
+    if (active_map_) saveState();
 }
 
 void SearchResultsWidget::invalidateFilter() {
     filter_dirty_ = true;
+}
+
+void SearchResultsWidget::setActiveMap(const Domain::ChunkedMap* map) {
+    if (active_map_ && active_map_ != map) {
+        saveState();
+    }
+    loadState(map);
+    active_map_ = map;
+}
+
+void SearchResultsWidget::forgetMap(const Domain::ChunkedMap* map) {
+    session_states_.erase(map);
+    if (active_map_ == map) {
+        active_map_ = nullptr;
+        results_.clear();
+        total_results_ = 0;
+        selected_index_ = -1;
+        current_page_ = 0;
+        filtered_indices_.clear();
+        filtered_count_ = 0;
+        filter_dirty_ = true;
+    }
+}
+
+void SearchResultsWidget::saveState() {
+    if (!active_map_) return;
+    auto& st = session_states_[active_map_];
+    st.results = results_;
+    st.total_results = total_results_;
+    st.selected_index = selected_index_;
+    st.current_page = current_page_;
+}
+
+void SearchResultsWidget::loadState(const Domain::ChunkedMap* map) {
+    auto it = session_states_.find(map);
+    if (it != session_states_.end()) {
+        results_ = std::move(it->second.results);
+        total_results_ = it->second.total_results;
+        selected_index_ = it->second.selected_index;
+        current_page_ = it->second.current_page;
+        session_states_.erase(it);
+    } else {
+        results_.clear();
+        total_results_ = 0;
+        selected_index_ = -1;
+        current_page_ = 0;
+    }
+    filtered_indices_.clear();
+    filtered_count_ = 0;
+    filter_dirty_ = true;
+    filter_buffer_[0] = '\0';
 }
 
 void SearchResultsWidget::rebuildFilter() {

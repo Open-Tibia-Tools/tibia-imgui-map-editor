@@ -4,8 +4,10 @@
 #include <vector>
 #include <functional>
 #include <string>
+#include <unordered_map>
 
 namespace MapEditor {
+namespace Domain { class ChunkedMap; }
 namespace Services { 
     class SpriteManager; 
     class ClientDataService;
@@ -17,6 +19,7 @@ namespace UI {
 /**
  * Dockable widget for searching items/creatures on the map.
  * Smart search: auto-detects name vs ID, searches all modes.
+ * Results are cached per-session; switching tabs preserves/restores results.
  */
 class SearchResultsWidget {
 public:
@@ -38,6 +41,12 @@ public:
     void setOpenAdvancedSearchCallback(OpenAdvancedSearchCallback cb) { on_open_advanced_search_ = std::move(cb); }
     void setSearchAsyncCallback(SearchAsyncCallback cb) { on_search_async_ = std::move(cb); }
     
+    /** Switch active map. Saves current results for the old map, restores results for the new map. */
+    void setActiveMap(const Domain::ChunkedMap* map);
+
+    /** Remove cached results for a session being destroyed. */
+    void forgetMap(const Domain::ChunkedMap* map);
+    
     void setResults(const std::vector<Domain::Search::MapSearchResult>& results);
     void clear();
     void invalidateFilter();
@@ -51,6 +60,9 @@ public:
 private:
     void doSearch();
     void renderPreview(const Domain::Search::MapSearchResult& result);
+
+    void saveState();
+    void loadState(const Domain::ChunkedMap* map);
     
     Services::SpriteManager* sprite_manager_ = nullptr;
     Services::ClientDataService* client_data_ = nullptr;
@@ -72,6 +84,16 @@ private:
     std::vector<size_t> filtered_indices_;
     size_t filtered_count_ = 0;
     bool filter_dirty_ = true;
+
+    const Domain::ChunkedMap* active_map_ = nullptr;
+
+    struct SessionState {
+        std::vector<Domain::Search::MapSearchResult> results;
+        size_t total_results = 0;
+        int selected_index = -1;
+        int current_page = 0;
+    };
+    std::unordered_map<const void*, SessionState> session_states_;
 
     void rebuildFilter();
     void renderSearchBar(bool& enter_pressed);

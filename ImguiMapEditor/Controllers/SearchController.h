@@ -83,6 +83,9 @@ public:
     /** Cancel any in-flight async search. Blocks until the background task finishes. */
     void cancelAsyncSearch();
 
+    /** Remove cached results for a session about to be destroyed. */
+    void forgetSessionMap(const Domain::ChunkedMap* map);
+
     // Accessors for UI components (needed for rendering and callbacks)
     UI::QuickSearchPopup* getQuickSearchPopup() const;
     UI::AdvancedSearchDialog* getAdvancedSearchDialog() const;

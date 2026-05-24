@@ -36,7 +36,8 @@ void WorkspaceController::bindSession(
     Domain::Tileset::TilesetRegistry *tileset_registry,
     Domain::Palette::PaletteRegistry *palette_registry,
     const Domain::Position *initial_camera_pos) {
-  // 1. Update MapPanel
+  current_map_ = session ? session->getMap() : nullptr;
+
   map_panel_.setEditorSession(session);
   map_panel_.setClientDataService(client_data);
   if (initial_camera_pos) {
@@ -91,14 +92,18 @@ void WorkspaceController::bindSession(
 }
 
 void WorkspaceController::unbindSession() {
+  // Cancel async search and clean up cached results for this session's map
+  if (current_map_) {
+    search_controller_.forgetSessionMap(current_map_);
+  }
+  search_controller_.cancelAsyncSearch();
+  search_controller_.onMapLoaded(nullptr, nullptr, nullptr, nullptr);
+  current_map_ = nullptr;
+
   map_panel_.setEditorSession(nullptr);
   map_panel_.setClientDataService(nullptr);
 
   input_controller_.setClientDataService(nullptr);
-
-  // Cancel any in-flight async search before resetting (prevents use-after-free)
-  search_controller_.cancelAsyncSearch();
-  search_controller_.onMapLoaded(nullptr, nullptr, nullptr, nullptr);
 
   minimap_window_.setMap(nullptr, nullptr);
 
