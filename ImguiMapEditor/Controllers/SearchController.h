@@ -86,6 +86,8 @@ public:
     UI::SearchResultsWidget* getSearchResultsWidget() const;
 
 private:
+    template<typename F> void launchAsync(F&& searchFn);
+
     // UI Components (unique_ptr to allow forward declarations in header)
     std::unique_ptr<UI::QuickSearchPopup> quick_search_popup_;
     std::unique_ptr<UI::AdvancedSearchDialog> advanced_search_dialog_;

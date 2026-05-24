@@ -47,22 +47,19 @@ void SearchResultsWidget::invalidateFilter() {
 void SearchResultsWidget::rebuildFilter() {
     filtered_indices_.clear();
 
-    std::string filter_lower;
-    if (filter_buffer_[0]) {
-        filter_lower = filter_buffer_;
-        std::transform(filter_lower.begin(), filter_lower.end(), filter_lower.begin(),
-            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    }
+    auto ci_eq = [](unsigned char a, unsigned char b) {
+        return std::tolower(a) == std::tolower(b);
+    };
 
     for (size_t i = 0; i < results_.size(); ++i) {
         const auto& r = results_[i];
         if (!search_items_ && r.isItem()) continue;
         if (!search_creatures_ && r.isCreature()) continue;
-        if (!filter_lower.empty()) {
-            std::string dn = r.display_name;
-            std::transform(dn.begin(), dn.end(), dn.begin(),
-                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-            if (dn.find(filter_lower) == std::string::npos) continue;
+        if (filter_buffer_[0]) {
+            auto& dn = r.display_name;
+            auto it = std::search(dn.begin(), dn.end(),
+                filter_buffer_, filter_buffer_ + strlen(filter_buffer_), ci_eq);
+            if (it == dn.end()) continue;
         }
         filtered_indices_.push_back(i);
     }
@@ -91,11 +88,10 @@ void SearchResultsWidget::renderActionButtons(bool enter_pressed) {
 
     if (ImGui::Button(ICON_FA_PASTE " Paste", ImVec2(btn_w, 0))) {
         if (has_clipboard) {
-            size_t len = strlen(clipboard);
-            if (len < sizeof(search_buffer_)) {
-                memcpy(search_buffer_, clipboard, len + 1);
-                doSearch();
-            }
+            size_t copy_len = std::min(strlen(clipboard), sizeof(search_buffer_) - 1);
+            memcpy(search_buffer_, clipboard, copy_len);
+            search_buffer_[copy_len] = '\0';
+            doSearch();
         }
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip(has_clipboard ? "Paste and search" : "Clipboard empty");
@@ -123,16 +119,17 @@ void SearchResultsWidget::renderResultsList(float row_height) {
 
     if (results_.empty()) {
         ImVec2 wsize = ImGui::GetWindowSize();
-        std::string msg = std::format("{} {}", ICON_FA_KEYBOARD, "Type to search...");
-        ImVec2 tsize = ImGui::CalcTextSize(msg.c_str());
+        const char* msg = search_buffer_[0] ? "No results found" : "Type to search...";
+        std::string text = std::format("{} {}", search_buffer_[0] ? ICON_FA_CIRCLE_EXCLAMATION : ICON_FA_KEYBOARD, msg);
+        ImVec2 tsize = ImGui::CalcTextSize(text.c_str());
         ImGui::SetCursorPos(ImVec2((wsize.x - tsize.x) * 0.5f, (wsize.y - tsize.y) * 0.5f));
         ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
-        ImGui::TextUnformatted(msg.c_str());
+        ImGui::TextUnformatted(text.c_str());
         ImGui::PopStyleColor();
         return;
     }
 
-    if (filtered_indices_.empty() && filter_buffer_[0]) {
+    if (filtered_indices_.empty()) {
         ImVec2 wsize = ImGui::GetWindowSize();
         std::string msg = std::format("{} No matching results", ICON_FA_CIRCLE_EXCLAMATION);
         ImVec2 tsize = ImGui::CalcTextSize(msg.c_str());
@@ -142,8 +139,6 @@ void SearchResultsWidget::renderResultsList(float row_height) {
         ImGui::PopStyleColor();
         return;
     }
-
-    if (filtered_indices_.empty()) return;
 
     size_t page_start = static_cast<size_t>(current_page_) * PAGE_SIZE;
     if (page_start >= filtered_count_) {
@@ -344,6 +339,10 @@ void SearchResultsWidget::renderPreview(const Domain::Search::MapSearchResult& r
 }
 
 void SearchResultsWidget::doSearch() {
+    results_.clear();
+    filtered_indices_.clear();
+    filtered_count_ = 0;
+    total_results_ = 0;
     selected_index_ = -1;
     current_page_ = 0;
     filter_dirty_ = true;

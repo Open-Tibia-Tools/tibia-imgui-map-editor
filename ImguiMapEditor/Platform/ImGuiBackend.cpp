@@ -34,12 +34,12 @@ bool ImGuiBackend::initialize(IWindow& window, const char* ini_path) {
     // Load default font with explicit SizePixels so the merged font below
     // also uses an explicit reference size. Both fonts must agree (both explicit
     // or both implicit) for MergeMode to succeed in recent ImGui versions.
-    ImFontConfig default_cfg;
+    ImFontConfig default_cfg{};
     default_cfg.SizePixels = 13.0f;
     io.Fonts->AddFontDefault(&default_cfg);
 
     // Merge FontAwesome icons into the default font
-    ImFontConfig config;
+    ImFontConfig config{};
     config.MergeMode = true;
     config.GlyphMinAdvanceX = 13.0f;
     config.SizePixels = 13.0f;

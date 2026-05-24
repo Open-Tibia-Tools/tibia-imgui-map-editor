@@ -11,6 +11,18 @@
 namespace MapEditor {
 namespace AppLogic {
 
+static void sortResultsByName(std::vector<Domain::Search::MapSearchResult>& results) {
+    std::sort(results.begin(), results.end(),
+        [](const auto& a, const auto& b) {
+            return std::lexicographical_compare(
+                a.display_name.begin(), a.display_name.end(),
+                b.display_name.begin(), b.display_name.end(),
+                [](unsigned char ca, unsigned char cb) {
+                    return std::tolower(ca) < std::tolower(cb);
+                });
+        });
+}
+
 SearchController::SearchController()
     : quick_search_popup_(std::make_unique<UI::QuickSearchPopup>()),
       advanced_search_dialog_(std::make_unique<UI::AdvancedSearchDialog>()),
@@ -18,16 +30,20 @@ SearchController::SearchController()
 
 SearchController::~SearchController() = default;
 
-UI::QuickSearchPopup* SearchController::getQuickSearchPopup() const {
-    return quick_search_popup_.get();
-}
+UI::QuickSearchPopup* SearchController::getQuickSearchPopup() const { return quick_search_popup_.get(); }
+UI::AdvancedSearchDialog* SearchController::getAdvancedSearchDialog() const { return advanced_search_dialog_.get(); }
+UI::SearchResultsWidget* SearchController::getSearchResultsWidget() const { return search_results_widget_.get(); }
 
-UI::AdvancedSearchDialog* SearchController::getAdvancedSearchDialog() const {
-    return advanced_search_dialog_.get();
-}
-
-UI::SearchResultsWidget* SearchController::getSearchResultsWidget() const {
-    return search_results_widget_.get();
+template<typename F>
+void SearchController::launchAsync(F&& searchFn) {
+    if (!map_search_service_ || async_search_active_) return;
+    async_search_future_ = std::async(std::launch::async,
+        [fn = std::forward<F>(searchFn)]() {
+            auto results = fn();
+            sortResultsByName(results);
+            return results;
+        });
+    async_search_active_ = true;
 }
 
 void SearchController::onMapLoaded(
@@ -38,36 +54,25 @@ void SearchController::onMapLoaded(
 ) {
     if (!client_data) return;
 
-    // Only recreate ItemPickerService if client data changed (it doesn't support setting new data)
     if (!item_picker_service_ || current_client_data_ != client_data) {
         item_picker_service_ = std::make_unique<AppLogic::ItemPickerService>(client_data);
         quick_search_popup_->setItemPickerService(item_picker_service_.get());
         advanced_search_dialog_->setItemPickerService(item_picker_service_.get());
     }
 
-    // Initialize MapSearchService if needed
     if (!map_search_service_) {
         map_search_service_ = std::make_unique<Services::MapSearchService>();
-
-        // Wire up UI components that depend on the service instance
         search_results_widget_->setMapSearchService(map_search_service_.get());
         advanced_search_dialog_->setMapSearchService(map_search_service_.get());
         advanced_search_dialog_->setSearchResultsWidget(search_results_widget_.get());
     }
 
-    // Always update dependencies for MapSearchService
     map_search_service_->setClientData(client_data);
+    if (map) map_search_service_->setMap(map);
 
-    // Update MapSearchService with current map
-    if (map) {
-        map_search_service_->setMap(map);
-    }
-
-    // Update other UI components
     search_results_widget_->setClientData(client_data);
     search_results_widget_->setSpriteManager(sprite_manager);
 
-    // Update QuickSearchPopup dependencies
     quick_search_popup_->setSpriteManager(sprite_manager);
     quick_search_popup_->setClientDataService(client_data);
 
@@ -78,7 +83,6 @@ void SearchController::onMapLoaded(
         advanced_search_dialog_->setShowSearchResultsToggle(&view_settings->show_search_results);
     }
 
-    // Wire async text search
     search_results_widget_->setSearchAsyncCallback(
         [this](const std::string& query, bool search_items, bool search_creatures) {
             searchTextAsync(query, search_items, search_creatures);
@@ -88,79 +92,16 @@ void SearchController::onMapLoaded(
 }
 
 void SearchController::searchUniqueAsync() {
-    if (!map_search_service_ || async_search_active_) return;
-    async_search_future_ = std::async(std::launch::async,
-        [service = map_search_service_.get()]() {
-            auto results = service->searchByUnique();
-            std::sort(results.begin(), results.end(),
-                [](const auto& a, const auto& b) {
-                    return std::lexicographical_compare(
-                        a.display_name.begin(), a.display_name.end(),
-                        b.display_name.begin(), b.display_name.end(),
-                        [](unsigned char ca, unsigned char cb) {
-                            return std::tolower(ca) < std::tolower(cb);
-                        });
-                });
-            return results;
-        });
-    async_search_active_ = true;
+    launchAsync([s = map_search_service_.get()]() { return s->searchByUnique(); });
 }
-
 void SearchController::searchActionAsync() {
-    if (!map_search_service_ || async_search_active_) return;
-    async_search_future_ = std::async(std::launch::async,
-        [service = map_search_service_.get()]() {
-            auto results = service->searchByAction();
-            std::sort(results.begin(), results.end(),
-                [](const auto& a, const auto& b) {
-                    return std::lexicographical_compare(
-                        a.display_name.begin(), a.display_name.end(),
-                        b.display_name.begin(), b.display_name.end(),
-                        [](unsigned char ca, unsigned char cb) {
-                            return std::tolower(ca) < std::tolower(cb);
-                        });
-                });
-            return results;
-        });
-    async_search_active_ = true;
+    launchAsync([s = map_search_service_.get()]() { return s->searchByAction(); });
 }
-
 void SearchController::searchContainerAsync() {
-    if (!map_search_service_ || async_search_active_) return;
-    async_search_future_ = std::async(std::launch::async,
-        [service = map_search_service_.get()]() {
-            auto results = service->searchByContainer();
-            std::sort(results.begin(), results.end(),
-                [](const auto& a, const auto& b) {
-                    return std::lexicographical_compare(
-                        a.display_name.begin(), a.display_name.end(),
-                        b.display_name.begin(), b.display_name.end(),
-                        [](unsigned char ca, unsigned char cb) {
-                            return std::tolower(ca) < std::tolower(cb);
-                        });
-                });
-            return results;
-        });
-    async_search_active_ = true;
+    launchAsync([s = map_search_service_.get()]() { return s->searchByContainer(); });
 }
-
 void SearchController::searchWriteableAsync() {
-    if (!map_search_service_ || async_search_active_) return;
-    async_search_future_ = std::async(std::launch::async,
-        [service = map_search_service_.get()]() {
-            auto results = service->searchByWriteable();
-            std::sort(results.begin(), results.end(),
-                [](const auto& a, const auto& b) {
-                    return std::lexicographical_compare(
-                        a.display_name.begin(), a.display_name.end(),
-                        b.display_name.begin(), b.display_name.end(),
-                        [](unsigned char ca, unsigned char cb) {
-                            return std::tolower(ca) < std::tolower(cb);
-                        });
-                });
-            return results;
-        });
-    async_search_active_ = true;
+    launchAsync([s = map_search_service_.get()]() { return s->searchByWriteable(); });
 }
 
 void SearchController::searchTextAsync(const std::string& query, bool search_items, bool search_creatures) {
@@ -169,38 +110,25 @@ void SearchController::searchTextAsync(const std::string& query, bool search_ite
     bool is_number = std::all_of(query.begin(), query.end(),
         [](unsigned char c) { return std::isdigit(c) != 0; });
 
-    async_search_future_ = std::async(std::launch::async,
-        [service = map_search_service_.get(), query, search_items, search_creatures, is_number]()
-            -> std::vector<Domain::Search::MapSearchResult> {
+    launchAsync([service = map_search_service_.get(), query, search_items,
+                 search_creatures, is_number]() {
+        std::vector<Domain::Search::MapSearchResult> results;
+        static constexpr size_t limit = 100000;
 
-            std::vector<Domain::Search::MapSearchResult> results;
-            static constexpr size_t limit = 100000;
+        auto append = [&](const auto& source) {
+            if (results.size() >= limit) return;
+            auto needed = limit - results.size();
+            std::ranges::copy(source | std::views::take(needed), std::back_inserter(results));
+        };
 
-            auto append = [&](const auto& source) {
-                if (results.size() >= limit) return;
-                auto needed = limit - results.size();
-                std::ranges::copy(source | std::views::take(needed), std::back_inserter(results));
-            };
+        if (is_number) {
+            append(service->search(query, Services::MapSearchMode::ByServerId, search_items, false, limit));
+            append(service->search(query, Services::MapSearchMode::ByClientId, search_items, false, limit));
+        }
+        append(service->search(query, Services::MapSearchMode::ByName, search_items, search_creatures, limit));
 
-            if (is_number) {
-                append(service->search(query, Services::MapSearchMode::ByServerId, search_items, false, limit));
-                append(service->search(query, Services::MapSearchMode::ByClientId, search_items, false, limit));
-            }
-            append(service->search(query, Services::MapSearchMode::ByName, search_items, search_creatures, limit));
-
-            std::sort(results.begin(), results.end(),
-                [](const auto& a, const auto& b) {
-                    return std::lexicographical_compare(
-                        a.display_name.begin(), a.display_name.end(),
-                        b.display_name.begin(), b.display_name.end(),
-                        [](unsigned char ca, unsigned char cb) {
-                            return std::tolower(ca) < std::tolower(cb);
-                        });
-                });
-
-            return results;
-        });
-    async_search_active_ = true;
+        return results;
+    });
 }
 
 void SearchController::processAsyncSearch() {

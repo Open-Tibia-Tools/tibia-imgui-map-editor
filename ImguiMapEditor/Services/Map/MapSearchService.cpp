@@ -381,7 +381,9 @@ MapSearchService::SearchMatch MapSearchService::evaluateSearchCondition(const Do
             if (!item->getText().empty()) {
                 m.matches = true;
                 m.displayName = type_name;
-                const auto& text = item->getText();
+                auto text = item->getText();
+                std::replace(text.begin(), text.end(), '\r', ' ');
+                std::replace(text.begin(), text.end(), '\n', ' ');
                 std::string truncated = text.length() > 60 ? text.substr(0, 60) + "..." : text;
                 m.infoLine = std::format("Text: {}", truncated);
             }
@@ -412,7 +414,7 @@ std::vector<Domain::Search::MapSearchResult> MapSearchService::searchByCondition
                 results.push_back(std::move(result));
             }
 
-            if (!item->getContainerItems().empty() && results.size() < limit) {
+            if (item->isContainer() && results.size() < limit) {
                 processContainerItems(item, tile, cond, results, limit);
             }
         };
