@@ -265,9 +265,10 @@ void MenuBar::renderViewMenu() {
 
     ImGui::MenuItem("Show Ingame Box", formatShortcut(SHOW_INGAME_BOX).c_str(),
                     &view_settings_.show_ingame_box);
-    ImGui::MenuItem("Show As Minimap", nullptr,
+    ImGui::MenuItem("Show Minimap", formatShortcut(SHOW_MINIMAP).c_str(),
                     &view_settings_.show_minimap_window);
-    ImGui::MenuItem("Browse Tile", nullptr, &view_settings_.show_browse_tile);
+    ImGui::MenuItem("Show Browse Tile", formatShortcut(SHOW_BROWSE_TILE).c_str(),
+                    &view_settings_.show_browse_tile);
     ImGui::MenuItem(ICON_FA_PAINTBRUSH " Brush Settings", nullptr,
                     &view_settings_.show_brush_settings);
     ImGui::MenuItem(ICON_FA_MAGNIFYING_GLASS " Search Results", "Ctrl+Shift+F",

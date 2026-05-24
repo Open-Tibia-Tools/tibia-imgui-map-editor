@@ -38,6 +38,7 @@ void ViewSettings::loadFromConfig(const ConfigService &config) {
   preview_ambient_light = config.get<int>("view.preview_ambient_light", 255);
 
   show_minimap_window = config.get<bool>("view.show_minimap_window", false);
+  show_browse_tile = config.get<bool>("view.show_browse_tile", false);
   show_waypoints = config.get<bool>("view.show_waypoints", false);
   show_wall_hooks = config.get<bool>("view.show_wall_hooks", false);
   show_wall_outline = config.get<bool>("view.show_wall_outline", false);
@@ -79,6 +80,7 @@ void ViewSettings::saveToConfig(ConfigService &config) const {
   config.set("view.preview_ambient_light", preview_ambient_light);
 
   config.set("view.show_minimap_window", show_minimap_window);
+  config.set("view.show_browse_tile", show_browse_tile);
   config.set("view.show_waypoints", show_waypoints);
   config.set("view.show_wall_hooks", show_wall_hooks);
   config.set("view.show_wall_outline", show_wall_outline);

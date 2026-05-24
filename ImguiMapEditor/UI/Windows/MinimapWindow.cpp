@@ -45,12 +45,12 @@ void MinimapWindow::syncWithCamera(int32_t x, int32_t y, int16_t floor) {
 }
 
 void MinimapWindow::render(bool* p_visible) {
-    ImGui::SetNextWindowSize(ImVec2(Config::UI::MINIMAP_WINDOW_W, Config::UI::MINIMAP_WINDOW_H), ImGuiCond_FirstUseEver);
-    
     // Use external visibility flag if provided, otherwise use internal one
     bool* vis_ptr = p_visible ? p_visible : &visible_;
     
-    // Let ImGui handle visibility - this ensures docking layout is restored
+    if (p_visible && !*p_visible) return;
+
+    ImGui::SetNextWindowSize(ImVec2(Config::UI::MINIMAP_WINDOW_W, Config::UI::MINIMAP_WINDOW_H), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin("Minimap", vis_ptr)) {
         ImGui::End();
         return;
