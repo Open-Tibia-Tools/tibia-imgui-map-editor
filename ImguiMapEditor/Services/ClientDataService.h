@@ -1,4 +1,5 @@
 #pragma once
+#include "Domain/ClientVersionTypes.h"
 #include "Domain/ItemType.h"
 #include "Domain/CreatureType.h"
 #include "IO/OtbReader.h"
