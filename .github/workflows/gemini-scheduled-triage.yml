@@ -21,9 +21,6 @@ concurrency:
   group: '${{ github.workflow }}'
   cancel-in-progress: true
 
-env:
-  GEMINI_CLI_TRUST_WORKSPACE: 'true'
-
 defaults:
   run:
     shell: 'bash'
@@ -100,6 +97,9 @@ jobs:
             echo "$GOOGLE_OAUTH" > ~/.gemini/oauth_creds.json
             echo '{"security": {"auth": {"selectedType": "oauth-personal"}}}' > ~/.gemini/settings.json
           fi
+
+      - name: 'Trust Workspace'
+        run: echo "GEMINI_CLI_TRUST_WORKSPACE=true" >> $GITHUB_ENV
 
       - name: 'Run Gemini Issue Analysis'
         id: 'gemini_issue_analysis'

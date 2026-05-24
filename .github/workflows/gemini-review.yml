@@ -12,9 +12,6 @@ concurrency:
   group: '${{ github.workflow }}-review-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.issue.number }}'
   cancel-in-progress: true
 
-env:
-  GEMINI_CLI_TRUST_WORKSPACE: 'true'
-
 defaults:
   run:
     shell: 'bash'
@@ -53,6 +50,9 @@ jobs:
             echo "$GOOGLE_OAUTH" > ~/.gemini/oauth_creds.json
             echo '{"security": {"auth": {"selectedType": "oauth-personal"}}}' > ~/.gemini/settings.json
           fi
+
+      - name: 'Trust Workspace'
+        run: echo "GEMINI_CLI_TRUST_WORKSPACE=true" >> $GITHUB_ENV
 
       - name: 'Run Gemini pull request review'
         uses: 'google-github-actions/run-gemini-cli@v0' # ratchet:exclude
