@@ -299,7 +299,6 @@ void ClientDataService::clear() {
 }
 
 void ClientDataService::mergeOtbWithDat(
-    // ...
     const std::vector<Domain::ItemType> &otb_items,
     const IO::DatResult &dat_result, uint32_t client_version) {
 

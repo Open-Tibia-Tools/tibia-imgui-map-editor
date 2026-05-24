@@ -197,7 +197,8 @@ void ClientPropertyEditor::syncToClient(Domain::ClientVersion &cv) {
   if (cv.getVersion() != new_version)
     cv.setVersion(new_version);
 
-  cv.setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(std::clamp(data_source_idx_, 0, 2)));
+  cv.setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(
+      std::clamp(data_source_idx_, 0, static_cast<int>(Domain::ItemDataSource::DAT))));
 
   cv.markDirty();
 }
@@ -307,7 +308,8 @@ void ClientPropertyEditor::renderIdentitySection() {
   if (ImGui::Combo("##datasource", &data_source_idx_, sources, IM_ARRAYSIZE(sources))) {
     auto *cv = registry_->getVersion(active_version_);
     if (cv) {
-      cv->setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(std::clamp(data_source_idx_, 0, 2)));
+      cv->setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(
+          std::clamp(data_source_idx_, 0, static_cast<int>(IM_ARRAYSIZE(sources) - 1))));
       cv->markDirty();
     }
   }

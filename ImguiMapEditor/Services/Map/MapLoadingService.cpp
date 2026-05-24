@@ -396,12 +396,15 @@ bool MapLoadingService::loadClientData(
 
   auto effective_source = source_override.value_or(version_info->getDataSource());
   auto client_path = version_info->getClientPath();
-  auto metadata_filename = (effective_source == Domain::ItemDataSource::SRV) ? "items.srv" : "items.otb";
+  auto metadata_filename = (effective_source == Domain::ItemDataSource::SRV)
+                               ? "items.srv"
+                               : (effective_source == Domain::ItemDataSource::DAT) ? "" : "items.otb";
 
   // Debug: check what files exist
   auto dat_path = version_info->getDatPath();
   auto spr_path = version_info->getSprPath();
   auto metadata_path = client_path / metadata_filename;
+  auto metadata_fallback_path = std::filesystem::current_path() / "data" / metadata_filename;
 
   spdlog::info("Checking client files (source mode: {}):",
                (effective_source == Domain::ItemDataSource::SRV) ? "SRV" :
@@ -422,7 +425,7 @@ bool MapLoadingService::loadClientData(
       valid = false;
   } else if (effective_source != Domain::ItemDataSource::DAT) {
       if (!std::filesystem::exists(metadata_path) &&
-          !std::filesystem::exists(std::filesystem::current_path() / "data" / metadata_filename)) {
+          !std::filesystem::exists(metadata_fallback_path)) {
           valid = false;
       }
   }
@@ -432,7 +435,10 @@ bool MapLoadingService::loadClientData(
     if (!std::filesystem::exists(dat_path)) missing_list += " Tibia.dat";
     if (!std::filesystem::exists(spr_path)) missing_list += " Tibia.spr";
     if (effective_source != Domain::ItemDataSource::DAT) {
-        if (!std::filesystem::exists(metadata_path)) missing_list += " " + std::string(metadata_filename);
+        if (!std::filesystem::exists(metadata_path) &&
+            !std::filesystem::exists(metadata_fallback_path)) {
+            missing_list += " " + std::string(metadata_filename);
+        }
     }
     spdlog::error(
         "Client files not found for version {} in path '{}'. Missing:{}",
@@ -450,7 +456,7 @@ bool MapLoadingService::loadClientData(
   if (effective_source != Domain::ItemDataSource::DAT) {
       final_metadata_path = metadata_path;
       if (!std::filesystem::exists(final_metadata_path)) {
-          final_metadata_path = std::filesystem::path("data") / metadata_filename;
+          final_metadata_path = metadata_fallback_path;
           spdlog::info("Using metadata from editor data directory: {}", final_metadata_path.string());
       }
   }
