@@ -12,7 +12,7 @@ ClientDataResult
 ClientDataService::load(const std::filesystem::path &client_path,
                         const std::filesystem::path &otb_path,
                         uint32_t client_version,
-                        Domain::ItemDataSource data_source,
+                        ::MapEditor::Domain::ItemDataSource data_source,
                         LoadProgressCallback progress) {
   ClientDataResult result;
   // Clear any existing data first
@@ -26,10 +26,10 @@ ClientDataService::load(const std::filesystem::path &client_path,
   // OTB is the modern binary format
   std::vector<Domain::ItemType> item_definitions;
 
-  if (data_source == Domain::ItemDataSource::DAT) {
+  if (data_source == ::MapEditor::Domain::ItemDataSource::DAT) {
     spdlog::info("ClientDataService: Using DAT-only mode (Client IDs as Server IDs)");
     // item_definitions will be generated later during merge
-  } else if (data_source == Domain::ItemDataSource::SRV) {
+  } else if (data_source == ::MapEditor::Domain::ItemDataSource::SRV) {
     // Load SRV format
     std::filesystem::path srv_path = otb_path;
 
@@ -107,7 +107,7 @@ ClientDataService::load(const std::filesystem::path &client_path,
     progress(60, "Merging data...");
 
   // 3. Merge data
-  if (data_source == Domain::ItemDataSource::DAT) {
+  if (data_source == ::MapEditor::Domain::ItemDataSource::DAT) {
       // Generate item definitions directly from DAT
       item_definitions.reserve(dat_result.items.size());
       for (const auto& dat_item : dat_result.items) {

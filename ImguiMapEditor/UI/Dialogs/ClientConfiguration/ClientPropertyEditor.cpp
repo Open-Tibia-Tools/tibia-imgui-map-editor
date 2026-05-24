@@ -197,7 +197,7 @@ void ClientPropertyEditor::syncToClient(Domain::ClientVersion &cv) {
   if (cv.getVersion() != new_version)
     cv.setVersion(new_version);
 
-  cv.setDataSource(static_cast<Domain::ItemDataSource>(data_source_idx_));
+  cv.setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(data_source_idx_));
 
   cv.markDirty();
 }
@@ -307,7 +307,7 @@ void ClientPropertyEditor::renderIdentitySection() {
   if (ImGui::Combo("##datasource", &data_source_idx_, sources, IM_ARRAYSIZE(sources))) {
     auto *cv = registry_->getVersion(active_version_);
     if (cv) {
-      cv->setDataSource(static_cast<Domain::ItemDataSource>(data_source_idx_));
+      cv->setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(data_source_idx_));
       cv->markDirty();
     }
   }
@@ -465,7 +465,7 @@ void ClientPropertyEditor::renderAutoDetectedFileInputs() {
     ImVec4 otb_col = otb_found ? kGreenStatus : ImVec4(0.9f, 0.4f, 0.3f, 1.0f);
     ImGui::TextColored(otb_col, "%s", otb_display.c_str());
     if (ImGui::IsItemHovered())
-      ImGui::SetTooltip("%s is required to load maps with this configuration.", fileName);
+      ImGui::SetTooltip("%s is required to load maps with this configuration. Place it in the client folder or the editor's data directory.", fileName);
   }
 }
 
