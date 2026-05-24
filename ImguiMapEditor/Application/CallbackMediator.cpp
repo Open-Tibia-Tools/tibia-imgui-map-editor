@@ -41,16 +41,24 @@
 namespace MapEditor {
 
 void CallbackMediator::wireAll(Context &ctx) {
-  // Inject persistent dependencies into dialogs (once, before any show() call)
+  // === Edit Towns dialog — inject persistent dependencies once ===
+  // The dialog auto-tracks the active session via MapTabManager, so
+  // callbacks only need to open it — no per-call wiring required.
   if (ctx.edit_towns) {
+    // Gives the dialog access to active session's map and towns
     ctx.edit_towns->setTabManager(ctx.tab_manager);
+    // Go To: pans the main map camera to a town's temple position
     ctx.edit_towns->setGoToCallback([ctx](const Domain::Position &pos) {
       ctx.map_panel->setCameraCenter(pos.x, pos.y, pos.z);
     });
+    // Pick Position: shows a hint toast, TownPickController handles the click
     ctx.edit_towns->setPickPositionCallback([ctx]() -> bool {
       Presentation::showInfo("Click on map to select temple position", 2000);
       return true;
     });
+    // Converts tile coords to screen center for the viewport temple marker.
+    // tileToScreen returns the tile top-left; we offset by half a tile
+    // (scaled by zoom) so the marker icon sits at the tile center.
     ctx.edit_towns->setTileToScreenFunc([ctx](const Domain::Position &pos) -> glm::vec2 {
       glm::vec2 screen = ctx.map_panel->tileToScreen(pos);
       float half_tile = Config::Rendering::TILE_SIZE * 0.5f * ctx.map_panel->getZoom();
@@ -162,6 +170,8 @@ void CallbackMediator::wireTabCallbacks(Context &ctx) {
   });
 
   // Hotkey map menu
+  // Dependencies were injected once in wireAll(); dialog auto-discovers the
+  // active map via MapTabManager, so show() needs no parameters.
   ctx.hotkey->setEditTownsCallback([ctx]() {
     ctx.edit_towns->show();
   });
@@ -311,6 +321,7 @@ void CallbackMediator::wireMenuCallbacks(Context &ctx) {
   });
 
   // Map menu
+  // Same as hotkey: deps injected once, show() needs no parameters.
   ctx.menu_bar->setEditTownsCallback([ctx]() {
     ctx.edit_towns->show();
   });
