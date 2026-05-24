@@ -323,15 +323,17 @@ void PreferencesDialog::renderHotkeysTab() {
     binding.is_mouse = hotkeys[appliedIndex].isMouse;
     hotkey_registry_->registerBinding(binding);
 
-    saveHotkeysToFile(hotkey_registry_->getAllBindings());
-
-    // Show toast notification
-    char shortcut[64];
-    ImHotKey::GetHotKeyLib(hotkeys[appliedIndex], shortcut, sizeof(shortcut));
-    Presentation::showSuccess(std::string("Set ") +
-                                  hotkeys[appliedIndex].functionName + " to " +
-                                  shortcut,
-                              2000);
+    if (saveHotkeysToFile(hotkey_registry_->getAllBindings())) {
+      // Show toast notification
+      char shortcut[64];
+      ImHotKey::GetHotKeyLib(hotkeys[appliedIndex], shortcut, sizeof(shortcut));
+      Presentation::showSuccess(std::string("Set ") +
+                                    hotkeys[appliedIndex].functionName + " to " +
+                                    shortcut,
+                                2000);
+    } else {
+      Presentation::showError("Failed to save hotkeys to file", 3000);
+    }
   }
 
   ImGui::Spacing();
