@@ -236,7 +236,7 @@ void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
       std::vector<std::string> missing_files;
       auto dat = missing(client_version->getDatPath());
       auto spr = missing(client_version->getSprPath());
-      auto otb = missing(client_version->getOtbPath());
+      auto otb = missing(client_version->getItemMetadataPath());
       auto srv = missing(client_version->getClientPath() / "items.srv");
       if (!dat.empty()) missing_files.push_back(dat);
       if (!spr.empty()) missing_files.push_back(spr);

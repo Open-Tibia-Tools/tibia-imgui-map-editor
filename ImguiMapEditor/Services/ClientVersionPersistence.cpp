@@ -122,7 +122,10 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
       version.setDataSource(Domain::ItemDataSource::SRV);
     } else if (source_str == "DAT") {
       version.setDataSource(Domain::ItemDataSource::DAT);
+    } else if (source_str == "OTB") {
+      version.setDataSource(Domain::ItemDataSource::OTB);
     } else {
+      spdlog::warn("Unknown itemDataSource '{}' for client {}, falling back to 'OTB'", source_str, version_number);
       version.setDataSource(Domain::ItemDataSource::OTB);
     }
 
@@ -188,6 +191,9 @@ bool ClientVersionPersistence::saveToJson(const std::filesystem::path &path,
       break;
     case Domain::ItemDataSource::DAT:
       entry["itemDataSource"] = "DAT";
+      break;
+    default:
+      entry["itemDataSource"] = "OTB";
       break;
     }
 

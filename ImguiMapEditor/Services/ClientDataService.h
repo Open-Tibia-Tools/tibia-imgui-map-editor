@@ -63,13 +63,14 @@ public:
     /**
      * Load all client data for a specific version
      * @param client_path Path to Tibia client directory (containing Tibia.dat, Tibia.spr)
-     * @param otb_path Path to items.otb file
+     * @param item_metadata_path Path to items.otb or items.srv file
      * @param client_version Client version number (e.g., 860, 1010)
+     * @param data_source The item configuration type (OTB, SRV, or DAT-only)
      * @param progress Optional progress callback
      * @return Result with load status and statistics
      */
     ClientDataResult load(const std::filesystem::path& client_path,
-                          const std::filesystem::path& otb_path,
+                          const std::filesystem::path& item_metadata_path,
                           uint32_t client_version,
                           ::MapEditor::Domain::ItemDataSource data_source = ::MapEditor::Domain::ItemDataSource::OTB,
                           LoadProgressCallback progress = nullptr);

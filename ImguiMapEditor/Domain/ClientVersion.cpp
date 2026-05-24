@@ -23,14 +23,19 @@ std::filesystem::path ClientVersion::getSprPath() const {
     return client_path_ / (sprites_file_.empty() ? "Tibia.spr" : sprites_file_);
 }
 
-std::filesystem::path ClientVersion::getOtbPath() const {
+std::filesystem::path ClientVersion::getItemMetadataPath() const {
     if (client_path_.empty()) {
         return {};
     }
-    if (data_source_ == ItemDataSource::SRV) {
+    switch (data_source_) {
+    case ItemDataSource::SRV:
         return client_path_ / "items.srv";
+    case ItemDataSource::OTB:
+        return client_path_ / "items.otb";
+    case ItemDataSource::DAT:
+    default:
+        return {};
     }
-    return client_path_ / "items.otb";
 }
 
 bool ClientVersion::hasValidPaths() const {
@@ -52,12 +57,15 @@ bool ClientVersion::validateFiles() const {
         return false;
     }
 
-    if (data_source_ == ItemDataSource::OTB) {
-        return std::filesystem::exists(getOtbPath());
-    } else if (data_source_ == ItemDataSource::SRV) {
-        return std::filesystem::exists(getOtbPath()); // returns items.srv path
-    } else if (data_source_ == ItemDataSource::DAT) {
-        return true; // only dat + spr required
+    switch (data_source_) {
+    case ItemDataSource::OTB:
+        return std::filesystem::exists(getItemMetadataPath());
+    case ItemDataSource::SRV:
+        return std::filesystem::exists(getItemMetadataPath());
+    case ItemDataSource::DAT:
+        return true;
+    default:
+        break;
     }
 
     return false;

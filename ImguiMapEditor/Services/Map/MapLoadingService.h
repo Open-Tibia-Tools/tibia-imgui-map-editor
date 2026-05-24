@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <spdlog/spdlog.h>
 #include <string_view>
 
@@ -113,7 +114,8 @@ public:
    * @return true if successful
    */
   bool loadClientData(uint32_t client_version,
-                      const std::filesystem::path &pending_path = {});
+                      const std::filesystem::path &pending_path,
+                      std::optional<Domain::ItemDataSource> source_override = std::nullopt);
 
   /**
    * Load SEC format map from directory.

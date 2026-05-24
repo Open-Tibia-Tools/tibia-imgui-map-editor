@@ -85,7 +85,7 @@ public:
   // Path helpers (use configurable metadata/sprites file names)
   std::filesystem::path getDatPath() const;
   std::filesystem::path getSprPath() const;
-  std::filesystem::path getOtbPath() const;
+  std::filesystem::path getItemMetadataPath() const;
 
   // Validation
   bool hasValidPaths() const;

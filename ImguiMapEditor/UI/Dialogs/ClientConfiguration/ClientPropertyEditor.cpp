@@ -197,7 +197,7 @@ void ClientPropertyEditor::syncToClient(Domain::ClientVersion &cv) {
   if (cv.getVersion() != new_version)
     cv.setVersion(new_version);
 
-  cv.setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(data_source_idx_));
+  cv.setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(std::clamp(data_source_idx_, 0, 2)));
 
   cv.markDirty();
 }
@@ -303,11 +303,11 @@ void ClientPropertyEditor::renderIdentitySection() {
   ImGui::Text("Item Data Source:");
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(200);
-  const char *sources[] = {"Tibia.dat + items.otb", "Tibia.dat + items.srv", "Tibia.dat only (Client IDs)"};
+  const char *sources[] = {"Tibia.dat + Tibia.spr + items.otb", "Tibia.dat + Tibia.spr + items.srv", "Tibia.dat + Tibia.spr only (Client IDs)"};
   if (ImGui::Combo("##datasource", &data_source_idx_, sources, IM_ARRAYSIZE(sources))) {
     auto *cv = registry_->getVersion(active_version_);
     if (cv) {
-      cv->setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(data_source_idx_));
+      cv->setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(std::clamp(data_source_idx_, 0, 2)));
       cv->markDirty();
     }
   }
@@ -453,11 +453,15 @@ void ClientPropertyEditor::renderAutoDetectedFileInputs() {
     bool otb_found = false;
     if (!cl_path.empty()) {
       std::filesystem::path target = std::filesystem::path(cl_path) / fileName;
+      std::filesystem::path fallback = std::filesystem::current_path() / "data" / fileName;
       if (std::filesystem::exists(target)) {
         otb_display = std::format("{} Found", ICON_FA_CHECK);
         otb_found = true;
+      } else if (std::filesystem::exists(fallback)) {
+        otb_display = std::format("{} Found in data/", ICON_FA_CHECK);
+        otb_found = true;
       } else {
-        otb_display = std::format("{} Not found in client path", ICON_FA_XMARK);
+        otb_display = std::format("{} Not found", ICON_FA_XMARK);
       }
     } else {
       otb_display = std::format("{} Set client path first", ICON_FA_CIRCLE_QUESTION);

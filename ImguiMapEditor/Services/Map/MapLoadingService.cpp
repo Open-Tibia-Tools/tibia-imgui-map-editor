@@ -240,8 +240,8 @@ MapLoadingService::loadSecMap(const std::filesystem::path &directory,
     return result;
   }
 
-  // Load client data first
-  if (!loadClientData(current_version, directory)) {
+  // Load client data first - force SRV for SEC maps
+  if (!loadClientData(current_version, directory, Domain::ItemDataSource::SRV)) {
     result.error = "Failed to load client data. SEC maps require items.srv.";
     return result;
   }
@@ -357,7 +357,8 @@ MapLoadingResult MapLoadingService::createNewMap(const NewMapConfig &config,
 }
 
 bool MapLoadingService::loadClientData(
-    uint32_t client_version, const std::filesystem::path &pending_path) {
+    uint32_t client_version, const std::filesystem::path &pending_path,
+    std::optional<Domain::ItemDataSource> source_override) {
   // Get client version info
   auto *version_info = version_registry_.getVersion(client_version);
   if (!version_info) {
@@ -396,7 +397,7 @@ bool MapLoadingService::loadClientData(
   // Debug: check what files exist
   auto dat_path = version_info->getDatPath();
   auto spr_path = version_info->getSprPath();
-  auto otb_path = version_info->getOtbPath();
+  auto otb_path = version_info->getItemMetadataPath();
 
   spdlog::info("Checking client files:");
   spdlog::info("  DAT: {} -> {}", dat_path.string(),
@@ -449,7 +450,7 @@ bool MapLoadingService::loadClientData(
   // Load client data
   auto result = client_data_service_->load(
       version_info->getClientPath(), final_item_path, client_version,
-      version_info->getDataSource(),
+      source_override.value_or(version_info->getDataSource()),
       [](int percent, const std::string &status) {
         spdlog::info("Loading: {}% - {}", percent, status);
       });
