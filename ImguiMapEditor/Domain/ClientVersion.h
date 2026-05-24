@@ -62,6 +62,9 @@ public:
   const std::string &getSpritesFile() const { return sprites_file_; }
   void setSpritesFile(const std::string &file) { sprites_file_ = file; }
 
+  ItemDataSource getDataSource() const { return data_source_; }
+  void setDataSource(ItemDataSource source) { data_source_ = source; }
+
   // Feature flags
   bool isTransparent() const { return transparency_; }
   void setTransparent(bool v) { transparency_ = v; }
@@ -122,6 +125,7 @@ private:
   std::string description_;
   std::string metadata_file_ = "Tibia.dat";
   std::string sprites_file_ = "Tibia.spr";
+  ItemDataSource data_source_ = ItemDataSource::OTB;
   bool visible_ = true;
   bool is_default_ = false;
   bool transparency_ = false;
@@ -143,6 +147,7 @@ private:
     std::string description;
     std::string metadata_file;
     std::string sprites_file;
+    ItemDataSource data_source;
     bool visible;
     bool is_default;
     bool transparency;

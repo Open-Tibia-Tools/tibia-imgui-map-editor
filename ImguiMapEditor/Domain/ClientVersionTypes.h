@@ -40,5 +40,11 @@ enum class PropertyVisualState {
   Saved,
 };
 
+enum class ItemDataSource : uint8_t {
+  OTB,
+  SRV,
+  DAT
+};
+
 } // namespace Domain
 } // namespace MapEditor

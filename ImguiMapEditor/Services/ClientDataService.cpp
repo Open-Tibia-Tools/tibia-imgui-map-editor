@@ -12,6 +12,7 @@ ClientDataResult
 ClientDataService::load(const std::filesystem::path &client_path,
                         const std::filesystem::path &otb_path,
                         uint32_t client_version,
+                        Domain::ItemDataSource data_source,
                         LoadProgressCallback progress) {
   ClientDataResult result;
   // Clear any existing data first
@@ -25,13 +26,12 @@ ClientDataService::load(const std::filesystem::path &client_path,
   // OTB is the modern binary format
   std::vector<Domain::ItemType> item_definitions;
 
-  bool is_srv = otb_path.extension() == ".srv";
-
-  if (is_srv) {
+  if (data_source == Domain::ItemDataSource::DAT) {
+    spdlog::info("ClientDataService: Using DAT-only mode (Client IDs as Server IDs)");
+    // item_definitions will be generated later during merge
+  } else if (data_source == Domain::ItemDataSource::SRV) {
     // Load SRV format
-    std::filesystem::path srv_path = otb_path.extension() == ".srv"
-                                         ? otb_path
-                                         : otb_path.parent_path() / "items.srv";
+    std::filesystem::path srv_path = otb_path;
 
     IO::SrvResult srv_result = IO::SrvReader::read(srv_path);
     if (!srv_result.success) {
@@ -107,6 +107,18 @@ ClientDataService::load(const std::filesystem::path &client_path,
     progress(60, "Merging data...");
 
   // 3. Merge data
+  if (data_source == Domain::ItemDataSource::DAT) {
+      // Generate item definitions directly from DAT
+      item_definitions.reserve(dat_result.items.size());
+      for (const auto& dat_item : dat_result.items) {
+          Domain::ItemType it;
+          it.server_id = dat_item.id;
+          it.client_id = dat_item.id;
+          it.name = std::format("Item {}", dat_item.id);
+          item_definitions.push_back(std::move(it));
+      }
+  }
+
   mergeOtbWithDat(item_definitions, dat_result, client_version);
 
   // 4. Store outfit data for creature sprite lookup

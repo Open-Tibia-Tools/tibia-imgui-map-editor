@@ -63,6 +63,7 @@ private:
   char dat_sig_buf_[16] = {};
   char spr_sig_buf_[16] = {};
   int version_int_ = 0;
+  int data_source_idx_ = 0;
   int otb_id_int_ = 0;
   int otb_major_int_ = 0;
   char otbm_versions_buf_[64] = {};

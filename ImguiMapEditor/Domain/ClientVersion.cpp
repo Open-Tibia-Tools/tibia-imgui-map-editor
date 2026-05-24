@@ -27,6 +27,9 @@ std::filesystem::path ClientVersion::getOtbPath() const {
     if (client_path_.empty()) {
         return {};
     }
+    if (data_source_ == ItemDataSource::SRV) {
+        return client_path_ / "items.srv";
+    }
     return client_path_ / "items.otb";
 }
 
@@ -44,12 +47,20 @@ bool ClientVersion::validateFiles() const {
     
     auto dat_path = getDatPath();
     auto spr_path = getSprPath();
-    auto otb_path = getOtbPath();
-    auto srv_path = client_path_ / "items.srv";
     
-    return std::filesystem::exists(dat_path) &&
-           std::filesystem::exists(spr_path) &&
-           (std::filesystem::exists(otb_path) || std::filesystem::exists(srv_path));
+    if (!std::filesystem::exists(dat_path) || !std::filesystem::exists(spr_path)) {
+        return false;
+    }
+
+    if (data_source_ == ItemDataSource::OTB) {
+        return std::filesystem::exists(getOtbPath());
+    } else if (data_source_ == ItemDataSource::SRV) {
+        return std::filesystem::exists(getOtbPath()); // returns items.srv path
+    } else if (data_source_ == ItemDataSource::DAT) {
+        return true; // only dat + spr required
+    }
+
+    return false;
 }
 
 void ClientVersion::backup() {
@@ -66,6 +77,7 @@ void ClientVersion::backup() {
         description_,
         metadata_file_,
         sprites_file_,
+        data_source_,
         visible_,
         is_default_,
         transparency_,
@@ -88,6 +100,7 @@ void ClientVersion::restore() {
     description_ = backup_data_.description;
     metadata_file_ = backup_data_.metadata_file;
     sprites_file_ = backup_data_.sprites_file;
+    data_source_ = backup_data_.data_source;
     visible_ = backup_data_.visible;
     is_default_ = backup_data_.is_default;
     transparency_ = backup_data_.transparency;

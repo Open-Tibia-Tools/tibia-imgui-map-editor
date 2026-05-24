@@ -449,6 +449,7 @@ bool MapLoadingService::loadClientData(
   // Load client data
   auto result = client_data_service_->load(
       version_info->getClientPath(), final_item_path, client_version,
+      version_info->getDataSource(),
       [](int percent, const std::string &status) {
         spdlog::info("Loading: {}% - {}", percent, status);
       });

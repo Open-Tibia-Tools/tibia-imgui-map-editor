@@ -70,6 +70,7 @@ public:
     ClientDataResult load(const std::filesystem::path& client_path,
                           const std::filesystem::path& otb_path,
                           uint32_t client_version,
+                          Domain::ItemDataSource data_source = Domain::ItemDataSource::OTB,
                           LoadProgressCallback progress = nullptr);
     
     /**

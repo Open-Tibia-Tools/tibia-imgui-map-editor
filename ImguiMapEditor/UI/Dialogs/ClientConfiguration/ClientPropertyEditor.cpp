@@ -134,6 +134,8 @@ void ClientPropertyEditor::syncFromClient(const Domain::ClientVersion &cv) {
   std::snprintf(dat_sig_buf_, sizeof(dat_sig_buf_), "%08X", cv.getDatSignature());
   std::snprintf(spr_sig_buf_, sizeof(spr_sig_buf_), "%08X", cv.getSprSignature());
 
+  data_source_idx_ = static_cast<int>(cv.getDataSource());
+
   otb_id_int_ = static_cast<int>(cv.getOtbVersion());
   otb_major_int_ = static_cast<int>(cv.getOtbMajor());
 
@@ -194,6 +196,8 @@ void ClientPropertyEditor::syncToClient(Domain::ClientVersion &cv) {
 
   if (cv.getVersion() != new_version)
     cv.setVersion(new_version);
+
+  cv.setDataSource(static_cast<Domain::ItemDataSource>(data_source_idx_));
 
   cv.markDirty();
 }
@@ -295,6 +299,19 @@ void ClientPropertyEditor::renderStatusBar() {
 void ClientPropertyEditor::renderIdentitySection() {
   if (!ImGui::TreeNodeEx("Identity", ImGuiTreeNodeFlags_DefaultOpen))
     return;
+
+  ImGui::Text("Item Data Source:");
+  ImGui::SameLine(labelColumn());
+  ImGui::PushItemWidth(200);
+  const char *sources[] = {"Tibia.dat + items.otb", "Tibia.dat + items.srv", "Tibia.dat only (Client IDs)"};
+  if (ImGui::Combo("##datasource", &data_source_idx_, sources, IM_ARRAYSIZE(sources))) {
+    auto *cv = registry_->getVersion(active_version_);
+    if (cv) {
+      cv->setDataSource(static_cast<Domain::ItemDataSource>(data_source_idx_));
+      cv->markDirty();
+    }
+  }
+  ImGui::PopItemWidth();
 
   ImGui::Text("Version:");
   ImGui::SameLine(labelColumn());
@@ -426,30 +443,30 @@ void ClientPropertyEditor::renderAutoDetectedFileInputs() {
          sizeof(sprites_buf_),
          [&](Domain::ClientVersion &cv) { cv.setSpritesFile(sprites_buf_); });
 
-  ImGui::Text("items.otb:");
-  ImGui::SameLine(labelColumn());
-  std::string otb_display;
-  std::string cl_path(client_path_buf_);
-  bool otb_found = false;
-  if (!cl_path.empty()) {
-    std::filesystem::path otb_target = std::filesystem::path(cl_path) / "items.otb";
-    std::filesystem::path srv_target = std::filesystem::path(cl_path) / "items.srv";
-    if (std::filesystem::exists(otb_target)) {
-      otb_display = std::format("{} Found", ICON_FA_CHECK);
-      otb_found = true;
-    } else if (std::filesystem::exists(srv_target)) {
-      otb_display = std::format("{} items.srv", ICON_FA_CHECK);
-      otb_found = true;
+  auto *cv = registry_->getVersion(active_version_);
+  if (cv && cv->getDataSource() != Domain::ItemDataSource::DAT) {
+    const char *fileName = (cv->getDataSource() == Domain::ItemDataSource::SRV) ? "items.srv" : "items.otb";
+    ImGui::Text("%s:", fileName);
+    ImGui::SameLine(labelColumn());
+    std::string otb_display;
+    std::string cl_path(client_path_buf_);
+    bool otb_found = false;
+    if (!cl_path.empty()) {
+      std::filesystem::path target = std::filesystem::path(cl_path) / fileName;
+      if (std::filesystem::exists(target)) {
+        otb_display = std::format("{} Found", ICON_FA_CHECK);
+        otb_found = true;
+      } else {
+        otb_display = std::format("{} Not found in client path", ICON_FA_XMARK);
+      }
     } else {
-      otb_display = std::format("{} Not found in client path", ICON_FA_XMARK);
+      otb_display = std::format("{} Set client path first", ICON_FA_CIRCLE_QUESTION);
     }
-  } else {
-    otb_display = std::format("{} Set client path first", ICON_FA_CIRCLE_QUESTION);
+    ImVec4 otb_col = otb_found ? kGreenStatus : ImVec4(0.9f, 0.4f, 0.3f, 1.0f);
+    ImGui::TextColored(otb_col, "%s", otb_display.c_str());
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("%s is required to load maps with this configuration.", fileName);
   }
-  ImVec4 otb_col = otb_found ? kGreenStatus : ImVec4(0.9f, 0.4f, 0.3f, 1.0f);
-  ImGui::TextColored(otb_col, "%s", otb_display.c_str());
-  if (ImGui::IsItemHovered())
-    ImGui::SetTooltip("items.otb is required to load maps. Place it in the client folder or the editor's data directory.");
 }
 
 void ClientPropertyEditor::renderCompatibilitySection() {

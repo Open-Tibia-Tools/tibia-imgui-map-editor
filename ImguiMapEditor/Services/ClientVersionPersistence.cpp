@@ -116,6 +116,16 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
 
     version.setMetadataFile(client.value("metadataFile", "Tibia.dat"));
     version.setSpritesFile(client.value("spritesFile", "Tibia.spr"));
+
+    std::string source_str = client.value("itemDataSource", "OTB");
+    if (source_str == "SRV") {
+      version.setDataSource(Domain::ItemDataSource::SRV);
+    } else if (source_str == "DAT") {
+      version.setDataSource(Domain::ItemDataSource::DAT);
+    } else {
+      version.setDataSource(Domain::ItemDataSource::OTB);
+    }
+
     version.setTransparent(client.value("transparency", false));
     version.setExtended(client.value("extended", false));
     version.setFrameDurations(client.value("frameDurations", false));
@@ -168,6 +178,19 @@ bool ClientVersionPersistence::saveToJson(const std::filesystem::path &path,
 
     entry["metadataFile"] = client.getMetadataFile();
     entry["spritesFile"] = client.getSpritesFile();
+
+    switch (client.getDataSource()) {
+    case Domain::ItemDataSource::OTB:
+      entry["itemDataSource"] = "OTB";
+      break;
+    case Domain::ItemDataSource::SRV:
+      entry["itemDataSource"] = "SRV";
+      break;
+    case Domain::ItemDataSource::DAT:
+      entry["itemDataSource"] = "DAT";
+      break;
+    }
+
     entry["transparency"] = client.isTransparent();
     entry["extended"] = client.isExtended();
     entry["frameDurations"] = client.hasFrameDurations();
