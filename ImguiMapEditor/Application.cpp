@@ -201,9 +201,17 @@ void Application::wireCallbacks() {
             Presentation::showNotification(type, message);
           }};
 
+  // Wire session-destroy callback to evict cached search results
+  if (session_lifecycle_ && ui_.search_controller) {
+    session_lifecycle_->setSessionDestroyCallback(
+        [sc = ui_.search_controller.get()](const AppLogic::EditorSession& session) {
+          if (auto* map = session.getMap()) {
+            sc->forgetSessionMap(map);
+          }
+        });
+  }
+
   callback_mediator_.wireAll(ctx);
-  // MainWindow dialog callbacks are wired in
-  // CallbackMediator::wireMapOperationCallbacks
 }
 
 void Application::onMapLoaded(

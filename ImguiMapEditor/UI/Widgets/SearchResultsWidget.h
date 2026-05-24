@@ -92,6 +92,9 @@ private:
         size_t total_results = 0;
         int selected_index = -1;
         int current_page = 0;
+        char filter_buffer[256] = {};
+        bool search_items = true;
+        bool search_creatures = true;
     };
     std::unordered_map<const void*, SessionState> session_states_;
 

@@ -109,6 +109,7 @@ private:
     // Async search
     std::future<std::vector<Domain::Search::MapSearchResult>> async_search_future_;
     bool async_search_active_ = false;
+    const Domain::ChunkedMap* async_search_map_ = nullptr;
 };
 
 } // namespace AppLogic

@@ -37,6 +37,7 @@ UI::SearchResultsWidget* SearchController::getSearchResultsWidget() const { retu
 template<typename F>
 void SearchController::launchAsync(F&& searchFn) {
     if (!map_search_service_ || async_search_active_) return;
+    async_search_map_ = map_search_service_->getMapAddr();
     async_search_future_ = std::async(std::launch::async,
         [fn = std::forward<F>(searchFn)]() {
             auto results = fn();
@@ -53,6 +54,10 @@ void SearchController::onMapLoaded(
     Services::ViewSettings* view_settings
 ) {
     cancelAsyncSearch();
+
+    if (map_search_service_) {
+        map_search_service_->setMap(map);
+    }
 
     if (!client_data) return;
 
@@ -154,6 +159,13 @@ void SearchController::processAsyncSearch() {
 
     try {
         auto results = async_search_future_.get();
+        // Drop stale results if the session map changed while search was running
+        const Domain::ChunkedMap* current_map = map_search_service_ ? map_search_service_->getMapAddr() : nullptr;
+        if (async_search_map_ && async_search_map_ != current_map) {
+            async_search_active_ = false;
+            async_search_map_ = nullptr;
+            return;
+        }
         if (search_results_widget_) {
             search_results_widget_->setResults(results);
         }
@@ -164,6 +176,7 @@ void SearchController::processAsyncSearch() {
     }
 
     async_search_active_ = false;
+    async_search_map_ = nullptr;
 }
 
 } // namespace AppLogic

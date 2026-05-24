@@ -47,6 +47,7 @@ public:
      * Set the map to search
      */
     void setMap(const Domain::ChunkedMap* map) { map_ = map; }
+    const Domain::ChunkedMap* getMapAddr() const { return map_; }
     
     /**
      * Set client data for item name lookup

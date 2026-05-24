@@ -75,6 +75,9 @@ void SearchResultsWidget::saveState() {
     st.total_results = total_results_;
     st.selected_index = selected_index_;
     st.current_page = current_page_;
+    memcpy(st.filter_buffer, filter_buffer_, sizeof(filter_buffer_));
+    st.search_items = search_items_;
+    st.search_creatures = search_creatures_;
 }
 
 void SearchResultsWidget::loadState(const Domain::ChunkedMap* map) {
@@ -84,17 +87,20 @@ void SearchResultsWidget::loadState(const Domain::ChunkedMap* map) {
         total_results_ = it->second.total_results;
         selected_index_ = it->second.selected_index;
         current_page_ = it->second.current_page;
+        memcpy(filter_buffer_, it->second.filter_buffer, sizeof(filter_buffer_));
+        search_items_ = it->second.search_items;
+        search_creatures_ = it->second.search_creatures;
         session_states_.erase(it);
     } else {
         results_.clear();
         total_results_ = 0;
         selected_index_ = -1;
         current_page_ = 0;
+        filter_buffer_[0] = '\0';
     }
     filtered_indices_.clear();
     filtered_count_ = 0;
     filter_dirty_ = true;
-    filter_buffer_[0] = '\0';
 }
 
 void SearchResultsWidget::rebuildFilter() {
@@ -203,7 +209,7 @@ void SearchResultsWidget::renderResultsList(float row_height) {
     size_t page_count = page_end - page_start;
 
     ImGuiListClipper clipper;
-    clipper.Begin(static_cast<int>(page_count), row_height);
+    clipper.Begin(static_cast<int>(page_count));
     while (clipper.Step()) {
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
             size_t result_idx = filtered_indices_[page_start + static_cast<size_t>(i)];
@@ -305,7 +311,9 @@ void SearchResultsWidget::renderResultRow(size_t result_idx, const Domain::Searc
     float line_h = ImGui::GetTextLineHeightWithSpacing();
 
     ImGui::PushID(static_cast<int>(result_idx));
-    ImGui::Selectable("##row", is_selected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0, row_height));
+
+    // Selectable without AllowOverlap — cursor advances naturally for clipper
+    ImGui::Selectable("##row", is_selected, 0, ImVec2(0, row_height));
 
     if (ImGui::IsItemHovered()) {
         if (ImGui::IsMouseDoubleClicked(0) && on_navigate_) {
@@ -326,9 +334,13 @@ void SearchResultsWidget::renderResultRow(size_t result_idx, const Domain::Searc
         selected_index_ = static_cast<int>(result_idx);
     }
 
+    // Save cursor position after Selectable (for clipper-consistent advancement)
+    ImVec2 cursor_end = ImGui::GetCursorPos();
+
     float sprite_size = 32.0f;
     float text_x = cursor.x + sprite_size + 4;
 
+    // Draw sprite
     ImGui::SetCursorPos(ImVec2(cursor.x, cursor.y + 2));
     GLuint tex_id = 0;
     if (result.isItem() && sprite_manager_ && client_data_) {
@@ -346,6 +358,7 @@ void SearchResultsWidget::renderResultRow(size_t result_idx, const Domain::Searc
         ImGui::Image((void*)(intptr_t)tex_id, ImVec2(sprite_size, sprite_size));
     }
 
+    // Draw text rows overlaid on the selectable
     ImGui::SetCursorPos(ImVec2(text_x, cursor.y));
     ImGui::TextUnformatted(result.display_name.c_str());
 
@@ -361,8 +374,8 @@ void SearchResultsWidget::renderResultRow(size_t result_idx, const Domain::Searc
     ImGui::Text("%d, %d, %d", result.position.x, result.position.y, result.position.z);
     ImGui::PopStyleColor();
 
-    ImGui::SetCursorPos(ImVec2(cursor.x, cursor.y + row_height + 2));
-    ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, 0));
+    // Restore cursor to where Selectable left it — clipper-compatible
+    ImGui::SetCursorPos(cursor_end);
     ImGui::PopID();
 }
 
