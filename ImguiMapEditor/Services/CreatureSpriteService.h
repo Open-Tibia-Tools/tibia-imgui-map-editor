@@ -1,6 +1,10 @@
 #pragma once
 #include "Domain/Creature.h"
 #include "IO/Readers/DatReaderBase.h"
+// INTENTIONAL LAYER EXCEPTION: CreatureSpriteService produces
+// Rendering::Texture and Rendering::AtlasRegion objects for creature/outfit
+// preview (UI) and GPU batch rendering. It composes colorized sprite data
+// but delegates all GL uploads to the Rendering layer via AtlasManager.
 #include "Rendering/Core/Texture.h"
 #include "Rendering/Resources/AtlasManager.h"
 #include <list>

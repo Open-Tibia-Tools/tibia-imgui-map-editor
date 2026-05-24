@@ -21,7 +21,10 @@ bool SettingsRegistry::load() {
   recent_locations_->loadFromConfig(*config_service_);
 
   view_settings_.loadFromConfig(*config_service_);
-  selection_settings_.loadFromConfig(*config_service_);
+  // SelectionSettings serialization (was in Domain/SelectionSettings.cpp — moved here to break Domain→Services dependency)
+  selection_settings_.floor_scope = static_cast<Domain::SelectionFloorScope>(
+      config_service_->get<int>("selection.floor_scope", 0));
+  selection_settings_.use_pixel_perfect = config_service_->get<bool>("selection.use_pixel_perfect", false);
 
   // AppSettings loading doesn't require ImGui context, only applying it does.
   app_settings_.loadFromConfig(*config_service_);
@@ -41,7 +44,9 @@ void SettingsRegistry::save() {
     recent_locations_->saveToConfig(*config_service_);
 
   view_settings_.saveToConfig(*config_service_);
-  selection_settings_.saveToConfig(*config_service_);
+  // SelectionSettings serialization (moved from Domain to break Domain→Services dependency)
+  config_service_->set("selection.floor_scope", static_cast<int>(selection_settings_.floor_scope));
+  config_service_->set("selection.use_pixel_perfect", selection_settings_.use_pixel_perfect);
   app_settings_.saveToConfig(*config_service_);
 
   config_service_->save();

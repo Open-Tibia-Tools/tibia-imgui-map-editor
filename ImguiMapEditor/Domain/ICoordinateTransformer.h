@@ -41,6 +41,16 @@ public:
      * Get current floor being viewed.
      */
     virtual int getCurrentFloor() const = 0;
+
+    /**
+     * Get the viewport position in screen pixels (top-left corner).
+     */
+    virtual glm::vec2 getViewportPos() const = 0;
+
+    /**
+     * Get the viewport size in screen pixels.
+     */
+    virtual glm::vec2 getViewportSize() const = 0;
 };
 
 } // namespace Domain

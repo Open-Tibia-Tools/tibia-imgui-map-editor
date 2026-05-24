@@ -299,7 +299,7 @@ void PreferencesDialog::renderHotkeysTab() {
   // When Apply is clicked, sync immediately
   if (result == ImHotKey::EditResult::Applied && appliedIndex >= 0) {
     // Update registry with the changed binding
-    Services::HotkeyBinding binding;
+    Domain::HotkeyBinding binding;
     binding.action_id = hotkeys[appliedIndex].functionName;
     binding.key = hotkeys[appliedIndex].key;
     binding.mods = hotkeys[appliedIndex].mods;
@@ -313,7 +313,7 @@ void PreferencesDialog::renderHotkeysTab() {
     for (const auto &path : save_paths) {
       if (std::filesystem::exists(path.parent_path()) ||
           path.parent_path().empty()) {
-        IO::HotkeyJsonReader::save(path, *hotkey_registry_);
+        IO::HotkeyJsonReader::save(path, hotkey_registry_->getAllBindings());
         break;
       }
     }
@@ -381,7 +381,7 @@ void PreferencesDialog::renderHotkeysTab() {
     for (const auto &path : save_paths) {
       if (std::filesystem::exists(path.parent_path()) ||
           path.parent_path().empty()) {
-        IO::HotkeyJsonReader::save(path, *hotkey_registry_);
+        IO::HotkeyJsonReader::save(path, hotkey_registry_->getAllBindings());
         break;
       }
     }

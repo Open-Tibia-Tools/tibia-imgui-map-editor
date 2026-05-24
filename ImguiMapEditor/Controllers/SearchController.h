@@ -1,13 +1,16 @@
 #pragma once
 #include "Services/ItemPickerService.h"
 #include "Services/Map/MapSearchService.h"
-#include "UI/Widgets/QuickSearchPopup.h"
-#include "UI/Dialogs/AdvancedSearchDialog.h"
-#include "UI/Widgets/SearchResultsWidget.h"
 #include "Services/ViewSettings.h"
 #include <memory>
 
 namespace MapEditor {
+
+namespace UI {
+class QuickSearchPopup;
+class AdvancedSearchDialog;
+class SearchResultsWidget;
+}
 
 namespace Services {
     class ClientDataService;
@@ -40,15 +43,15 @@ public:
     );
 
     // Accessors for UI components (needed for rendering and callbacks)
-    UI::QuickSearchPopup* getQuickSearchPopup() { return &quick_search_popup_; }
-    UI::AdvancedSearchDialog* getAdvancedSearchDialog() { return &advanced_search_dialog_; }
-    UI::SearchResultsWidget* getSearchResultsWidget() { return &search_results_widget_; }
+    UI::QuickSearchPopup* getQuickSearchPopup();
+    UI::AdvancedSearchDialog* getAdvancedSearchDialog();
+    UI::SearchResultsWidget* getSearchResultsWidget();
 
 private:
-    // UI Components
-    UI::QuickSearchPopup quick_search_popup_;
-    UI::AdvancedSearchDialog advanced_search_dialog_;
-    UI::SearchResultsWidget search_results_widget_;
+    // UI Components (unique_ptr to allow forward declarations in header)
+    std::unique_ptr<UI::QuickSearchPopup> quick_search_popup_;
+    std::unique_ptr<UI::AdvancedSearchDialog> advanced_search_dialog_;
+    std::unique_ptr<UI::SearchResultsWidget> search_results_widget_;
 
     // Services
     std::unique_ptr<AppLogic::ItemPickerService> item_picker_service_;

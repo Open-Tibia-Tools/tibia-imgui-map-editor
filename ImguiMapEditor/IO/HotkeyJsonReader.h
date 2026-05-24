@@ -1,35 +1,29 @@
 #pragma once
 
+#include "Domain/HotkeyDefinitions.h"
 #include <filesystem>
 #include <string>
-
-namespace MapEditor {
-namespace Services {
-class HotkeyRegistry;
-}
-}
 
 namespace MapEditor {
 namespace IO {
 
 /**
  * Reads and writes hotkey configuration from/to JSON files.
- * 
- * Follows IO pattern like SpawnXmlReader, OtbmWriter.
+ * Operates on pure data (Domain::HotkeyBindingMap), not on Services.
  */
 class HotkeyJsonReader {
 public:
     /**
-     * Load hotkey bindings from a JSON file into the registry.
-     * @return true on success, false on error (registry unchanged on error)
+     * Load hotkey bindings from a JSON file into the binding map.
+     * @return true on success, false on error (bindings unchanged on error)
      */
-    static bool load(const std::filesystem::path& path, Services::HotkeyRegistry& registry);
+    static bool load(const std::filesystem::path& path, Domain::HotkeyBindingMap& bindings);
     
     /**
-     * Save hotkey bindings from the registry to a JSON file.
+     * Save hotkey bindings from the binding map to a JSON file.
      * @return true on success
      */
-    static bool save(const std::filesystem::path& path, const Services::HotkeyRegistry& registry);
+    static bool save(const std::filesystem::path& path, const Domain::HotkeyBindingMap& bindings);
     
     /**
      * Convert key name string to GLFW key code.

@@ -8,7 +8,7 @@ namespace MapEditor {
 namespace Rendering {
 
 void StatusOverlay::render(ImDrawList *draw_list,
-                           const UI::MapViewCamera &camera,
+                           const Domain::ICoordinateTransformer &camera,
                            size_t selection_count, bool is_hovered,
                            float framerate) {
   if (!draw_list)

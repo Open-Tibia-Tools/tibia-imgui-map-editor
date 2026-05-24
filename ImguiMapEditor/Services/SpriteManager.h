@@ -4,6 +4,11 @@
 #include "IO/Readers/DatReaderBase.h"
 #include "IO/SprReader.h"
 #include "ItemCompositor.h"
+// INTENTIONAL LAYER EXCEPTION: SpriteManager is the architectural bridge
+// between async I/O and GPU resource management. It owns Rendering-layer
+// types (AtlasManager, SpriteAtlasLUT, Texture) but does NOT issue GL calls
+// itself — all GPU uploads are delegated to SpriteAsyncLoader::process()
+// which runs on the main thread via the frame-tick contract.
 #include "Rendering/Core/Texture.h"
 #include "Rendering/Overlays/OverlaySpriteCache.h"
 #include "Rendering/Resources/AtlasManager.h"

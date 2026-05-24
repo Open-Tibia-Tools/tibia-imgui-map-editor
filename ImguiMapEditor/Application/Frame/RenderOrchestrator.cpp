@@ -1,4 +1,4 @@
-#include "Rendering/Frame/RenderOrchestrator.h"
+#include "Application/Frame/RenderOrchestrator.h"
 #include "Application/AppStateManager.h"
 #include "Application/ClientVersionManager.h"
 #include "Application/DialogContainer.h"

@@ -5,6 +5,11 @@
 #include <unordered_set>
 #include <vector>
 
+// INTENTIONAL LAYER EXCEPTION: SpriteAsyncLoader is the designated boundary
+// between CPU sprite data and GPU uploads. It owns Rendering::PixelBufferObject
+// (the PBO fence-sync boundary) and receives AtlasManager/SpriteAtlasLUT
+// references to drive glTexSubImage* uploads. All GL calls happen inside
+// process() on the main thread via the frame-tick contract.
 #include "Rendering/Core/PixelBufferObject.h"
 #include "Rendering/Resources/AtlasManager.h"
 #include "Rendering/Resources/SpriteAtlasLUT.h"

@@ -1,7 +1,7 @@
 #pragma once
+#include "Domain/ICoordinateTransformer.h"
 #include "Domain/Position.h"
 #include "Services/Selection/ISelectionObserver.h"
-#include "UI/Map/MapViewCamera.h"
 #include <glm/glm.hpp>
 #include <imgui.h>
 #include <vector>
@@ -35,7 +35,7 @@ public:
    * Render all selection visuals.
    * Gets selection data from EditorSession via ISelectionDataProvider.
    */
-  void render(ImDrawList *draw_list, const UI::MapViewCamera &camera,
+  void render(ImDrawList *draw_list, const Domain::ICoordinateTransformer &camera,
               const ISelectionDataProvider *selection_provider);
 
   /**
@@ -58,7 +58,7 @@ public:
   void renderDragDimensions(ImDrawList *draw_list,
                             const glm::vec2 &start_screen,
                             const glm::vec2 &current_screen,
-                            const UI::MapViewCamera &camera, bool shif_pressed,
+                            const Domain::ICoordinateTransformer &camera, bool shif_pressed,
                             bool alt_pressed);
 
   // === ISelectionObserver interface ===
@@ -91,7 +91,7 @@ private:
    * Efficient for small selections.
    */
   void renderSelectionIterative(ImDrawList *draw_list,
-                                const UI::MapViewCamera &camera,
+                                const Domain::ICoordinateTransformer &camera,
                                 const ISelectionDataProvider *provider,
                                 int floor, float tile_screen_size);
 
@@ -100,7 +100,7 @@ private:
    * Efficient for large selections (avoids O(N) iteration of selection set).
    */
   void renderSelectionViewport(ImDrawList *draw_list,
-                               const UI::MapViewCamera &camera,
+                               const Domain::ICoordinateTransformer &camera,
                                const ISelectionDataProvider *provider,
                                int floor, float tile_screen_size);
 

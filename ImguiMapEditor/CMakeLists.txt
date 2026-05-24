@@ -73,7 +73,6 @@ set(DOMAIN_SOURCES
     Domain/MapInstance.cpp
     Domain/ChunkedMap.cpp
     Domain/CopyBuffer.cpp
-    Domain/SelectionSettings.cpp
     Domain/Selection/SelectionBucket.cpp
     Domain/History/TileSnapshot.cpp
     Domain/History/TileSnapshotCodec.cpp
@@ -137,7 +136,7 @@ set(RENDERING_SOURCES
     Rendering/Passes/GhostFloorRenderer.cpp
     Rendering/Tile/CreatureSpriteHelper.cpp
     Rendering/Passes/BackgroundRenderer.cpp
-    Rendering/Frame/RenderOrchestrator.cpp
+    Application/Frame/RenderOrchestrator.cpp
     Rendering/Frame/RenderingManager.cpp
     Rendering/Frame/FrameDataCollector.cpp
     Rendering/Passes/TerrainPass.cpp

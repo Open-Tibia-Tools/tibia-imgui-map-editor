@@ -28,6 +28,7 @@
 // UI Components
 #include "Presentation/MainWindow.h"
 #include "Presentation/MenuBar.h"
+#include "UI/Core/Theme.h"
 #include "UI/Dialogs/Startup/StartupDialog.h"
 #include "UI/Map/MapPanel.h"
 #include "UI/Ribbon/RibbonController.h"
@@ -82,7 +83,7 @@ bool Application::initializePlatform() {
     return false;
 
   // Load app settings AFTER ImGui is initialized (theme needs ImGui context)
-  settings_registry_->getAppSettings().apply();
+  ApplyTheme(settings_registry_->getAppSettings().theme);
 
   return true;
 }

@@ -9,17 +9,17 @@
 namespace MapEditor {
 namespace Services {
 
-void HotkeyRegistry::registerBinding(const HotkeyBinding& binding) {
+void HotkeyRegistry::registerBinding(const Domain::HotkeyBinding& binding) {
     bindings_[binding.action_id] = binding;
 }
 
-const HotkeyBinding* HotkeyRegistry::findByAction(const std::string& action_id) const {
+const Domain::HotkeyBinding* HotkeyRegistry::findByAction(const std::string& action_id) const {
     auto it = bindings_.find(action_id);
     return it != bindings_.end() ? &it->second : nullptr;
 }
 
-const HotkeyBinding* HotkeyRegistry::findByKey(int key, int mods) const {
-    const HotkeyBinding* bestMatch = nullptr;
+const Domain::HotkeyBinding* HotkeyRegistry::findByKey(int key, int mods) const {
+    const Domain::HotkeyBinding* bestMatch = nullptr;
     int maxModCount = -1;
 
     for (const auto& [id, binding] : bindings_) {
@@ -45,8 +45,8 @@ bool HotkeyRegistry::hasConflict(int key, int mods, const std::string& exclude_a
     return false;
 }
 
-std::vector<const HotkeyBinding*> HotkeyRegistry::getBindingsByCategory(const std::string& category) const {
-    std::vector<const HotkeyBinding*> result;
+std::vector<const Domain::HotkeyBinding*> HotkeyRegistry::getBindingsByCategory(const std::string& category) const {
+    std::vector<const Domain::HotkeyBinding*> result;
     for (const auto& [id, binding] : bindings_) {
         if (binding.category == category) {
             result.push_back(&binding);
@@ -55,7 +55,7 @@ std::vector<const HotkeyBinding*> HotkeyRegistry::getBindingsByCategory(const st
     return result;
 }
 
-std::string HotkeyRegistry::formatShortcut(const HotkeyBinding& binding) {
+std::string HotkeyRegistry::formatShortcut(const Domain::HotkeyBinding& binding) {
     std::ostringstream oss;
     
     if (binding.mods & GLFW_MOD_CONTROL) oss << "Ctrl+";
@@ -153,7 +153,7 @@ HotkeyRegistry HotkeyRegistry::loadOrCreateDefaults(const std::vector<std::strin
     for (const auto& path : data_paths) {
         if (std::filesystem::exists(path)) {
             HotkeyRegistry registry;
-            if (IO::HotkeyJsonReader::load(path, registry)) {
+            if (IO::HotkeyJsonReader::load(path, registry.bindings_)) {
                 // IO::HotkeyJsonReader::load handles its own logging
                 return registry;
             }
@@ -168,7 +168,7 @@ HotkeyRegistry HotkeyRegistry::loadOrCreateDefaults(const std::vector<std::strin
     for (const auto& path : data_paths) {
         std::filesystem::path fs_path(path);
         if (std::filesystem::exists(fs_path.parent_path()) || fs_path.parent_path().empty()) {
-            IO::HotkeyJsonReader::save(fs_path, defaults);
+            IO::HotkeyJsonReader::save(fs_path, defaults.bindings_);
             break;
         }
     }

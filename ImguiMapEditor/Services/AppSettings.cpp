@@ -1,6 +1,6 @@
 #include "AppSettings.h"
 #include "ConfigService.h"
-#include "UI/Core/Theme.h"
+#include "UI/Core/Theme.h" // needed for ThemeType enum values in constructor
 #include <spdlog/spdlog.h>
 
 namespace MapEditor {
@@ -27,7 +27,8 @@ void AppSettings::saveToConfig(ConfigService &config) const {
   config.set("app.openPaletteNames", openPaletteNames);
 }
 
-void AppSettings::apply() const { ApplyTheme(theme); }
+// apply() removed — theme application belongs in the UI/Presentation layer.
+// Callers should use UI::ApplyTheme(settings.theme) directly.
 
 } // namespace Services
 } // namespace MapEditor

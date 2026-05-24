@@ -11,7 +11,7 @@ namespace MapEditor {
 namespace Rendering {
 
 void SelectionOverlay::render(ImDrawList *draw_list,
-                              const UI::MapViewCamera &camera,
+                              const Domain::ICoordinateTransformer &camera,
                               const ISelectionDataProvider *provider) {
   if (!provider || provider->isEmpty()) {
     return;
@@ -87,9 +87,9 @@ void SelectionOverlay::renderLassoOverlay(ImDrawList *draw_list,
 void SelectionOverlay::renderDragDimensions(ImDrawList *draw_list,
                                             const glm::vec2 &start_screen,
                                             const glm::vec2 &current_screen,
-                                            const UI::MapViewCamera &camera,
-                                            bool shift_pressed,
-                                            bool alt_pressed) {
+                                             const Domain::ICoordinateTransformer &camera,
+                                             bool shift_pressed,
+                                             bool alt_pressed) {
   Domain::Position start_pos = camera.screenToTile(start_screen);
   Domain::Position end_pos = camera.screenToTile(current_screen);
 
@@ -118,7 +118,7 @@ void SelectionOverlay::renderDragDimensions(ImDrawList *draw_list,
 }
 
 void SelectionOverlay::renderSelectionIterative(
-    ImDrawList *draw_list, const UI::MapViewCamera &camera,
+    ImDrawList *draw_list, const Domain::ICoordinateTransformer &camera,
     const ISelectionDataProvider *provider, int floor, float tile_screen_size) {
 
   // Check bounds for culling optimization
@@ -158,7 +158,7 @@ void SelectionOverlay::renderSelectionIterative(
 }
 
 void SelectionOverlay::renderSelectionViewport(
-    ImDrawList *draw_list, const UI::MapViewCamera &camera,
+    ImDrawList *draw_list, const Domain::ICoordinateTransformer &camera,
     const ISelectionDataProvider *provider, int floor, float tile_screen_size) {
 
   // Calculate visible tile range

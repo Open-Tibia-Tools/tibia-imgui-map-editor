@@ -1,5 +1,4 @@
 #include "HotkeyJsonReader.h"
-#include "Services/HotkeyRegistry.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <spdlog/spdlog.h>
@@ -85,7 +84,7 @@ int HotkeyJsonReader::parseModifier(const std::string& mod) {
     return 0;
 }
 
-bool HotkeyJsonReader::load(const std::filesystem::path& path, Services::HotkeyRegistry& registry) {
+bool HotkeyJsonReader::load(const std::filesystem::path& path, Domain::HotkeyBindingMap& bindings) {
     std::ifstream file(path);
     if (!file.is_open()) {
         spdlog::warn("[HotkeyJsonReader] Could not open {}", path.string());
@@ -100,11 +99,11 @@ bool HotkeyJsonReader::load(const std::filesystem::path& path, Services::HotkeyR
             return false;
         }
         
-        registry.clear();
+        bindings.clear();
         
         for (auto& [category, actions] : root["bindings"].items()) {
             for (auto& [action_id, binding_data] : actions.items()) {
-                Services::HotkeyBinding binding;
+                Domain::HotkeyBinding binding;
                 binding.action_id = action_id;
                 binding.category = category;
                 
@@ -124,12 +123,12 @@ bool HotkeyJsonReader::load(const std::filesystem::path& path, Services::HotkeyR
                     }
                 }
                 
-                registry.registerBinding(binding);
+                bindings[binding.action_id] = binding;
             }
         }
         
         spdlog::info("[HotkeyJsonReader] Loaded {} hotkeys from {}", 
-                     registry.getAllBindings().size(), path.string());
+                     bindings.size(), path.string());
         return true;
         
     } catch (const json::exception& e) {
@@ -138,12 +137,12 @@ bool HotkeyJsonReader::load(const std::filesystem::path& path, Services::HotkeyR
     }
 }
 
-bool HotkeyJsonReader::save(const std::filesystem::path& path, const Services::HotkeyRegistry& registry) {
+bool HotkeyJsonReader::save(const std::filesystem::path& path, const Domain::HotkeyBindingMap& bindings) {
     json root;
     root["version"] = "1.0";
     root["bindings"] = json::object();
     
-    for (const auto& [action_id, binding] : registry.getAllBindings()) {
+    for (const auto& [action_id, binding] : bindings) {
         // Build key name
         std::string key_name;
         if (binding.key >= GLFW_KEY_A && binding.key <= GLFW_KEY_Z) {
@@ -261,7 +260,7 @@ bool HotkeyJsonReader::save(const std::filesystem::path& path, const Services::H
     
     file << root.dump(2);
     spdlog::info("[HotkeyJsonReader] Saved {} hotkeys to {}", 
-                 registry.getAllBindings().size(), path.string());
+                 bindings.size(), path.string());
     return true;
 }
 

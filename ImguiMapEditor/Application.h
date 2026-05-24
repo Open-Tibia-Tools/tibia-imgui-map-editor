@@ -22,7 +22,7 @@
 #include "Controllers/WindowController.h"
 #include "Controllers/WorkspaceController.h"
 #include "Domain/SelectionSettings.h"
-#include "Rendering/Frame/RenderOrchestrator.h"
+#include "Application/Frame/RenderOrchestrator.h"
 #include "Rendering/Frame/RenderingManager.h"
 #include "Services/SessionWiringService.h"
 #include "Services/SettingsRegistry.h"

@@ -1,5 +1,8 @@
 #pragma once
 #include "Domain/ItemType.h"
+// INTENTIONAL LAYER EXCEPTION: ItemCompositor produces Rendering::Texture
+// objects for UI preview display. It composes sprite data into GPU-ready
+// textures but delegates all GL operations to the Rendering layer.
 #include "Rendering/Core/Texture.h"
 #include <memory>
 #include <unordered_map>
