@@ -407,7 +407,7 @@ void MenuBar::renderMapMenu() {
 
   if (ImGui::BeginMenu("Map")) {
     // Edit Towns
-    if (ImGui::MenuItem(ICON_FA_CITY " Edit Towns...", nullptr, false,
+    if (ImGui::MenuItem(ICON_FA_BUILDING " Edit Towns...", nullptr, false,
                         has_session)) {
       if (on_edit_towns_)
         on_edit_towns_();

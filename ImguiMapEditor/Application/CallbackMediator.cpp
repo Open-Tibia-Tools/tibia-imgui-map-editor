@@ -40,6 +40,23 @@
 namespace MapEditor {
 
 void CallbackMediator::wireAll(Context &ctx) {
+  // Inject persistent dependencies into dialogs (once, before any show() call)
+  if (ctx.edit_towns) {
+    ctx.edit_towns->setTabManager(ctx.tab_manager);
+    ctx.edit_towns->setGoToCallback([ctx](const Domain::Position &pos) {
+      ctx.map_panel->setCameraCenter(pos.x, pos.y, pos.z);
+    });
+    ctx.edit_towns->setPickPositionCallback([ctx]() -> bool {
+      Presentation::showInfo("Click on map to select temple position", 2000);
+      return true;
+    });
+    ctx.edit_towns->setTileToScreenFunc([ctx](const Domain::Position &pos) -> glm::vec2 {
+      glm::vec2 screen = ctx.map_panel->tileToScreen(pos);
+      float half_tile = 16.0f * ctx.map_panel->getZoom();
+      return glm::vec2(screen.x + half_tile, screen.y + half_tile);
+    });
+  }
+
   wirePlatformCallbacks(ctx);
   wireTabCallbacks(ctx);
   wireMapOperationCallbacks(ctx);
@@ -145,13 +162,7 @@ void CallbackMediator::wireTabCallbacks(Context &ctx) {
 
   // Hotkey map menu
   ctx.hotkey->setEditTownsCallback([ctx]() {
-    auto *session = ctx.tab_manager->getActiveSession();
-    if (session && session->getMap()) {
-      ctx.edit_towns->setGoToCallback([ctx](const Domain::Position &pos) {
-        ctx.map_panel->setCameraCenter(pos.x, pos.y, pos.z);
-      });
-      ctx.edit_towns->show(session->getMap());
-    }
+    ctx.edit_towns->show();
   });
   ctx.hotkey->setMapPropertiesCallback([ctx]() {
     auto *session = ctx.tab_manager->getActiveSession();
@@ -300,17 +311,7 @@ void CallbackMediator::wireMenuCallbacks(Context &ctx) {
 
   // Map menu
   ctx.menu_bar->setEditTownsCallback([ctx]() {
-    auto *session = ctx.tab_manager->getActiveSession();
-    if (session && session->getMap()) {
-      ctx.edit_towns->setGoToCallback([ctx](const Domain::Position &pos) {
-        ctx.map_panel->setCameraCenter(pos.x, pos.y, pos.z);
-      });
-      ctx.edit_towns->setPickPositionCallback([ctx]() -> bool {
-        Presentation::showInfo("Click on map to select temple position", 2000);
-        return true;
-      });
-      ctx.edit_towns->show(session->getMap());
-    }
+    ctx.edit_towns->show();
   });
 
   ctx.menu_bar->setMapPropertiesCallback([ctx]() {

@@ -1,118 +1,93 @@
 #pragma once
 #include "Domain/ChunkedMap.h"
 #include "Domain/Position.h"
+#include "Rendering/Minimap/MinimapRenderer.h"
+#include "Rendering/Minimap/ChunkedMapMinimapSource.h"
 #include <vector>
 #include <string>
 #include <functional>
+#include <glm/glm.hpp>
+#include <memory>
+#include <unordered_set>
 
 namespace MapEditor {
+namespace AppLogic { class MapTabManager; }
+
 namespace UI {
 
-/**
- * Dialog for editing map towns (CRUD operations).
- * 
- * Features:
- * - List all towns with selection
- * - Add/remove towns
- * - Edit town name and temple position
- * - Click-to-select temple position on map
- * 
- * All changes are applied to the map when OK is clicked.
- * Cancel discards all changes.
- */
 class EditTownsDialog {
 public:
     enum class Result {
-        None,       // Dialog still open
-        Applied,    // User clicked OK - changes applied
-        Cancelled   // User cancelled - no changes
+        None,
+        Applied,
+        Cancelled
     };
-    
-    /**
-     * Callback for "Go To" functionality - navigate camera to position.
-     */
+
     using GoToCallback = std::function<void(const Domain::Position& pos)>;
-    
-    /**
-     * Callback for pick-position mode - enter mode where next map click sets temple.
-     * Returns true if pick mode was activated.
-     */
     using PickPositionCallback = std::function<bool()>;
-    
-    /**
-     * Show the dialog with the given map.
-     * Makes a copy of towns for editing.
-     */
-    void show(Domain::ChunkedMap* map);
-    
-    /**
-     * Render the dialog. Call every frame.
-     * @return Result of user action
-     */
+    using TileToScreenFunc = std::function<glm::vec2(const Domain::Position&)>;
+
+    void show();
+
     Result render();
-    
-    /**
-     * Check if dialog is open
-     */
+
     bool isOpen() const { return is_open_; }
-    
-    /**
-     * Set callback for Go To button
-     */
+
+    void setTabManager(AppLogic::MapTabManager* tab_mgr) { tab_manager_ = tab_mgr; }
     void setGoToCallback(GoToCallback cb) { on_go_to_ = std::move(cb); }
-    
-    /**
-     * Set callback for pick position from map
-     */
     void setPickPositionCallback(PickPositionCallback cb) { on_pick_position_ = std::move(cb); }
-    
-    /**
-     * Set the picked position (called by Application when user clicks map in pick mode)
-     */
+    void setTileToScreenFunc(TileToScreenFunc fn) { tile_to_screen_ = std::move(fn); }
+
     void setPickedPosition(const Domain::Position& pos);
-    
-    /**
-     * Check if in position pick mode
-     */
+
     bool isPickingPosition() const { return is_picking_position_; }
 
 private:
-    // Internal town representation for editing
     struct TownEntry {
         uint32_t id = 0;
         std::string name;
         Domain::Position temple_position{0, 0, 7};
-        bool is_new = false;  // For tracking newly added towns
+        bool is_new = false;
     };
-    
+
+    void refreshFromActiveMap();
     void loadTownsFromMap();
     void applyChangesToMap();
-    void updateSelectionBuffers();
+    void syncEditBuffers();
+    void markModified(size_t index);
     bool canRemoveSelectedTown() const;
-    
-    bool should_open_ = false;
+    uint32_t getNextTownId() const;
+    void updateMinimapView(const Domain::Position& pos);
+
     bool is_open_ = false;
     bool is_picking_position_ = false;
     bool show_delete_confirm_ = false;
-    
+
+    AppLogic::MapTabManager* tab_manager_ = nullptr;
+
     Domain::ChunkedMap* map_ = nullptr;
-    
-    // Working copies (modifications applied on OK)
+    Domain::ChunkedMap* last_map_ = nullptr;
+
     std::vector<TownEntry> towns_;
+    std::unordered_set<size_t> modified_indices_;
     int selected_index_ = -1;
-    
-    // Edit buffers
+
     char name_buffer_[256] = {};
     int temple_x_ = 0;
     int temple_y_ = 0;
     int temple_z_ = 7;
-    
-    // Next available town ID
-    uint32_t next_town_id_ = 1;
-    
-    // Callbacks
+
+    Domain::Position last_minimap_pos_{-1, -1, -1};
+    int last_selected_index_ = -2;
+
+    Rendering::MinimapRenderer minimap_renderer_;
+    std::unique_ptr<Rendering::ChunkedMapMinimapSource> minimap_source_;
+
     GoToCallback on_go_to_;
     PickPositionCallback on_pick_position_;
+    TileToScreenFunc tile_to_screen_;
+
+    float apply_flash_time_ = 0.0f;
 };
 
 } // namespace UI
