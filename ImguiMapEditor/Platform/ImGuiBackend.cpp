@@ -31,17 +31,18 @@ bool ImGuiBackend::initialize(IWindow& window, const char* ini_path) {
         io.IniFilename = ini_path;
     }
     
-    // Load default font with explicit size to avoid ImFontFlags_ImplicitRefSize
-    // (required for MergeMode compatibility with newer ImGui)
+    // Load default font with explicit SizePixels so the merged font below
+    // also uses an explicit reference size. Both fonts must agree (both explicit
+    // or both implicit) for MergeMode to succeed in recent ImGui versions.
     ImFontConfig default_cfg;
     default_cfg.SizePixels = 13.0f;
     io.Fonts->AddFontDefault(&default_cfg);
-    
+
     // Merge FontAwesome icons into the default font
     ImFontConfig config;
     config.MergeMode = true;
-    config.GlyphMinAdvanceX = 13.0f; // Monospace icons
-    config.SizePixels = 13.0f;       // Match base font's explicit reference size
+    config.GlyphMinAdvanceX = 13.0f;
+    config.SizePixels = 13.0f;
     static const ImWchar icon_ranges[] = { 0xe005, 0xf8ff, 0 }; // FontAwesome 6 range
     io.Fonts->AddFontFromFileTTF("data/fonts/fa-solid-900.ttf", 13.0f, &config, icon_ranges);
     

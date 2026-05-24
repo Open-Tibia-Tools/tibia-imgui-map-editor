@@ -31,6 +31,20 @@ namespace AppLogic {
 
 /**
  * Orchestrates search functionality, managing search services and UI widgets.
+ *
+ * ## Thread Safety — Known Limitation
+ *
+ * Async searches (searchUniqueAsync, searchTextAsync, etc.) run on background
+ * threads via std::async. These read ChunkedMap tiles and items concurrently
+ * with the main thread, which may modify tiles during editing (brush strokes,
+ * property edits, undo/redo).
+ *
+ * ChunkedMap is NOT currently synchronized. A data race exists if the user
+ * edits tiles while a search is in progress. In practice searches complete in
+ * seconds, during which map edits are unlikely. No crashes have been observed.
+ *
+ * A proper fix would require a read-write lock on ChunkedMap or a snapshot
+ * mechanism for searches (follow-up issue).
  */
 class SearchController {
 public:

@@ -344,6 +344,53 @@ std::vector<Domain::Search::MapSearchResult> MapSearchService::searchByWriteable
     return searchByCondition(SearchCondition::Writeable, limit);
 }
 
+MapSearchService::SearchMatch MapSearchService::evaluateSearchCondition(const Domain::Item* item, SearchCondition cond) const {
+    SearchMatch m;
+    const Domain::ItemType* type = item->getType();
+
+    std::string type_name;
+    if (type && !type->name.empty())
+        type_name = type->name;
+    else
+        type_name = std::format("Item {}", item->getServerId());
+
+    switch (cond) {
+        case SearchCondition::Unique:
+            if (item->getUniqueId() > 0) {
+                m.matches = true;
+                m.displayName = type_name;
+                m.infoLine = std::format("UID: {}", item->getUniqueId());
+            }
+            break;
+        case SearchCondition::Action:
+            if (item->getActionId() > 0) {
+                m.matches = true;
+                m.displayName = type_name;
+                m.infoLine = std::format("AID: {}", item->getActionId());
+            }
+            break;
+        case SearchCondition::Container:
+            if (item->isContainer()) {
+                m.matches = true;
+                m.displayName = type_name;
+                size_t count = item->getContainerItems().size();
+                m.infoLine = std::format("Container ({} item{})", count, count == 1 ? "" : "s");
+            }
+            break;
+        case SearchCondition::Writeable:
+            if (!item->getText().empty()) {
+                m.matches = true;
+                m.displayName = type_name;
+                const auto& text = item->getText();
+                std::string truncated = text.length() > 60 ? text.substr(0, 60) + "..." : text;
+                m.infoLine = std::format("Text: {}", truncated);
+            }
+            break;
+    }
+
+    return m;
+}
+
 std::vector<Domain::Search::MapSearchResult> MapSearchService::searchByCondition(SearchCondition cond, size_t limit) const {
     std::vector<Domain::Search::MapSearchResult> results;
     if (!map_) return results;
@@ -354,52 +401,13 @@ std::vector<Domain::Search::MapSearchResult> MapSearchService::searchByCondition
         auto processItem = [&](const Domain::Item* item, bool in_container) {
             if (!item || results.size() >= limit) return;
 
-            const Domain::ItemType* type = item->getType();
-            std::string type_name = type ? type->name : "Unknown";
-            bool matches = false;
-            std::string display_name;
-
-            std::string info;
-            switch (cond) {
-                case SearchCondition::Unique:
-                    if (item->getUniqueId() > 0) {
-                        matches = true;
-                        display_name = type_name;
-                        info = std::format("UID: {}", item->getUniqueId());
-                    }
-                    break;
-                case SearchCondition::Action:
-                    if (item->getActionId() > 0) {
-                        matches = true;
-                        display_name = type_name;
-                        info = std::format("AID: {}", item->getActionId());
-                    }
-                    break;
-                case SearchCondition::Container:
-                    if (item->isContainer()) {
-                        matches = true;
-                        display_name = type_name;
-                        size_t count = item->getContainerItems().size();
-                        info = std::format("Container ({} item{})", count, count == 1 ? "" : "s");
-                    }
-                    break;
-                case SearchCondition::Writeable:
-                    if (!item->getText().empty()) {
-                        matches = true;
-                        display_name = type_name;
-                        const auto& text = item->getText();
-                        std::string truncated = text.length() > 60 ? text.substr(0, 60) + "..." : text;
-                        info = std::format("Text: {}", truncated);
-                    }
-                    break;
-            }
-
-            if (matches) {
+            auto match = evaluateSearchCondition(item, cond);
+            if (match.matches) {
                 Domain::Search::MapSearchResult result;
                 result.position = tile->getPosition();
                 result.item_id = item->getServerId();
-                result.display_name = std::move(display_name);
-                result.info_line = std::move(info);
+                result.display_name = std::move(match.displayName);
+                result.info_line = std::move(match.infoLine);
                 result.is_in_container = in_container;
                 results.push_back(std::move(result));
             }
@@ -431,52 +439,13 @@ void MapSearchService::processContainerItems(
         const Domain::Item* item = child.get();
         if (!item) continue;
 
-        const Domain::ItemType* type = item->getType();
-        std::string type_name = type ? type->name : "Unknown";
-        bool matches = false;
-        std::string display_name;
-
-        std::string info;
-        switch (cond) {
-            case SearchCondition::Unique:
-                if (item->getUniqueId() > 0) {
-                    matches = true;
-                    display_name = type_name;
-                    info = std::format("UID: {}", item->getUniqueId());
-                }
-                break;
-            case SearchCondition::Action:
-                if (item->getActionId() > 0) {
-                    matches = true;
-                    display_name = type_name;
-                    info = std::format("AID: {}", item->getActionId());
-                }
-                break;
-            case SearchCondition::Container:
-                if (item->isContainer()) {
-                    matches = true;
-                    display_name = type_name;
-                    size_t count = item->getContainerItems().size();
-                    info = std::format("Container ({} item{})", count, count == 1 ? "" : "s");
-                }
-                break;
-            case SearchCondition::Writeable:
-                if (!item->getText().empty()) {
-                    matches = true;
-                    display_name = type_name;
-                    const auto& text = item->getText();
-                    std::string truncated = text.length() > 60 ? text.substr(0, 60) + "..." : text;
-                    info = std::format("Text: {}", truncated);
-                }
-                break;
-        }
-
-        if (matches) {
+        auto match = evaluateSearchCondition(item, cond);
+        if (match.matches) {
             Domain::Search::MapSearchResult result;
             result.position = tile->getPosition();
             result.item_id = item->getServerId();
-            result.display_name = std::move(display_name);
-            result.info_line = std::move(info);
+            result.display_name = std::move(match.displayName);
+            result.info_line = std::move(match.infoLine);
             result.is_in_container = true;
             results.push_back(std::move(result));
         }

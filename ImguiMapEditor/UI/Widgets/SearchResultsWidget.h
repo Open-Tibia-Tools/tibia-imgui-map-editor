@@ -40,6 +40,7 @@ public:
     
     void setResults(const std::vector<Domain::Search::MapSearchResult>& results);
     void clear();
+    void invalidateFilter();
     size_t getResultCount() const { return total_results_; }
 
     static constexpr size_t PAGE_SIZE = 10000;
@@ -68,6 +69,16 @@ private:
     int current_page_ = 0;
     size_t total_results_ = 0;
 
+    std::vector<size_t> filtered_indices_;
+    size_t filtered_count_ = 0;
+    bool filter_dirty_ = true;
+
+    void rebuildFilter();
+    void renderSearchBar(bool& enter_pressed);
+    void renderActionButtons(bool enter_pressed);
+    void renderResultsList(float row_height);
+    void renderFilterFooter(float btn_width);
+    void renderPagination();
     void renderResultRow(size_t result_idx, const Domain::Search::MapSearchResult& result, bool is_selected, float row_height);
 };
 

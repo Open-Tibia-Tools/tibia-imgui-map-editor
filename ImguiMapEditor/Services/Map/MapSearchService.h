@@ -29,6 +29,10 @@ enum class MapSearchMode {
 /**
  * Service for searching items/creatures ON THE MAP.
  * Iterates map tiles to find matching entities.
+ *
+ * Methods are read-only (const) and may be called from background threads
+ * by SearchController async searches. Callers are responsible for ensuring
+ * ChunkedMap is not mutated concurrently. See SearchController for details.
  */
 class MapSearchService {
 public:
@@ -104,6 +108,14 @@ public:
     
 private:
     enum class SearchCondition { Unique, Action, Container, Writeable };
+
+    struct SearchMatch {
+        bool matches = false;
+        std::string displayName;
+        std::string infoLine;
+    };
+
+    SearchMatch evaluateSearchCondition(const Domain::Item* item, SearchCondition cond) const;
 
     std::vector<Domain::Search::MapSearchResult> searchByCondition(SearchCondition cond, size_t limit) const;
     void processContainerItems(const Domain::Item* container, const Domain::Tile* tile,
