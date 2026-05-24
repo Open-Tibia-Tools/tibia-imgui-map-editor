@@ -137,7 +137,7 @@ private:
     // Helper to restore snapshots to map and resolve ItemTypes
     void applySnapshots(ChunkedMap* map, const std::vector<TileSnapshot>& snapshots,
                         const std::vector<size_t>& originalSizes,
-                        Services::ClientDataService* clientData);
+                        Services::ClientDataService* clientData) const;
     
     // Selection state (optional - only set if selection changed during operation)
     std::optional<Domain::Selection::SelectionSnapshot> selection_before_;

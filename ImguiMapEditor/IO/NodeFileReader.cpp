@@ -138,7 +138,7 @@ BinaryNode* BinaryNode::advance() {
     // Last was NODE_END (0xFF)
     // Read next byte to see if there's another sibling
     uint8_t*& cache = file_->cache_;
-    size_t& cache_length = file_->cache_length_;
+    size_t const& cache_length = file_->cache_length_;
     size_t& local_read_index = file_->local_read_index_;
     
     if (local_read_index >= cache_length) {
@@ -153,7 +153,7 @@ BinaryNode* BinaryNode::advance() {
         }
     }
     
-    uint8_t op = cache[local_read_index];
+    uint8_t const op = cache[local_read_index];
     ++local_read_index;
     
     if (op == static_cast<uint8_t>(NodeMarker::Start)) {
@@ -185,7 +185,7 @@ void BinaryNode::load() {
     data_.reserve(256);
     
     uint8_t*& cache = file_->cache_;
-    size_t& cache_length = file_->cache_length_;
+    size_t const& cache_length = file_->cache_length_;
     size_t& local_read_index = file_->local_read_index_;
     
     while (true) {

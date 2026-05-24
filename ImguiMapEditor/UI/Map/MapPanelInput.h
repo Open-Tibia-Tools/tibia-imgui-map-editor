@@ -67,11 +67,11 @@ public:
   Domain::Position getContextMenuPosition() const { return context_menu_pos_; }
 
 private:
-  void handlePasteMode(MapViewCamera &camera, AppLogic::EditorSession *session);
+  static void handlePasteMode(MapViewCamera &camera, AppLogic::EditorSession *session);
 
   void handleMousePan(MapViewCamera &camera, bool is_focused);
-  void handleMouseZoom(MapViewCamera &camera);
-  void handleFloorChange(MapViewCamera &camera, bool is_focused);
+  static void handleMouseZoom(MapViewCamera &camera);
+  static void handleFloorChange(MapViewCamera &camera, bool is_focused);
   void handleTileSelection(MapViewCamera &camera,
                            AppLogic::EditorSession *session,
                            AppLogic::MapInputController *input_controller,

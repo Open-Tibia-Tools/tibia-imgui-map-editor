@@ -30,7 +30,7 @@ bool GroundRenderer::queue(const Domain::Item *ground, float screen_x,
 
   // Secondary client fallback - ONLY if show_invalid_items is enabled
   bool is_from_secondary = false;
-  bool show_invalid = view_settings && view_settings->show_invalid_items;
+  bool const show_invalid = view_settings && view_settings->show_invalid_items;
   auto *sec_client = secondary_client_.get();
 
   if (!item_type && show_invalid && sec_client && sec_client->isActive()) {
@@ -41,13 +41,13 @@ bool GroundRenderer::queue(const Domain::Item *ground, float screen_x,
   // Item is invalid if:
   // 1. item_type is null (ID not in items.otb at all), OR
   // 2. item_type exists but has no client_id (gap entry in items.otb)
-  bool is_invalid = (item_type == nullptr) || !item_type->isValidForRendering();
+  bool const is_invalid = (item_type == nullptr) || !item_type->isValidForRendering();
 
   if (item_type && !item_type->sprite_ids.empty()) {
     // Check for blocking ground transparency
     float final_alpha = alpha;
     if (view_settings && view_settings->show_wall_outline) {
-      bool is_blocking_ground =
+      bool const is_blocking_ground =
           item_type->hasFlag(Domain::ItemFlag::Unpassable) &&
           item_type->hasFlag(Domain::ItemFlag::BlockMissiles) &&
           !item_type->hasFlag(Domain::ItemFlag::Moveable) &&
@@ -70,13 +70,13 @@ bool GroundRenderer::queue(const Domain::Item *ground, float screen_x,
 
     // Secondary client tinting (red tint)
     if (is_from_secondary && sec_client) {
-      float tint = sec_client->getTintIntensity();
+      float const tint = sec_client->getTintIntensity();
       final_color.g *= (1.0f - tint);
       final_color.b *= (1.0f - tint);
       final_alpha *= sec_client->getAlphaMultiplier();
     }
 
-    uint32_t sprite_offset =
+    uint32_t const sprite_offset =
         is_from_secondary ? Services::SECONDARY_SPRITE_OFFSET : 0;
 
     // Delegate to ItemRenderer for actual sprite queueing

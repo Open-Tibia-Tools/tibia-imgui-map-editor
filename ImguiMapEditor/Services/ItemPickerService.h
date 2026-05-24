@@ -38,7 +38,7 @@ public:
     
 private:
     bool matchesFuzzy(const std::string& text, const std::string& query) const;
-    std::string toLower(const std::string& str) const;
+    static std::string toLower(const std::string& str) ;
     
     Services::ClientDataService* client_data_;  // Non-owning
 };

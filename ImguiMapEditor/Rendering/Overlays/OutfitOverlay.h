@@ -38,7 +38,7 @@ public:
    * @param tint Color tint for lighting (default white = no tint)
    * @return true if rendered successfully, false if fallback needed
    */
-  bool render(ImDrawList *draw_list, const Domain::Outfit &outfit,
+  static bool render(ImDrawList *draw_list, const Domain::Outfit &outfit,
               Services::ClientDataService *client_data,
               Services::SpriteManager *sprite_manager,
               OverlaySpriteCache *overlay_cache, const glm::vec2 &screen_pos,
@@ -48,7 +48,7 @@ public:
   /**
    * Render creature name label above sprite.
    */
-  void renderName(ImDrawList *draw_list, const std::string &name,
+  static void renderName(ImDrawList *draw_list, const std::string &name,
                   const glm::vec2 &center, float sprite_height, float zoom);
 
 private:

@@ -30,12 +30,12 @@ public:
     /**
      * Bind this framebuffer for rendering
      */
-    void bind();
+    void bind() const;
     
     /**
      * Unbind (return to default framebuffer)
      */
-    void unbind();
+    static void unbind();
     
     /**
      * Get the color attachment texture ID for ImGui::Image()

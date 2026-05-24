@@ -48,7 +48,7 @@ private:
    * Render indicator for spawn tile (orange square with "SPAWN" text).
    */
   void renderSpawnIndicator(ImDrawList *draw_list, const glm::vec2 &screen_pos,
-                            float size, float zoom);
+                            float size, float zoom) const;
 
   /**
    * Render solid border around spawn radius area.
@@ -58,7 +58,7 @@ private:
                           const glm::vec2 &camera_pos,
                           const glm::vec2 &viewport_pos,
                           const glm::vec2 &viewport_size, float zoom,
-                          int creature_count = 0);
+                          int creature_count = 0) const;
 
   static constexpr float TILE_SIZE = Config::Rendering::TILE_SIZE;
 };

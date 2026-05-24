@@ -54,7 +54,7 @@ void PaletteWindow::initialize(
           if (!tileset->getSourceFile().empty()) {
             spdlog::info("[PaletteWindow] Saving tileset '{}' to: {}",
                          tilesetName, tileset->getSourceFile().string());
-            bool success =
+            bool const success =
                 IO::TilesetXmlWriter::write(tileset->getSourceFile(), *tileset);
             if (success) {
               tileset->clearDirty();
@@ -117,7 +117,7 @@ void PaletteWindow::selectTileset(size_t index) {
   selectedTilesetIndex_ = static_cast<int>(index);
 
   // Get the tileset and set it on the grid
-  Domain::Tileset::Tileset *tileset = palette_->getTilesetAt(index);
+  Domain::Tileset::Tileset  const*tileset = palette_->getTilesetAt(index);
   if (tileset) {
     gridWidget_.setTileset(tileset->getName());
   }
@@ -148,7 +148,7 @@ bool PaletteWindow::render() {
   }
 
   // Window title with palette name
-  std::string windowTitle =
+  std::string const windowTitle =
       std::format("{} {}##{}", ICON_FA_PALETTE, paletteName_, paletteName_);
 
   ImGui::SetNextWindowSize(ImVec2(350, 450), ImGuiCond_FirstUseEver);
@@ -159,8 +159,8 @@ bool PaletteWindow::render() {
       ImGui::TextDisabled(ICON_FA_BOX_OPEN " No tilesets in this palette");
     } else {
       // Get available space to determine layout
-      ImVec2 availableSize = ImGui::GetContentRegionAvail();
-      bool useHorizontalLayout = availableSize.x > availableSize.y * 1.3f;
+      ImVec2 const availableSize = ImGui::GetContentRegionAvail();
+      bool const useHorizontalLayout = availableSize.x > availableSize.y * 1.3f;
 
       const float controlsPanelWidth = 150.0f;
 
@@ -171,11 +171,11 @@ bool PaletteWindow::render() {
           gridWidget_.renderControlsOnly(true);
           ImGui::Separator();
 
-          float tilesetListHeight = ImGui::GetContentRegionAvail().y;
+          float const tilesetListHeight = ImGui::GetContentRegionAvail().y;
           if (ImGui::BeginChild("TilesetList", ImVec2(-1, tilesetListHeight),
                                 false)) {
             for (size_t i = 0; i < tilesetNames_.size(); ++i) {
-              bool isSelected = (selectedTilesetIndex_ == static_cast<int>(i));
+              bool const isSelected = (selectedTilesetIndex_ == static_cast<int>(i));
 
               if (isSelected) {
                 ImGui::PushStyleColor(
@@ -217,7 +217,7 @@ bool PaletteWindow::render() {
             ImGui::BeginCombo("##TilesetCombo",
                               tilesetNames_[selectedTilesetIndex_].c_str())) {
           for (size_t i = 0; i < tilesetNames_.size(); ++i) {
-            bool isSelected = (selectedTilesetIndex_ == static_cast<int>(i));
+            bool const isSelected = (selectedTilesetIndex_ == static_cast<int>(i));
             if (ImGui::Selectable(tilesetNames_[i].c_str(), isSelected)) {
               selectTileset(i);
             }

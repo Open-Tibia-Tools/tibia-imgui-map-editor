@@ -26,9 +26,9 @@ public:
    * quad.
    * @param alpha The transparency of the shade overlay (0.0 to 1.0).
    */
-  void render(SpriteBatch &batch, const ViewCamera &camera, int viewport_width,
+  static void render(SpriteBatch &batch, const ViewCamera &camera, int viewport_width,
               int viewport_height, const AtlasRegion &white_pixel,
-              float alpha = Config::Rendering::DEFAULT_SHADE_ALPHA) const;
+              float alpha = Config::Rendering::DEFAULT_SHADE_ALPHA) ;
 };
 
 } // namespace MapEditor::Rendering

@@ -27,7 +27,7 @@ void RibbonController::Render() {
     // Render each panel as a regular dockable window
     // These participate in the main application dockspace (DockSpaceOverViewport)
     for (auto& panel : panels_) {
-        ImGuiWindowFlags panel_flags = 
+        ImGuiWindowFlags const panel_flags = 
             ImGuiWindowFlags_NoScrollbar |
             ImGuiWindowFlags_NoScrollWithMouse;
         
@@ -44,8 +44,8 @@ void RibbonController::SetupInitialDockLayout() {
     // Check if imgui.ini already has saved docking info for our panels
     // by checking if window settings exist for first panel
     if (!panels_.empty()) {
-        ImGuiID window_id = ImHashStr(panels_[0]->GetPanelID());
-        ImGuiWindowSettings* settings = ImGui::FindWindowSettingsByID(window_id);
+        ImGuiID const window_id = ImHashStr(panels_[0]->GetPanelID());
+        ImGuiWindowSettings const* settings = ImGui::FindWindowSettingsByID(window_id);
         if (settings && settings->DockId != 0) {
             // Panel has saved dock settings from imgui.ini - don't override
             return;
@@ -56,7 +56,7 @@ void RibbonController::SetupInitialDockLayout() {
     ImGuiContext& g = *GImGui;
     ImGuiID main_dockspace_id = 0;
     for (int n = 0; n < g.DockContext.Nodes.Data.Size; n++) {
-        ImGuiDockNode* node = static_cast<ImGuiDockNode*>(g.DockContext.Nodes.Data[n].val_p);
+        ImGuiDockNode const* node = static_cast<ImGuiDockNode*>(g.DockContext.Nodes.Data[n].val_p);
         if (node && node->IsDockSpace() && node->HostWindow) {
             main_dockspace_id = node->ID;
             break;

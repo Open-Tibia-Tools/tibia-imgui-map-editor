@@ -103,7 +103,7 @@ void Application::initializeUIComponents() {
   // Wire persistence: load custom brushes from AppData
   brush_system_->setConfigService(&settings_registry_->getConfig());
 
-  UIFactoryContext ctx{
+  UIFactoryContext const ctx{
       .view_settings = settings_registry_->getViewSettings(),
       .selection_settings = settings_registry_->getSelectionSettings(),
       .hotkey_registry = settings_registry_->getHotkeyRegistry(),

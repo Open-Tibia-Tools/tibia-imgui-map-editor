@@ -50,7 +50,7 @@ void BrowseTileWindow::setSelection(const Services::Selection::SelectionService 
   selection_ = selection;
 }
 
-void BrowseTileWindow::saveState(AppLogic::EditorSession &session) {
+void BrowseTileWindow::saveState(AppLogic::EditorSession &session) const {
   session.getBrowseTileState().is_open = visible_;
 }
 
@@ -141,7 +141,7 @@ Domain::Item *BrowseTileWindow::getSelectedItem() {
   }
 
   // Stacked items
-  size_t stack_index = static_cast<size_t>(selected_index_ - index);
+  size_t const stack_index = static_cast<size_t>(selected_index_ - index);
   if (stack_index < mutable_tile->getItemCount()) {
     return mutable_tile->getItem(stack_index);
   }
@@ -150,7 +150,7 @@ Domain::Item *BrowseTileWindow::getSelectedItem() {
 }
 
 void BrowseTileWindow::render(bool *p_visible) {
-  ImGuiWindowFlags flags = ImGuiWindowFlags_None;
+  ImGuiWindowFlags const flags = ImGuiWindowFlags_None;
 
   // Always call Begin/End for ImGui layout persistence (imgui.ini)
   if (!ImGui::Begin("Browse Tile", p_visible, flags)) {
@@ -162,8 +162,8 @@ void BrowseTileWindow::render(bool *p_visible) {
   refreshFromSelection();
 
   if (!current_tile_) {
-    ImVec2 content_size = ImGui::GetContentRegionAvail();
-    float text_width = ImGui::CalcTextSize("Select a single tile to browse").x;
+    ImVec2 const content_size = ImGui::GetContentRegionAvail();
+    float const text_width = ImGui::CalcTextSize("Select a single tile to browse").x;
     ImGui::SetCursorPosX((content_size.x - text_width) * 0.5f);
     ImGui::SetCursorPosY(content_size.y * 0.5f);
     ImGui::TextDisabled("Select a single tile to browse");
@@ -175,7 +175,7 @@ void BrowseTileWindow::render(bool *p_visible) {
   ensureRenderersInitialized();
 
   // Reserve space for footer only
-  float footer_height = ImGui::GetTextLineHeightWithSpacing() + 4.0f;
+  float const footer_height = ImGui::GetTextLineHeightWithSpacing() + 4.0f;
   float available_height = ImGui::GetContentRegionAvail().y - footer_height;
   if (available_height < 100.0f)
     available_height = 100.0f;
@@ -234,10 +234,10 @@ void BrowseTileWindow::render(bool *p_visible) {
 
       // Reserve fixed height for Spawn/Creature box (64px images + labels +
       // padding)
-      float spawn_creature_reserved = 140.0f;
+      float const spawn_creature_reserved = 140.0f;
 
       // Items list in scrollable child - leave space for spawn/creature box
-      float available = ImGui::GetContentRegionAvail().y;
+      float const available = ImGui::GetContentRegionAvail().y;
       float list_height = available - spawn_creature_reserved;
       if (list_height < 50.0f)
         list_height = 50.0f;
@@ -282,7 +282,7 @@ void BrowseTileWindow::render(bool *p_visible) {
         }
       }
 
-      uint32_t otbm_version = map_ ? map_->getVersion().otbm_version : 0;
+      uint32_t const otbm_version = map_ ? map_->getVersion().otbm_version : 0;
 
       property_renderer_.setContext(selected_item, spawn, creature,
                                     otbm_version, sprite_manager_,
@@ -320,14 +320,14 @@ void BrowseTileWindow::render(bool *p_visible) {
 
 void BrowseTileWindow::renderTileProperties() {
   // Zone flags at top (ribbon style)
-  Domain::TileFlag flags = current_tile_->getFlags();
-  bool pz = Domain::hasFlag(flags, Domain::TileFlag::ProtectionZone);
-  bool no_pvp = Domain::hasFlag(flags, Domain::TileFlag::NoPvp);
-  bool no_logout = Domain::hasFlag(flags, Domain::TileFlag::NoLogout);
-  bool pvp_zone = Domain::hasFlag(flags, Domain::TileFlag::PvpZone);
-
-  ImVec4 green(0.2f, 0.8f, 0.2f, 1.0f);
-  ImVec4 red(0.5f, 0.3f, 0.3f, 1.0f);
+  Domain::TileFlag const flags = current_tile_->getFlags();
+  bool const pz = Domain::hasFlag(flags, Domain::TileFlag::ProtectionZone);
+  bool const no_pvp = Domain::hasFlag(flags, Domain::TileFlag::NoPvp);
+  bool const no_logout = Domain::hasFlag(flags, Domain::TileFlag::NoLogout);
+  bool const pvp_zone = Domain::hasFlag(flags, Domain::TileFlag::PvpZone);
+
+  ImVec4 const green(0.2f, 0.8f, 0.2f, 1.0f);
+  ImVec4 const red(0.5f, 0.3f, 0.3f, 1.0f);
 
   ImGui::Spacing();
 

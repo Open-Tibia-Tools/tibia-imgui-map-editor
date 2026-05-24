@@ -26,8 +26,8 @@ OpenSecPanel::RenderResult OpenSecPanel::render(State &state) {
   ImGui::Spacing();
 
   // 2-column layout
-  float col_width = ImGui::GetContentRegionAvail().x / 2.0f - 6.0f;
-  float content_height = 300.0f;
+  float const col_width = ImGui::GetContentRegionAvail().x / 2.0f - 6.0f;
+  float const content_height = 300.0f;
 
   // Column 1: Map Info
   ImGui::BeginChild("SecMapInfo", ImVec2(col_width, content_height),
@@ -83,7 +83,7 @@ void OpenSecPanel::renderSecFolderSelector(State &state) {
 
 void OpenSecPanel::browseForSecFolder(State &state) {
   NFD::UniquePath outPath;
-  nfdresult_t result = NFD::PickFolder(outPath);
+  nfdresult_t const result = NFD::PickFolder(outPath);
   if (result == NFD_OKAY) {
     state.sec_folder = outPath.get();
     sec_path_buffer_ = state.sec_folder.string();
@@ -93,7 +93,7 @@ void OpenSecPanel::browseForSecFolder(State &state) {
 
 void OpenSecPanel::browseForClientFolder(State &state) {
   NFD::UniquePath outPath;
-  nfdresult_t result = NFD::PickFolder(outPath);
+  nfdresult_t const result = NFD::PickFolder(outPath);
   if (result == NFD_OKAY) {
     state.client_path = outPath.get();
     client_path_buffer_ = state.client_path.string();
@@ -240,8 +240,8 @@ void OpenSecPanel::renderMapInfo(const State &state) {
   ImGui::TextDisabled("Est. Size:");
   ImGui::TableNextColumn();
   if (state.scan_valid) {
-    int width = (state.sector_x_max - state.sector_x_min + 1) * 32;
-    int height = (state.sector_y_max - state.sector_y_min + 1) * 32;
+    int const width = (state.sector_x_max - state.sector_x_min + 1) * 32;
+    int const height = (state.sector_y_max - state.sector_y_min + 1) * 32;
     ImGui::Text("%d x %d tiles", width, height);
   } else {
     ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "-");

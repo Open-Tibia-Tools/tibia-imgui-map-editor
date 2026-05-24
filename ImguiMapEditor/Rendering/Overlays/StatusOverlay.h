@@ -19,7 +19,7 @@ class StatusOverlay {
 public:
   StatusOverlay() = default;
 
-  void render(ImDrawList *draw_list, const Domain::ICoordinateTransformer &camera,
+  static void render(ImDrawList *draw_list, const Domain::ICoordinateTransformer &camera,
               size_t selection_count, bool is_hovered,
               float framerate);
 };

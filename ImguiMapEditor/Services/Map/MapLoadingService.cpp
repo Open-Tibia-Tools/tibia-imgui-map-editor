@@ -95,12 +95,12 @@ MapLoadingService::loadMap(const std::filesystem::path &path,
   current_map_->setName(path.stem().string());
 
   // Load Spawns (-spawn.xml)
-  std::filesystem::path spawn_path =
+  std::filesystem::path const spawn_path =
       path.parent_path() / (path.stem().string() + "-spawn.xml");
   IO::SpawnXmlReader::read(spawn_path, *current_map_);
 
   // Load Houses (-house.xml)
-  std::filesystem::path house_path =
+  std::filesystem::path const house_path =
       path.parent_path() / (path.stem().string() + "-house.xml");
   IO::HouseXmlReader::read(house_path, *current_map_);
 
@@ -195,12 +195,12 @@ MapLoadingResult MapLoadingService::loadMapWithExistingClientData(
   loaded_map->setVersion(map_version);
 
   // Load Spawns (-spawn.xml)
-  std::filesystem::path spawn_path =
+  std::filesystem::path const spawn_path =
       path.parent_path() / (path.stem().string() + "-spawn.xml");
   IO::SpawnXmlReader::read(spawn_path, *loaded_map);
 
   // Load Houses (-house.xml)
-  std::filesystem::path house_path =
+  std::filesystem::path const house_path =
       path.parent_path() / (path.stem().string() + "-house.xml");
   IO::HouseXmlReader::read(house_path, *loaded_map);
 
@@ -472,16 +472,16 @@ bool MapLoadingService::loadClientData(
   // Use injected TilesetService instead of creating locally
   // Always use the application's data folder for tilesets and palettes,
   // NOT the map directory - these are app resources, not per-map resources
-  std::filesystem::path app_data_path =
+  std::filesystem::path const app_data_path =
       std::filesystem::current_path() / "data";
 
-  bool tilesets_loaded = tileset_service_.loadTilesets(app_data_path);
+  bool const tilesets_loaded = tileset_service_.loadTilesets(app_data_path);
   if (!tilesets_loaded) {
     spdlog::warn("No tilesets found. The palette will be empty.");
   }
 
   // Load palettes (must be after tilesets since palettes reference tilesets)
-  bool palettes_loaded = tileset_service_.loadPalettes(app_data_path);
+  bool const palettes_loaded = tileset_service_.loadPalettes(app_data_path);
   if (!palettes_loaded) {
     spdlog::warn("No palettes loaded. Ribbon palette buttons will be empty.");
   }

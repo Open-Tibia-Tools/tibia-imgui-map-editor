@@ -48,7 +48,7 @@ public:
    * Collect visible waypoints for overlay rendering.
    * Delegates to WaypointRenderer::collectVisibleWaypoints().
    */
-  void collectWaypoints(const Domain::ChunkedMap &map, int floor_z,
+  static void collectWaypoints(const Domain::ChunkedMap &map, int floor_z,
                         const VisibleBounds &bounds,
                         OverlayCollector &collector,
                         const Services::ViewSettings &settings,

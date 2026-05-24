@@ -58,7 +58,7 @@ bool RingBuffer::initialize(size_t element_size, size_t max_elements) {
     section_size_ = element_size * max_elements;
     
     // Total buffer size: 3 sections
-    size_t total_size = section_size_ * BUFFER_COUNT;
+    size_t const total_size = section_size_ * BUFFER_COUNT;
 
     // Create buffer using RAII handle
     buffer_.create();
@@ -71,13 +71,13 @@ bool RingBuffer::initialize(size_t element_size, size_t max_elements) {
 
     // GL 4.4+ persistent coherent mapping (guaranteed with GL 4.6 context)
     // No fallback needed - context creation already handles GL version requirements
-    GLbitfield storage_flags = GL_MAP_WRITE_BIT | 
+    GLbitfield const storage_flags = GL_MAP_WRITE_BIT | 
                                GL_MAP_PERSISTENT_BIT | 
                                GL_MAP_COHERENT_BIT;
 
     glBufferStorage(GL_ARRAY_BUFFER, total_size, nullptr, storage_flags);
 
-    GLbitfield map_flags = GL_MAP_WRITE_BIT | 
+    GLbitfield const map_flags = GL_MAP_WRITE_BIT | 
                            GL_MAP_PERSISTENT_BIT | 
                            GL_MAP_COHERENT_BIT;
 
@@ -133,7 +133,7 @@ void* RingBuffer::waitAndMap(size_t count) {
     // Wait for fence on current section if it exists
     if (fences_[current_section_]) {
         // Wait with timeout - should be very fast in practice
-        GLenum result = fences_[current_section_].clientWait(
+        GLenum const result = fences_[current_section_].clientWait(
             GL_SYNC_FLUSH_COMMANDS_BIT, 1000000000);  // 1 second timeout
 
         if (result == GL_TIMEOUT_EXPIRED || result == GL_WAIT_FAILED) {

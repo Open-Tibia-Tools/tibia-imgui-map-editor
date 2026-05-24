@@ -58,7 +58,7 @@ bool TooltipBubbleRenderer::initialize() {
     glBufferData(GL_ARRAY_BUFFER, MAX_BUBBLES * sizeof(BubbleInstance), nullptr, GL_DYNAMIC_DRAW);
 
     // Instance attributes
-    size_t stride = sizeof(BubbleInstance);
+    size_t const stride = sizeof(BubbleInstance);
     
     // Location 1: rect (vec4) - x, y, w, h
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, stride, (void*)0);
@@ -99,21 +99,21 @@ void TooltipBubbleRenderer::addBubble(float screen_x, float screen_y, float tile
                                        const std::string& text, bool is_waypoint) {
     if (!in_batch_ || pending_bubbles_.size() >= MAX_BUBBLES) return;
 
-    float scale = current_scale_;
-    float max_text_width = Config::Tooltip::MAX_WIDTH_BASE * scale;
+    float const scale = current_scale_;
+    float const max_text_width = Config::Tooltip::MAX_WIDTH_BASE * scale;
     
     // Calculate text size
-    ImVec2 text_size = ImGui::CalcTextSize(text.c_str(), nullptr, false, max_text_width);
-    
-    ImVec2 padding(4.0f * scale, 2.0f * scale);
-    float bubble_width = text_size.x + padding.x * 2;
-    float bubble_height = text_size.y + padding.y * 2;
-    
-    float pointer_size = 5.0f * scale;
-    float center_x = screen_x + tile_size / 2.0f;
-    float bubble_left = center_x - bubble_width / 2.0f;
-    float bubble_bottom = screen_y - pointer_size;
-    float bubble_top = bubble_bottom - bubble_height;
+    ImVec2 const text_size = ImGui::CalcTextSize(text.c_str(), nullptr, false, max_text_width);
+    
+    ImVec2 const padding(4.0f * scale, 2.0f * scale);
+    float const bubble_width = text_size.x + padding.x * 2;
+    float const bubble_height = text_size.y + padding.y * 2;
+    
+    float const pointer_size = 5.0f * scale;
+    float const center_x = screen_x + tile_size / 2.0f;
+    float const bubble_left = center_x - bubble_width / 2.0f;
+    float const bubble_bottom = screen_y - pointer_size;
+    float const bubble_top = bubble_bottom - bubble_height;
     
     // Create bubble instance
     BubbleInstance inst;
@@ -160,8 +160,8 @@ void TooltipBubbleRenderer::endBubbles() {
                     instances_.data());
     
     // Save OpenGL state
-    GLboolean scissor_enabled = glIsEnabled(GL_SCISSOR_TEST);
-    GLboolean blend_enabled = glIsEnabled(GL_BLEND);
+    GLboolean const scissor_enabled = glIsEnabled(GL_SCISSOR_TEST);
+    GLboolean const blend_enabled = glIsEnabled(GL_BLEND);
     GLint blend_src, blend_dst;
     glGetIntegerv(GL_BLEND_SRC_ALPHA, &blend_src);
     glGetIntegerv(GL_BLEND_DST_ALPHA, &blend_dst);
@@ -188,7 +188,7 @@ void TooltipBubbleRenderer::endBubbles() {
 void TooltipBubbleRenderer::renderText(ImDrawList* draw_list) {
     if (!draw_list) return;
     
-    ImU32 text_color = IM_COL32(0, 0, 0, 255);
+    ImU32 const text_color = IM_COL32(0, 0, 0, 255);
     
     for (const auto& bubble : pending_bubbles_) {
         draw_list->AddText(

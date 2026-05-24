@@ -146,7 +146,7 @@ bool TextureAtlas::addLayer() {
       // This is required because glGetTexImage on GL_TEXTURE_2D_ARRAY only
       // reads the first layer, not all layers.
       static constexpr int RGBA_CHANNELS = 4;
-      size_t layer_size =
+      size_t const layer_size =
           static_cast<size_t>(ATLAS_SIZE) * ATLAS_SIZE * RGBA_CHANNELS;
       std::vector<uint8_t> buffer(layer_size);
 
@@ -229,8 +229,8 @@ std::optional<AtlasRegion> TextureAtlas::addSprite(const uint8_t *rgba_data) {
   }
 
   // Calculate pixel position in current layer
-  int pixel_x = next_x_ * SPRITE_SIZE;
-  int pixel_y = next_y_ * SPRITE_SIZE;
+  int const pixel_x = next_x_ * SPRITE_SIZE;
+  int const pixel_y = next_y_ * SPRITE_SIZE;
 
   // Upload sprite data to texture array
   glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id_);
@@ -278,8 +278,8 @@ TextureAtlas::addSpriteFromPBO(const uint8_t *pbo_offset) {
     }
   }
 
-  int pixel_x = next_x_ * SPRITE_SIZE;
-  int pixel_y = next_y_ * SPRITE_SIZE;
+  int const pixel_x = next_x_ * SPRITE_SIZE;
+  int const pixel_y = next_y_ * SPRITE_SIZE;
 
   // Upload from PBO (GL_PIXEL_UNPACK_BUFFER must be bound!)
   glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id_);
@@ -315,7 +315,7 @@ void TextureAtlas::bind(uint32_t slot) const {
   glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id_);
 }
 
-void TextureAtlas::unbind() const { glBindTexture(GL_TEXTURE_2D_ARRAY, 0); }
+void TextureAtlas::unbind() { glBindTexture(GL_TEXTURE_2D_ARRAY, 0); }
 
 void TextureAtlas::release() {
   if (texture_id_ != 0) {

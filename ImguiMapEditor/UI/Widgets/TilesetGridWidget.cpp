@@ -126,7 +126,7 @@ void TilesetGridWidget::renderGridOnly() {
 }
 
 void TilesetGridWidget::renderFilterInput() {
-  float availableWidth = ImGui::GetContentRegionAvail().x;
+  float const availableWidth = ImGui::GetContentRegionAvail().x;
   ImGui::SetNextItemWidth(availableWidth - 130.0f);
   if (ImGui::InputTextWithHint("##Filter", ICON_FA_FILTER " Filter...",
                                filterBuffer_, sizeof(filterBuffer_))) {
@@ -161,7 +161,7 @@ void TilesetGridWidget::applyFilter() {
   std::transform(lowerFilter.begin(), lowerFilter.end(), lowerFilter.begin(),
                  [](unsigned char c) { return std::tolower(c); });
 
-  bool useCrossSearch = !lowerFilter.empty() && !allBrushes_.empty();
+  bool const useCrossSearch = !lowerFilter.empty() && !allBrushes_.empty();
 
   if (useCrossSearch) {
     crossFilteredBrushes_.clear();
@@ -197,7 +197,7 @@ void TilesetGridWidget::applyFilter() {
             filteredEntries_.push_back({i, entry});
           } else {
             const auto &brushName = brush->getName();
-            bool matches = std::search(brushName.begin(), brushName.end(),
+            bool const matches = std::search(brushName.begin(), brushName.end(),
                                        lowerFilter.begin(), lowerFilter.end(),
                                        [](unsigned char c1, unsigned char c2) {
                                          return std::tolower(c1) == c2;
@@ -236,7 +236,7 @@ void TilesetGridWidget::renderBrushGrid() {
     filterDirty_ = false;
   }
 
-  bool showingCrossResults = !crossFilteredBrushes_.empty();
+  bool const showingCrossResults = !crossFilteredBrushes_.empty();
 
   if (filteredEntries_.empty() && crossFilteredBrushes_.empty() &&
       !std::string_view(filterBuffer_).empty()) {
@@ -245,10 +245,10 @@ void TilesetGridWidget::renderBrushGrid() {
     return;
   }
 
-  float availableWidth = ImGui::GetContentRegionAvail().x;
-  float itemSpacingX = ImGui::GetStyle().ItemSpacing.x;
-  float actualItemWidth = getIconSize() + itemSpacingX;
-  int columns =
+  float const availableWidth = ImGui::GetContentRegionAvail().x;
+  float const itemSpacingX = ImGui::GetStyle().ItemSpacing.x;
+  float const actualItemWidth = getIconSize() + itemSpacingX;
+  int const columns =
       std::max(1, static_cast<int>(std::floor((availableWidth + itemSpacingX) /
                                               actualItemWidth)));
 
@@ -285,19 +285,19 @@ void TilesetGridWidget::renderBrushGrid() {
       ImGui::PushID(static_cast<int>(i));
 
       // Render brush tile
-      ImVec2 tileSize(getIconSize(), getIconSize());
-      ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+      ImVec2 const tileSize(getIconSize(), getIconSize());
+      ImVec2 const cursorPos = ImGui::GetCursorScreenPos();
 
       void *textureId = getBrushTextureId(brush);
 
       ImGui::InvisibleButton("##tile", tileSize);
-      bool isHovered = ImGui::IsItemHovered();
-      bool isClicked = ImGui::IsItemClicked();
+      bool const isHovered = ImGui::IsItemHovered();
+      bool const isClicked = ImGui::IsItemClicked();
 
       ImDrawList *dl = ImGui::GetWindowDrawList();
 
       // Background
-      ImU32 bgColor =
+      ImU32 const bgColor =
           isHovered ? IM_COL32(80, 80, 80, 255) : IM_COL32(40, 40, 40, 255);
       dl->AddRectFilled(
           cursorPos, ImVec2(cursorPos.x + tileSize.x, cursorPos.y + tileSize.y),
@@ -359,7 +359,7 @@ void TilesetGridWidget::renderBrushGrid() {
         }
 
         const auto &sep = getSeparator(fe.entry);
-        bool isCollapsed = collapsedSections_[fe.originalIndex];
+        bool const isCollapsed = collapsedSections_[fe.originalIndex];
 
         ImGui::PushID(static_cast<int>(fe.originalIndex + 10000));
 
@@ -368,7 +368,7 @@ void TilesetGridWidget::renderBrushGrid() {
         ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
                               ImVec4(0.3f, 0.3f, 0.4f, 1.0f));
 
-        std::string headerLabel = sep.name.empty() ? "---" : sep.name;
+        std::string const headerLabel = sep.name.empty() ? "---" : sep.name;
         if (ImGui::CollapsingHeader(headerLabel.c_str(),
                                     ImGuiTreeNodeFlags_DefaultOpen)) {
           collapsedSections_[fe.originalIndex] = false;
@@ -406,16 +406,16 @@ void TilesetGridWidget::renderBrushGrid() {
 
       ImGui::PushID(static_cast<int>(fe.originalIndex));
 
-      ImVec2 tileSize(getIconSize(), getIconSize());
-      ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+      ImVec2 const tileSize(getIconSize(), getIconSize());
+      ImVec2 const cursorPos = ImGui::GetCursorScreenPos();
 
       void *textureId = getBrushTextureId(brush);
 
       // Drag source
       ImGui::InvisibleButton("##tile", tileSize);
-      bool isHovered = ImGui::IsItemHovered();
-      bool isClicked = ImGui::IsItemClicked();
-      bool isSelected = selectedIndices_.count(static_cast<int>(entryIdx)) > 0;
+      bool const isHovered = ImGui::IsItemHovered();
+      bool const isClicked = ImGui::IsItemClicked();
+      bool const isSelected = selectedIndices_.count(static_cast<int>(entryIdx)) > 0;
 
       // Scroll to this brush if it's the target
       if (!scrollToBrushName_.empty() &&
@@ -436,7 +436,7 @@ void TilesetGridWidget::renderBrushGrid() {
       if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload *payload =
                 ImGui::AcceptDragDropPayload("TILESET_ENTRY")) {
-          size_t sourceIdx = *static_cast<const size_t *>(payload->Data);
+          size_t const sourceIdx = *static_cast<const size_t *>(payload->Data);
           if (sourceIdx != fe.originalIndex && tilesetRegistry_) {
             // Perform move
             if (auto *ts = tilesetRegistry_->getTileset(tilesetName_)) {
@@ -473,23 +473,23 @@ void TilesetGridWidget::renderBrushGrid() {
 
       // Selection border (with optional pulse animation)
       if (isSelected) {
-        bool isPulsing =
+        bool const isPulsing =
             !pulseBrushName_.empty() && brush->getName() == pulseBrushName_;
 
         if (isPulsing) {
-          float currentTime = ImGui::GetTime();
+          float const currentTime = ImGui::GetTime();
           if (pulseStartTime_ < 0) {
             pulseStartTime_ = currentTime;
           }
 
-          float elapsed = currentTime - pulseStartTime_;
+          float const elapsed = currentTime - pulseStartTime_;
           if (elapsed < PULSE_DURATION) {
             // Pulsing green border
-            float pulse = 0.5f + 0.5f * std::sin(elapsed * 8.0f);
-            ImU32 pulseColor = IM_COL32(static_cast<int>(50 * (1 - pulse)),
+            float const pulse = 0.5f + 0.5f * std::sin(elapsed * 8.0f);
+            ImU32 const pulseColor = IM_COL32(static_cast<int>(50 * (1 - pulse)),
                                         static_cast<int>(220 * pulse + 35),
                                         static_cast<int>(80 * pulse), 255);
-            float thickness = 2.0f + pulse * 2.0f;
+            float const thickness = 2.0f + pulse * 2.0f;
             dl->AddRect(
                 cursorPos,
                 ImVec2(cursorPos.x + tileSize.x, cursorPos.y + tileSize.y),
@@ -520,8 +520,8 @@ void TilesetGridWidget::renderBrushGrid() {
 
       // Click handling
       if (isClicked) {
-        bool ctrlHeld = ImGui::GetIO().KeyCtrl;
-        bool shiftHeld = ImGui::GetIO().KeyShift;
+        bool const ctrlHeld = ImGui::GetIO().KeyCtrl;
+        bool const shiftHeld = ImGui::GetIO().KeyShift;
 
         if (ctrlHeld) {
           // Toggle selection
@@ -532,8 +532,8 @@ void TilesetGridWidget::renderBrushGrid() {
           }
         } else if (shiftHeld && lastClickedIndex_ >= 0) {
           // Range select
-          int start = std::min(lastClickedIndex_, static_cast<int>(entryIdx));
-          int end = std::max(lastClickedIndex_, static_cast<int>(entryIdx));
+          int const start = std::min(lastClickedIndex_, static_cast<int>(entryIdx));
+          int const end = std::max(lastClickedIndex_, static_cast<int>(entryIdx));
           for (int k = start; k <= end; ++k) {
             selectedIndices_.insert(k);
           }

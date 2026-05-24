@@ -80,8 +80,8 @@ public:
     /**
      * Get state without creating (for read-only access).
      */
-    const CreatureAnimState* getState(const Domain::Position& spawn_center,
-                                       const std::string& creature_name) const;
+    static const CreatureAnimState* getState(const Domain::Position& spawn_center,
+                                       const std::string& creature_name) ;
     
     /**
      * Clear all animation states.
@@ -99,7 +99,7 @@ private:
                         class ClientDataService* client_data);
     
     // Generate unique key for creature at position
-    uint64_t makeKey(const Domain::Creature* creature) const;
+    static uint64_t makeKey(const Domain::Creature* creature) ;
     
     bool enabled_ = false;
     std::unordered_map<uint64_t, CreatureAnimState> states_;

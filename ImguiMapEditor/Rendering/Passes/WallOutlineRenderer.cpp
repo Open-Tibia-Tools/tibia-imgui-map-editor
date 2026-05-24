@@ -64,7 +64,7 @@ bool WallOutlineRenderer::initialize() {
   return true;
 }
 
-bool WallOutlineRenderer::isBlockingGround(const Domain::ItemType &type) const {
+bool WallOutlineRenderer::isBlockingGround(const Domain::ItemType &type) {
   // Blocking ground: Unpassable + BlockMissiles + NOT Moveable + top_order==0 +
   // NOT FullTile
   return type.hasFlag(Domain::ItemFlag::Unpassable) &&
@@ -73,7 +73,7 @@ bool WallOutlineRenderer::isBlockingGround(const Domain::ItemType &type) const {
          !type.hasFlag(Domain::ItemFlag::FullTile);
 }
 
-bool WallOutlineRenderer::isWallItem(const Domain::ItemType &type) const {
+bool WallOutlineRenderer::isWallItem(const Domain::ItemType &type) {
   // Yellow lines: Unpassable + BlockMissiles + NOT Moveable + top_order!=0
   return type.hasFlag(Domain::ItemFlag::Unpassable) &&
          type.hasFlag(Domain::ItemFlag::BlockMissiles) &&
@@ -82,7 +82,7 @@ bool WallOutlineRenderer::isWallItem(const Domain::ItemType &type) const {
 
 bool WallOutlineRenderer::tileHasWall(const Domain::ChunkedMap &map, int x,
                                       int y, int z) const {
-  Domain::Position pos(x, y, static_cast<int16_t>(z));
+  Domain::Position const pos(x, y, static_cast<int16_t>(z));
   const Domain::Tile *tile = map.getTile(pos);
   if (!tile)
     return false;
@@ -179,13 +179,13 @@ void WallOutlineRenderer::collectData(const Domain::ChunkedMap &map,
   // Scan all visible tiles for wall items
   for (int y = start_y; y < end_y; ++y) {
     for (int x = start_x; x < end_x; ++x) {
-      Domain::Position pos(x, y, static_cast<int16_t>(floor_z));
+      Domain::Position const pos(x, y, static_cast<int16_t>(floor_z));
       const Domain::Tile *tile = map.getTile(pos);
       if (!tile)
         continue;
 
-      float screen_x = x * TILE_SIZE - floor_offset;
-      float screen_y = y * TILE_SIZE - floor_offset;
+      float const screen_x = x * TILE_SIZE - floor_offset;
+      float const screen_y = y * TILE_SIZE - floor_offset;
 
       bool has_wall = false;
 
@@ -202,12 +202,12 @@ void WallOutlineRenderer::collectData(const Domain::ChunkedMap &map,
       // Add yellow lines for wall connections
       // Only check +X and +Y to avoid duplicates
       if (has_wall) {
-        float center_x = screen_x + TILE_SIZE / 2.0f;
-        float center_y = screen_y + TILE_SIZE / 2.0f;
+        float const center_x = screen_x + TILE_SIZE / 2.0f;
+        float const center_y = screen_y + TILE_SIZE / 2.0f;
 
         // Check neighbor at (x+1, y)
         if (tileHasWall(map, x + 1, y, floor_z)) {
-          float neighbor_center_x =
+          float const neighbor_center_x =
               (x + 1) * TILE_SIZE - floor_offset + TILE_SIZE / 2.0f;
           addLine(center_x, center_y, neighbor_center_x, center_y, YELLOW_R,
                   YELLOW_G, YELLOW_B, YELLOW_A);
@@ -215,7 +215,7 @@ void WallOutlineRenderer::collectData(const Domain::ChunkedMap &map,
 
         // Check neighbor at (x, y+1)
         if (tileHasWall(map, x, y + 1, floor_z)) {
-          float neighbor_center_y =
+          float const neighbor_center_y =
               (y + 1) * TILE_SIZE - floor_offset + TILE_SIZE / 2.0f;
           addLine(center_x, center_y, center_x, neighbor_center_y, YELLOW_R,
                   YELLOW_G, YELLOW_B, YELLOW_A);
@@ -232,7 +232,7 @@ void WallOutlineRenderer::render(const RenderContext &context) {
   }
 
   // Only render on the current floor
-  float floor_offset = FloorIterator::getFloorOffset(context.current_floor,
+  float const floor_offset = FloorIterator::getFloorOffset(context.current_floor,
                                                      context.current_floor);
 
   const auto &map = context.map;

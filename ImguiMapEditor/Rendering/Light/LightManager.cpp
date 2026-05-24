@@ -43,8 +43,8 @@ void LightManager::invalidateTile(int32_t x, int32_t y) {
         // to propagate light changes (spilling)
         
         // Using explicit shift to match ChunkedMap
-        int32_t cx = x >> 5;
-        int32_t cy = y >> 5;
+        int32_t const cx = x >> 5;
+        int32_t const cy = y >> 5;
         
         // Since we don't know the floor here yet (interface limitation), 
         // valid safe approach is to invalidate this column on all floors.
@@ -72,21 +72,21 @@ void LightManager::render(const Domain::ChunkedMap& map,
     if (!config.enabled) return;
 
     // 1. Calculate tile bounds FIRST (to check against cache)
-    float tiles_x = viewport_width / (32.0f * zoom);
-    float tiles_y = viewport_height / (32.0f * zoom);
-    
-    int start_x = static_cast<int>(std::floor(camera_x - tiles_x / 2)) - 1;
-    int end_x = static_cast<int>(std::ceil(camera_x + tiles_x / 2)) + 2;
-    int start_y = static_cast<int>(std::floor(camera_y - tiles_y / 2)) - 1;
-    int end_y = static_cast<int>(std::ceil(camera_y + tiles_y / 2)) + 2;
-    
-    int width_tiles = end_x - start_x;
-    int height_tiles = end_y - start_y;
+    float const tiles_x = viewport_width / (32.0f * zoom);
+    float const tiles_y = viewport_height / (32.0f * zoom);
+    
+    int const start_x = static_cast<int>(std::floor(camera_x - tiles_x / 2)) - 1;
+    int const end_x = static_cast<int>(std::ceil(camera_x + tiles_x / 2)) + 2;
+    int const start_y = static_cast<int>(std::floor(camera_y - tiles_y / 2)) - 1;
+    int const end_y = static_cast<int>(std::ceil(camera_y + tiles_y / 2)) + 2;
+    
+    int const width_tiles = end_x - start_x;
+    int const height_tiles = end_y - start_y;
     
     if (width_tiles <= 0 || height_tiles <= 0) return;
 
     // OPTIMIZATION: Check if visible region, floor range, or config changed
-    bool bounds_changed =
+    bool const bounds_changed =
         start_x != last_start_x_ ||
         start_y != last_start_y_ ||
         width_tiles != last_width_tiles_ ||
@@ -95,7 +95,7 @@ void LightManager::render(const Domain::ChunkedMap& map,
         start_floor != last_start_floor_ ||
         end_floor != last_end_floor_;
 
-    bool config_changed =
+    bool const config_changed =
         config.ambient_color != last_config_.ambient_color ||
         config.ambient_level != last_config_.ambient_level ||
         config.enabled != last_config_.enabled;
@@ -104,12 +104,12 @@ void LightManager::render(const Domain::ChunkedMap& map,
     // But we MUST recalculate screen coordinates because sub-pixel camera movement
     // changes where the texture is drawn, even if the integer tile range is same.
     if (!bounds_changed && !config_changed && !force_update_) {
-        float world_x = start_x * 32.0f;
-        float world_y = start_y * 32.0f;
-        float screen_x = (world_x - camera_x * 32.0f) * zoom + viewport_width / 2.0f;
-        float screen_y = (world_y - camera_y * 32.0f) * zoom + viewport_height / 2.0f;
-        float screen_w = width_tiles * 32.0f * zoom;
-        float screen_h = height_tiles * 32.0f * zoom;
+        float const world_x = start_x * 32.0f;
+        float const world_y = start_y * 32.0f;
+        float const screen_x = (world_x - camera_x * 32.0f) * zoom + viewport_width / 2.0f;
+        float const screen_y = (world_y - camera_y * 32.0f) * zoom + viewport_height / 2.0f;
+        float const screen_w = width_tiles * 32.0f * zoom;
+        float const screen_h = height_tiles * 32.0f * zoom;
 
         overlay_->apply(texture_->getTextureId(),
                        glm::vec4(screen_x, screen_y, screen_w, screen_h),
@@ -129,17 +129,17 @@ void LightManager::render(const Domain::ChunkedMap& map,
     force_update_ = false;
 
     // 2. Prepare buffer
-    size_t required_size = width_tiles * height_tiles * 4;
+    size_t const required_size = width_tiles * height_tiles * 4;
     if (viewport_buffer_.size() < required_size) {
         viewport_buffer_.resize(required_size);
     }
     
     // 3. Iterate over chunks in the view
     // To optimized cache usage, iterate by chunks visible
-    int chunk_start_x = start_x >> 5;
-    int chunk_start_y = start_y >> 5;
-    int chunk_end_x = end_x >> 5;
-    int chunk_end_y = end_y >> 5;
+    int const chunk_start_x = start_x >> 5;
+    int const chunk_start_y = start_y >> 5;
+    int const chunk_end_x = end_x >> 5;
+    int const chunk_end_y = end_y >> 5;
 
     for (int cy = chunk_start_y; cy <= chunk_end_y; ++cy) {
         for (int cx = chunk_start_x; cx <= chunk_end_x; ++cx) {
@@ -166,25 +166,25 @@ void LightManager::render(const Domain::ChunkedMap& map,
             }
             
             // Copy relevant part of the grid to viewport buffer
-            int chunk_pixel_x = cx * 32;
-            int chunk_pixel_y = cy * 32;
+            int const chunk_pixel_x = cx * 32;
+            int const chunk_pixel_y = cy * 32;
             
             // Intersection between Chunk and Viewport
-            int ix_start = std::max(start_x, chunk_pixel_x);
-            int ix_end = std::min(end_x, chunk_pixel_x + 32);
-            int iy_start = std::max(start_y, chunk_pixel_y);
-            int iy_end = std::min(end_y, chunk_pixel_y + 32);
+            int const ix_start = std::max(start_x, chunk_pixel_x);
+            int const ix_end = std::min(end_x, chunk_pixel_x + 32);
+            int const iy_start = std::max(start_y, chunk_pixel_y);
+            int const iy_end = std::min(end_y, chunk_pixel_y + 32);
             
             if (ix_start >= ix_end || iy_start >= iy_end) continue;
             
             // Copy loops
             for (int y = iy_start; y < iy_end; ++y) {
-                int dest_y = y - start_y;
-                int src_y = y - chunk_pixel_y;
-                
-                int dest_row_start = (dest_y * width_tiles + (ix_start - start_x)) * 4;
-                int src_row_start = (src_y * 32 + (ix_start - chunk_pixel_x)) * 4; // Assuming 32 width
-                int row_len = (ix_end - ix_start) * 4; // Bytes
+                int const dest_y = y - start_y;
+                int const src_y = y - chunk_pixel_y;
+                
+                int const dest_row_start = (dest_y * width_tiles + (ix_start - start_x)) * 4;
+                int const src_row_start = (src_y * 32 + (ix_start - chunk_pixel_x)) * 4; // Assuming 32 width
+                int const row_len = (ix_end - ix_start) * 4; // Bytes
                 
                 // Safety check
                  std::memcpy(&viewport_buffer_[dest_row_start], 
@@ -198,13 +198,13 @@ void LightManager::render(const Domain::ChunkedMap& map,
     texture_->upload(viewport_buffer_, width_tiles, height_tiles);
     
     // Calc screen rect
-    float world_x = start_x * 32.0f; // TILE_SIZE
-    float world_y = start_y * 32.0f;
-    
-    float screen_x = (world_x - camera_x * 32.0f) * zoom + viewport_width / 2.0f;
-    float screen_y = (world_y - camera_y * 32.0f) * zoom + viewport_height / 2.0f;
-    float screen_w = width_tiles * 32.0f * zoom;
-    float screen_h = height_tiles * 32.0f * zoom;
+    float const world_x = start_x * 32.0f; // TILE_SIZE
+    float const world_y = start_y * 32.0f;
+    
+    float const screen_x = (world_x - camera_x * 32.0f) * zoom + viewport_width / 2.0f;
+    float const screen_y = (world_y - camera_y * 32.0f) * zoom + viewport_height / 2.0f;
+    float const screen_w = width_tiles * 32.0f * zoom;
+    float const screen_h = height_tiles * 32.0f * zoom;
     
     overlay_->apply(texture_->getTextureId(),
                    glm::vec4(screen_x, screen_y, screen_w, screen_h),
@@ -222,21 +222,21 @@ void LightManager::computeChunkLight(CachedLightGrid& grid,
     float ambient_r, ambient_g, ambient_b;
     LightColorPalette::from8bitFloat(config.ambient_color, ambient_r, ambient_g, ambient_b);
     
-    float ambient_scale = config.ambient_level / 255.0f;
+    float const ambient_scale = config.ambient_level / 255.0f;
     ambient_r *= ambient_scale;
     ambient_g *= ambient_scale;
     ambient_b *= ambient_scale;
     
-    uint8_t base_r = static_cast<uint8_t>(ambient_r * 255.0f);
-    uint8_t base_g = static_cast<uint8_t>(ambient_g * 255.0f);
-    uint8_t base_b = static_cast<uint8_t>(ambient_b * 255.0f);
+    uint8_t const base_r = static_cast<uint8_t>(ambient_r * 255.0f);
+    uint8_t const base_g = static_cast<uint8_t>(ambient_g * 255.0f);
+    uint8_t const base_b = static_cast<uint8_t>(ambient_b * 255.0f);
     
     // Fill with ambient first
-    uint32_t ambient_packed = base_r | (base_g << 8) | (base_b << 16) | (255 << 24);
+    uint32_t const ambient_packed = base_r | (base_g << 8) | (base_b << 16) | (255 << 24);
     std::fill(grid.pixels.begin(), grid.pixels.end(), ambient_packed);
     
-    int chunk_start_x = chunk_x * 32;
-    int chunk_start_y = chunk_y * 32;
+    int const chunk_start_x = chunk_x * 32;
+    int const chunk_start_y = chunk_y * 32;
     
     // Iterate lights FIRST, then only tiles affected by each light
     for (const auto& light : lights) {
@@ -245,11 +245,11 @@ void LightManager::computeChunkLight(CachedLightGrid& grid,
         LightColorPalette::from8bitFloat(light.color, lr, lg, lb);
         
         // Calculate bounding box of affected tiles (in local chunk coords)
-        int radius = light.intensity;
-        int min_x = std::max(0, light.x - radius - chunk_start_x);
-        int max_x = std::min(31, light.x + radius - chunk_start_x);
-        int min_y = std::max(0, light.y - radius - chunk_start_y);
-        int max_y = std::min(31, light.y + radius - chunk_start_y);
+        int const radius = light.intensity;
+        int const min_x = std::max(0, light.x - radius - chunk_start_x);
+        int const max_x = std::min(31, light.x + radius - chunk_start_x);
+        int const min_y = std::max(0, light.y - radius - chunk_start_y);
+        int const max_y = std::min(31, light.y + radius - chunk_start_y);
         
         // Skip if light doesn't affect this chunk
         if (min_x > 31 || max_x < 0 || min_y > 31 || max_y < 0) continue;
@@ -257,18 +257,18 @@ void LightManager::computeChunkLight(CachedLightGrid& grid,
         // Only iterate tiles within light's bounding box
         for (int y = min_y; y <= max_y; ++y) {
             for (int x = min_x; x <= max_x; ++x) {
-                int tile_x = chunk_start_x + x;
-                int tile_y = chunk_start_y + y;
-                
-                float dx = (static_cast<float>(tile_x) + 0.5f) - (static_cast<float>(light.x) + 0.5f);
-                float dy = (static_cast<float>(tile_y) + 0.5f) - (static_cast<float>(light.y) + 0.5f);
-                float dist_sq = dx*dx + dy*dy;
+                int const tile_x = chunk_start_x + x;
+                int const tile_y = chunk_start_y + y;
+                
+                float const dx = (static_cast<float>(tile_x) + 0.5f) - (static_cast<float>(light.x) + 0.5f);
+                float const dy = (static_cast<float>(tile_y) + 0.5f) - (static_cast<float>(light.y) + 0.5f);
+                float const dist_sq = dx*dx + dy*dy;
                 
                 // Skip tiles outside actual radius (bounding box overestimates)
-                float radius_sq = static_cast<float>(radius * radius);
+                float const radius_sq = static_cast<float>(radius * radius);
                 if (dist_sq > radius_sq) continue;
                 
-                float distance = std::sqrt(dist_sq);
+                float const distance = std::sqrt(dist_sq);
                 float intensity = (-distance + static_cast<float>(light.intensity)) * 0.2f;
                 
                 if (intensity < 0.01f) continue;
@@ -276,9 +276,9 @@ void LightManager::computeChunkLight(CachedLightGrid& grid,
                 
                 // Update pixel with max blending
                 uint32_t& pixel = grid.pixels[y * 32 + x];
-                int r = std::max(static_cast<int>(pixel & 0xFF), static_cast<int>(lr * intensity * 255.0f));
-                int g = std::max(static_cast<int>((pixel >> 8) & 0xFF), static_cast<int>(lg * intensity * 255.0f));
-                int b = std::max(static_cast<int>((pixel >> 16) & 0xFF), static_cast<int>(lb * intensity * 255.0f));
+                int const r = std::max(static_cast<int>(pixel & 0xFF), static_cast<int>(lr * intensity * 255.0f));
+                int const g = std::max(static_cast<int>((pixel >> 8) & 0xFF), static_cast<int>(lg * intensity * 255.0f));
+                int const b = std::max(static_cast<int>((pixel >> 16) & 0xFF), static_cast<int>(lb * intensity * 255.0f));
                 
                 pixel = static_cast<uint32_t>(std::min(r, 255)) |
                        (static_cast<uint32_t>(std::min(g, 255)) << 8) |

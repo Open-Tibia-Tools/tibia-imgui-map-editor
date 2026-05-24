@@ -80,7 +80,7 @@ public:
   /**
    * Unbind texture from current slot.
    */
-  void unbind() const;
+  static void unbind() ;
 
   /**
    * Get number of layers in use.

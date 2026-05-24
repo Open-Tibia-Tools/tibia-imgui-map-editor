@@ -7,7 +7,7 @@ namespace MapEditor {
 
 void PersistenceManager::saveApplicationState(Services::SettingsRegistry& settings,
                                               const PlatformManager& platform,
-                                              const ClientVersionManager& version_manager) const {
+                                              const ClientVersionManager& version_manager) {
     // Save window state (size, position, maximized)
     platform.saveWindowState(settings.getConfig());
 

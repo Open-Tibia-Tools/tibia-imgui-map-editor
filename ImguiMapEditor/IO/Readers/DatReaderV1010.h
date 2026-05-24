@@ -25,7 +25,6 @@ public:
 protected:
     uint8_t transformFlag(uint8_t raw) override;
     
-    bool shouldReadPatternZ() const override { return true; }
     bool usesExtendedSprites() const override { return version_ >= 960; }
     bool hasFrameDurations() const override { return version_ >= 1050; }
     bool hasFrameGroups() const override { return version_ >= 1057; }

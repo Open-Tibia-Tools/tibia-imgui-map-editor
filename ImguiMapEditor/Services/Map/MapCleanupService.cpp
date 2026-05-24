@@ -31,7 +31,7 @@ CleanupResult MapCleanupService::cleanInvalidItems(
             
             // Check ground item
             if (tile->hasGround()) {
-                Domain::Item* ground = tile->getGround();
+                Domain::Item const* ground = tile->getGround();
                 if (ground && !client_data.getItemTypeByServerId(ground->getServerId())) {
                     tile->removeGround();
                     result.items_removed++;
@@ -41,7 +41,7 @@ CleanupResult MapCleanupService::cleanInvalidItems(
             // Check stacked items - iterate backwards to safely remove
             const auto& items = tile->getItems();
             for (size_t i = items.size(); i > 0; --i) {
-                size_t idx = i - 1;
+                size_t const idx = i - 1;
                 if (items[idx] && !client_data.getItemTypeByServerId(items[idx]->getServerId())) {
                     tile->removeItem(idx);
                     result.items_removed++;
@@ -50,7 +50,7 @@ CleanupResult MapCleanupService::cleanInvalidItems(
             
             // Progress callback
             if (on_progress && result.tiles_processed % 10000 == 0) {
-                float progress = static_cast<float>(result.tiles_processed) / 
+                float const progress = static_cast<float>(result.tiles_processed) / 
                                  static_cast<float>(result.total_tiles);
                 on_progress(progress);
             }
@@ -90,7 +90,7 @@ CleanupResult MapCleanupService::cleanHouseItems(
             // Check stacked items - iterate backwards to safely remove
             const auto& items = tile->getItems();
             for (size_t i = items.size(); i > 0; --i) {
-                size_t idx = i - 1;
+                size_t const idx = i - 1;
                 const Domain::Item* item = items[idx].get();
                 if (!item) continue;
                 
@@ -104,7 +104,7 @@ CleanupResult MapCleanupService::cleanHouseItems(
             
             // Progress callback
             if (on_progress && result.tiles_processed % 10000 == 0) {
-                float progress = static_cast<float>(result.tiles_processed) / 
+                float const progress = static_cast<float>(result.tiles_processed) / 
                                  static_cast<float>(result.total_tiles);
                 on_progress(progress);
             }
@@ -138,7 +138,7 @@ CleanupResult MapCleanupService::removeItemsById(
             
             // Check ground item
             if (tile->hasGround()) {
-                Domain::Item* ground = tile->getGround();
+                Domain::Item const* ground = tile->getGround();
                 if (ground && ground->getServerId() == item_id) {
                     tile->removeGround();
                     result.items_removed++;
@@ -148,7 +148,7 @@ CleanupResult MapCleanupService::removeItemsById(
             // Check stacked items - iterate backwards to safely remove
             const auto& items = tile->getItems();
             for (size_t i = items.size(); i > 0; --i) {
-                size_t idx = i - 1;
+                size_t const idx = i - 1;
                 if (items[idx] && items[idx]->getServerId() == item_id) {
                     tile->removeItem(idx);
                     result.items_removed++;
@@ -157,7 +157,7 @@ CleanupResult MapCleanupService::removeItemsById(
             
             // Progress callback
             if (on_progress && result.tiles_processed % 10000 == 0) {
-                float progress = static_cast<float>(result.tiles_processed) / 
+                float const progress = static_cast<float>(result.tiles_processed) / 
                                  static_cast<float>(result.total_tiles);
                 on_progress(progress);
             }

@@ -20,11 +20,11 @@ void TooltipOverlay::renderFromCollector(
 
   // Controlled by LOD Policy
   // If LOD is active, we check the policy. If inactive, show by default.
-  bool should_show = !is_lod_active_ || LODPolicy::SHOW_TOOLTIPS;
+  bool const should_show = !is_lod_active_ || LODPolicy::SHOW_TOOLTIPS;
   if (!should_show)
     return;
 
-  float scale = std::min(1.0f, std::max(0.4f, zoom));
+  float const scale = std::min(1.0f, std::max(0.4f, zoom));
   ImGui::SetWindowFontScale(scale);
 
   for (const auto &entry : entries) {
@@ -66,7 +66,7 @@ void TooltipOverlay::renderFromCollector(
     // Items Attributes
     for (const auto &item_ptr : tile->getItems()) {
       const auto *item = item_ptr.get();
-      bool item_has_attrs =
+      bool const item_has_attrs =
           (item->getActionId() > 0 || item->getUniqueId() > 0 ||
            item->getDoorId() > 0 || !item->getText().empty() ||
            item->getTeleportDestination() != nullptr);
@@ -119,7 +119,7 @@ void TooltipOverlay::renderFromCollector(
       // CON: Re-calculating position.
       // Cost: negligible (a few muls/adds) vs Map Iteration (massive).
 
-      glm::vec2 screen_pos = Utils::tileToScreen(
+      glm::vec2 const screen_pos = Utils::tileToScreen(
           tile_pos, camera_pos, viewport_pos, viewport_size, zoom);
       drawSpeechBubble(draw_list, screen_pos, tooltip_text, is_waypoint, zoom,
                        scale);
@@ -137,10 +137,10 @@ void TooltipOverlay::renderHoverTooltip(
   if (!map)
     return;
 
-  int tx = static_cast<int>(std::floor(mouse_pos_world.x));
-  int ty = static_cast<int>(std::floor(mouse_pos_world.y));
-
-  Domain::Position pos(tx, ty, floor);
+  int const tx = static_cast<int>(std::floor(mouse_pos_world.x));
+  int const ty = static_cast<int>(std::floor(mouse_pos_world.y));
+
+  Domain::Position const pos(tx, ty, floor);
   auto tile = map->getTile(pos);
 
   if (!tile)
@@ -215,9 +215,9 @@ void TooltipOverlay::renderHoverTooltip(
     }
 
     // Draw hover tile outline
-    glm::vec2 tile_screen =
+    glm::vec2 const tile_screen =
         Utils::tileToScreen(pos, camera_pos, viewport_pos, viewport_size, zoom);
-    float size = Config::Rendering::TILE_SIZE * zoom;
+    float const size = Config::Rendering::TILE_SIZE * zoom;
     draw_list->AddRect(ImVec2(tile_screen.x, tile_screen.y),
                        ImVec2(tile_screen.x + size, tile_screen.y + size),
                        Config::Colors::PIXEL_SELECT_BORDER, 0, 0, 2.0f);
@@ -228,35 +228,35 @@ void TooltipOverlay::drawSpeechBubble(ImDrawList *draw_list,
                                       const glm::vec2 &tile_pos,
                                       const std::string &text, bool is_waypoint,
                                       float zoom, float scale) {
-  float tile_size = Config::Rendering::TILE_SIZE * zoom;
-  float center_x = tile_pos.x + tile_size / 2.0f;
-  float tile_top_y = tile_pos.y;
-
-  float max_text_width = 150.0f * scale;
-  ImVec2 text_size =
+  float const tile_size = Config::Rendering::TILE_SIZE * zoom;
+  float const center_x = tile_pos.x + tile_size / 2.0f;
+  float const tile_top_y = tile_pos.y;
+
+  float const max_text_width = 150.0f * scale;
+  ImVec2 const text_size =
       ImGui::CalcTextSize(text.c_str(), nullptr, false, max_text_width);
 
-  ImVec2 padding(4 * scale, 2 * scale);
-  float bubble_width = text_size.x + padding.x * 2;
-  float bubble_height = text_size.y + padding.y * 2;
-
-  float pointer_size = 5.0f * scale;
-  float bubble_left = center_x - bubble_width / 2.0f;
-  float bubble_bottom = tile_top_y - pointer_size;
-  float bubble_top = bubble_bottom - bubble_height;
-
-  ImU32 bg_color = is_waypoint ? Config::Colors::TOOLTIP_WAYPOINT_BG
+  ImVec2 const padding(4 * scale, 2 * scale);
+  float const bubble_width = text_size.x + padding.x * 2;
+  float const bubble_height = text_size.y + padding.y * 2;
+
+  float const pointer_size = 5.0f * scale;
+  float const bubble_left = center_x - bubble_width / 2.0f;
+  float const bubble_bottom = tile_top_y - pointer_size;
+  float const bubble_top = bubble_bottom - bubble_height;
+
+  ImU32 const bg_color = is_waypoint ? Config::Colors::TOOLTIP_WAYPOINT_BG
                                : Config::Colors::TOOLTIP_NORMAL_BG;
-  ImU32 border_color = Config::Colors::TOOLTIP_BORDER;
-  ImU32 text_color = Config::Colors::TOOLTIP_TEXT;
+  ImU32 const border_color = Config::Colors::TOOLTIP_BORDER;
+  ImU32 const text_color = Config::Colors::TOOLTIP_TEXT;
 
   draw_list->AddRectFilled(ImVec2(bubble_left, bubble_top),
                            ImVec2(bubble_left + bubble_width, bubble_bottom),
                            bg_color, 2.0f * scale);
 
-  ImVec2 p1(center_x - pointer_size, bubble_bottom);
-  ImVec2 p2(center_x + pointer_size, bubble_bottom);
-  ImVec2 p3(center_x, tile_top_y);
+  ImVec2 const p1(center_x - pointer_size, bubble_bottom);
+  ImVec2 const p2(center_x + pointer_size, bubble_bottom);
+  ImVec2 const p3(center_x, tile_top_y);
   draw_list->AddTriangleFilled(p1, p2, p3, bg_color);
 
   draw_list->AddRect(ImVec2(bubble_left, bubble_top),
@@ -274,16 +274,16 @@ void TooltipOverlay::drawSpeechBubble(ImDrawList *draw_list,
 void TooltipOverlay::drawParchmentTooltip(ImDrawList *draw_list,
                                           const glm::vec2 &pos,
                                           const std::string &text) {
-  ImVec2 padding(10, 10);
-  ImVec2 text_size = ImGui::CalcTextSize(text.c_str());
-  ImVec2 size(text_size.x + padding.x * 2, text_size.y + padding.y * 2);
-
-  ImVec2 top_left(pos.x + 15, pos.y + 15);
-  ImVec2 bottom_right(top_left.x + size.x, top_left.y + size.y);
-
-  ImU32 bg_color = Config::Colors::PARCHMENT_BG;
-  ImU32 border_color = Config::Colors::PARCHMENT_BORDER;
-  ImU32 text_color = Config::Colors::PARCHMENT_TEXT;
+  ImVec2 const padding(10, 10);
+  ImVec2 const text_size = ImGui::CalcTextSize(text.c_str());
+  ImVec2 const size(text_size.x + padding.x * 2, text_size.y + padding.y * 2);
+
+  ImVec2 const top_left(pos.x + 15, pos.y + 15);
+  ImVec2 const bottom_right(top_left.x + size.x, top_left.y + size.y);
+
+  ImU32 const bg_color = Config::Colors::PARCHMENT_BG;
+  ImU32 const border_color = Config::Colors::PARCHMENT_BORDER;
+  ImU32 const text_color = Config::Colors::PARCHMENT_TEXT;
 
   draw_list->AddRectFilled(top_left, bottom_right, bg_color, 4.0f);
   draw_list->AddRect(top_left, bottom_right, border_color, 4.0f, 0, 2.0f);
@@ -300,14 +300,14 @@ void TooltipOverlay::drawParchmentTooltipColored(ImDrawList *draw_list,
                                                  const std::string &text,
                                                  ImU32 bg_color,
                                                  ImU32 text_col) {
-  ImVec2 padding(10, 10);
-  ImVec2 text_size = ImGui::CalcTextSize(text.c_str());
-  ImVec2 size(text_size.x + padding.x * 2, text_size.y + padding.y * 2);
-
-  ImVec2 top_left(pos.x + 15, pos.y + 15);
-  ImVec2 bottom_right(top_left.x + size.x, top_left.y + size.y);
-
-  ImU32 border_color = IM_COL32(0, 80, 0, 255);
+  ImVec2 const padding(10, 10);
+  ImVec2 const text_size = ImGui::CalcTextSize(text.c_str());
+  ImVec2 const size(text_size.x + padding.x * 2, text_size.y + padding.y * 2);
+
+  ImVec2 const top_left(pos.x + 15, pos.y + 15);
+  ImVec2 const bottom_right(top_left.x + size.x, top_left.y + size.y);
+
+  ImU32 const border_color = IM_COL32(0, 80, 0, 255);
 
   draw_list->AddRectFilled(top_left, bottom_right, bg_color, 4.0f);
   draw_list->AddRect(top_left, bottom_right, border_color, 4.0f, 0, 2.0f);

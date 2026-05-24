@@ -86,7 +86,7 @@ bool Framebuffer::resize(int width, int height) {
     return true;
 }
 
-void Framebuffer::bind() {
+void Framebuffer::bind() const {
     glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
     glViewport(0, 0, width_, height_);
 }

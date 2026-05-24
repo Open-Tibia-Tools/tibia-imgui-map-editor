@@ -263,9 +263,9 @@ private:
   std::optional<Domain::Position> lastStrokePos_;
 
   // Helper: get all positions on line between two points (Bresenham)
-  std::vector<Domain::Position>
+  static std::vector<Domain::Position>
   getLinePositions(const Domain::Position &from,
-                   const Domain::Position &to) const;
+                   const Domain::Position &to) ;
 
   // Paint tile using current brush
   void paintTileDirect(const Domain::Position &pos);

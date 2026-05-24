@@ -17,17 +17,17 @@ void SelectionOverlay::render(ImDrawList *draw_list,
     return;
   }
 
-  int current_floor = camera.getCurrentFloor();
-  float tile_screen_size = Config::Rendering::TILE_SIZE * camera.getZoom();
+  int const current_floor = camera.getCurrentFloor();
+  float const tile_screen_size = Config::Rendering::TILE_SIZE * camera.getZoom();
 
   // Heuristic: Choose the iteration strategy with fewer steps.
   // 1. Iterative: Costs O(SelectionSize) to filter by floor.
   // 2. Viewport: Costs O(VisibleTiles) to query the hash map.
   // We calculate visible tiles dynamically to handle zoom levels correctly.
-  glm::vec2 vp_size = camera.getViewportSize();
-  float cols = vp_size.x / tile_screen_size;
-  float rows = vp_size.y / tile_screen_size;
-  size_t visible_tiles_count = static_cast<size_t>(cols * rows);
+  glm::vec2 const vp_size = camera.getViewportSize();
+  float const cols = vp_size.x / tile_screen_size;
+  float const rows = vp_size.y / tile_screen_size;
+  size_t const visible_tiles_count = static_cast<size_t>(cols * rows);
 
   if (provider->getSelectionCount() > visible_tiles_count) {
     renderSelectionViewport(draw_list, camera, provider, current_floor,
@@ -41,10 +41,10 @@ void SelectionOverlay::render(ImDrawList *draw_list,
 void SelectionOverlay::renderDragBox(ImDrawList *draw_list,
                                      const glm::vec2 &start_screen,
                                      const glm::vec2 &current_screen) {
-  float min_x = std::min(start_screen.x, current_screen.x);
-  float max_x = std::max(start_screen.x, current_screen.x);
-  float min_y = std::min(start_screen.y, current_screen.y);
-  float max_y = std::max(start_screen.y, current_screen.y);
+  float const min_x = std::min(start_screen.x, current_screen.x);
+  float const max_x = std::max(start_screen.x, current_screen.x);
+  float const min_y = std::min(start_screen.y, current_screen.y);
+  float const max_y = std::max(start_screen.y, current_screen.y);
 
   // RME Style: White outline, NO fill.
   // Ideally dotted (stipped), but solid white is closest simple approximation
@@ -74,8 +74,8 @@ void SelectionOverlay::renderLassoOverlay(ImDrawList *draw_list,
   }
 
   // Draw preview line from last point to current mouse
-  ImVec2 last_point = im_points.back();
-  ImVec2 mouse_pos(current_mouse.x, current_mouse.y);
+  ImVec2 const last_point = im_points.back();
+  ImVec2 const mouse_pos(current_mouse.x, current_mouse.y);
   draw_list->AddLine(last_point, mouse_pos, IM_COL32(255, 255, 255, 180), 1.0f);
 
   // Draw small circles at each vertex
@@ -90,12 +90,12 @@ void SelectionOverlay::renderDragDimensions(ImDrawList *draw_list,
                                              const Domain::ICoordinateTransformer &camera,
                                              bool shift_pressed,
                                              bool alt_pressed) {
-  Domain::Position start_pos = camera.screenToTile(start_screen);
-  Domain::Position end_pos = camera.screenToTile(current_screen);
-
-  int width = std::abs(end_pos.x - start_pos.x) + 1;
-  int height = std::abs(end_pos.y - start_pos.y) + 1;
-  int total = width * height;
+  Domain::Position const start_pos = camera.screenToTile(start_screen);
+  Domain::Position const end_pos = camera.screenToTile(current_screen);
+
+  int const width = std::abs(end_pos.x - start_pos.x) + 1;
+  int const height = std::abs(end_pos.y - start_pos.y) + 1;
+  int const total = width * height;
 
   std::string dim_text = std::to_string(width) + "x" + std::to_string(height) +
                          " (" + std::to_string(total) + ")";
@@ -106,8 +106,8 @@ void SelectionOverlay::renderDragDimensions(ImDrawList *draw_list,
   else if (alt_pressed)
     dim_text += " [Sub]";
 
-  ImVec2 text_size = ImGui::CalcTextSize(dim_text.c_str());
-  ImVec2 text_pos(current_screen.x + 15, current_screen.y + 15);
+  ImVec2 const text_size = ImGui::CalcTextSize(dim_text.c_str());
+  ImVec2 const text_pos(current_screen.x + 15, current_screen.y + 15);
 
   draw_list->AddRectFilled(
       text_pos,
@@ -122,8 +122,8 @@ void SelectionOverlay::renderSelectionIterative(
     const ISelectionDataProvider *provider, int floor, float tile_screen_size) {
 
   // Check bounds for culling optimization
-  glm::vec2 vp_pos_vec = camera.getViewportPos();
-  glm::vec2 vp_size_vec = camera.getViewportSize();
+  glm::vec2 const vp_pos_vec = camera.getViewportPos();
+  glm::vec2 const vp_size_vec = camera.getViewportSize();
   ImVec2 viewport_pos(vp_pos_vec.x, vp_pos_vec.y);
   ImVec2 viewport_size(vp_size_vec.x, vp_size_vec.y);
 
@@ -131,7 +131,7 @@ void SelectionOverlay::renderSelectionIterative(
   provider->forEachEntryOnFloor(
       static_cast<int16_t>(floor),
       [&](const Domain::Position &pos, Domain::Selection::EntityType type) {
-        glm::vec2 screen_pos = camera.tileToScreen(pos);
+        glm::vec2 const screen_pos = camera.tileToScreen(pos);
 
         // Simple Culling
         if (screen_pos.x + tile_screen_size < viewport_pos.x ||
@@ -162,32 +162,32 @@ void SelectionOverlay::renderSelectionViewport(
     const ISelectionDataProvider *provider, int floor, float tile_screen_size) {
 
   // Calculate visible tile range
-  glm::vec2 vp_pos_vec = camera.getViewportPos();
-  glm::vec2 vp_size_vec = camera.getViewportSize();
-  ImVec2 viewport_pos(vp_pos_vec.x, vp_pos_vec.y);
-  ImVec2 viewport_size(vp_size_vec.x, vp_size_vec.y);
+  glm::vec2 const vp_pos_vec = camera.getViewportPos();
+  glm::vec2 const vp_size_vec = camera.getViewportSize();
+  ImVec2 const viewport_pos(vp_pos_vec.x, vp_pos_vec.y);
+  ImVec2 const viewport_size(vp_size_vec.x, vp_size_vec.y);
 
   // Extend slightly to avoid clipping at edges
-  Domain::Position top_left =
+  Domain::Position const top_left =
       camera.screenToTile(glm::vec2(viewport_pos.x, viewport_pos.y));
-  Domain::Position bottom_right = camera.screenToTile(glm::vec2(
+  Domain::Position const bottom_right = camera.screenToTile(glm::vec2(
       viewport_pos.x + viewport_size.x, viewport_pos.y + viewport_size.y));
 
-  int start_x = top_left.x - 1;
-  int end_x = bottom_right.x + 1;
-  int start_y = top_left.y - 1;
-  int end_y = bottom_right.y + 1;
+  int const start_x = top_left.x - 1;
+  int const end_x = bottom_right.x + 1;
+  int const start_y = top_left.y - 1;
+  int const end_y = bottom_right.y + 1;
 
   // Iterate visible tiles
   for (int y = start_y; y <= end_y; ++y) {
     for (int x = start_x; x <= end_x; ++x) {
-      Domain::Position pos(x, y, static_cast<int16_t>(floor));
+      Domain::Position const pos(x, y, static_cast<int16_t>(floor));
 
       // Fast O(1) check via interface
       if (provider->hasSelectionAt(pos)) {
         // Check for Spawn selection at this position
         if (provider->hasSpawnSelectionAt(pos)) {
-          glm::vec2 screen_pos = camera.tileToScreen(pos);
+          glm::vec2 const screen_pos = camera.tileToScreen(pos);
           draw_list->AddRectFilled(ImVec2(screen_pos.x + 2, screen_pos.y + 2),
                                    ImVec2(screen_pos.x + tile_screen_size - 2,
                                           screen_pos.y + tile_screen_size - 2),

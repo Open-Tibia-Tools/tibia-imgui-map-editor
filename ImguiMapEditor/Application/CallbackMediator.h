@@ -163,16 +163,16 @@ public:
   void wireAll(Context &ctx);
 
 private:
-  void wirePlatformCallbacks(Context &ctx);
+  static void wirePlatformCallbacks(Context &ctx);
   void wireTabCallbacks(Context &ctx);
-  void wireMapOperationCallbacks(Context &ctx);
+  static void wireMapOperationCallbacks(Context &ctx);
   void wireMenuCallbacks(Context &ctx);
-  void wireSecondaryClientCallbacks(Context &ctx);
+  static void wireSecondaryClientCallbacks(Context &ctx);
   void wireRibbonCallbacks(Context &ctx);
-  void wireCleanupCallbacks(Context &ctx);
-  void wireSearchCallbacks(Context &ctx);
-  void wireInputCallbacks(Context &ctx);
-  void wireMinimapCallbacks(Context &ctx);
+  static void wireCleanupCallbacks(Context &ctx);
+  static void wireSearchCallbacks(Context &ctx);
+  static void wireInputCallbacks(Context &ctx);
+  static void wireMinimapCallbacks(Context &ctx);
 
   /**
    * Helper to wire close map logic (handles unsaved changes checks).

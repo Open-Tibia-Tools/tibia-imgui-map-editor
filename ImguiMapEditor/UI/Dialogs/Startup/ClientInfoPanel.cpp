@@ -47,14 +47,14 @@ void ClientInfoPanel::render() {
     ImGui::Spacing();
 
     // OTBM Version (compare with map)
-    bool otbm_match = (client_info_.otbm_version == map_info_.otbm_version);
+    bool const otbm_match = (client_info_.otbm_version == map_info_.otbm_version);
     ImGui::TextColored(label_color, ICON_FA_FILE_CODE " OTBM Version");
     ImGui::TextColored(otbm_match ? match_color : mismatch_color, "%u",
                        client_info_.otbm_version);
     ImGui::Spacing();
 
     // Items Major Version
-    bool major_match =
+    bool const major_match =
         (client_info_.items_major_version == map_info_.items_major_version);
     ImGui::TextColored(label_color, ICON_FA_CUBES " Items Major Version");
     ImGui::TextColored(major_match ? match_color : mismatch_color, "%u",
@@ -62,7 +62,7 @@ void ClientInfoPanel::render() {
     ImGui::Spacing();
 
     // Items Minor Version
-    bool minor_match =
+    bool const minor_match =
         (client_info_.items_minor_version == map_info_.items_minor_version);
     ImGui::TextColored(label_color, ICON_FA_CUBE " Items Minor Version");
     ImGui::TextColored(minor_match ? match_color : mismatch_color, "%u",

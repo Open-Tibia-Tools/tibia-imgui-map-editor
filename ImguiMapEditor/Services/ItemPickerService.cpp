@@ -18,10 +18,10 @@ std::vector<Domain::Search::PickResult> ItemPickerService::search(
         return results;
     }
     
-    std::string query_lower = toLower(query);
+    std::string const query_lower = toLower(query);
     
     // Check for "cid:" prefix (client ID search)
-    bool is_client_id_search = query_lower.substr(0, 4) == "cid:";
+    bool const is_client_id_search = query_lower.substr(0, 4) == "cid:";
     uint16_t search_id = 0;
     bool is_id_search = false;
     
@@ -32,7 +32,7 @@ std::vector<Domain::Search::PickResult> ItemPickerService::search(
         } catch (...) { }
     } else {
         // Check if query is a number (server ID search)
-        bool all_digits = !query.empty() && 
+        bool const all_digits = !query.empty() && 
             std::all_of(query.begin(), query.end(), ::isdigit);
         if (all_digits) {
             try {
@@ -97,14 +97,14 @@ std::vector<Domain::Search::PickResult> ItemPickerService::search(
 
 bool ItemPickerService::matchesFuzzy(const std::string& text, 
                                       const std::string& query) const {
-    std::string text_lower = toLower(text);
+    std::string const text_lower = toLower(text);
     
     // Simple substring match for now
     // Can be upgraded to fuzzy matching algorithm later
     return text_lower.find(query) != std::string::npos;
 }
 
-std::string ItemPickerService::toLower(const std::string& str) const {
+std::string ItemPickerService::toLower(const std::string& str) {
     std::string result = str;
     std::transform(result.begin(), result.end(), result.begin(),
                    [](unsigned char c) { return std::tolower(c); });

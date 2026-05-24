@@ -54,7 +54,7 @@ public:
     void setFollowCursor(bool follow) { follow_cursor_ = follow; }
     
     // Session state save/restore for tab switching
-    void saveState(AppLogic::EditorSession& session);
+    void saveState(AppLogic::EditorSession& session) const;
     void restoreState(const AppLogic::EditorSession& session);
     
 private:

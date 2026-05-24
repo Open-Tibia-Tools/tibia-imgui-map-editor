@@ -33,7 +33,7 @@ void SpawnTintPass::queueRadiusOverlay(float screen_x, float screen_y,
   }
 
   // TINT OVERLAY (using Config::Colors::SPAWN_RADIUS_TINT_*)
-  float overlay_alpha = Config::Colors::SPAWN_RADIUS_TINT_FACTOR * alpha;
+  float const overlay_alpha = Config::Colors::SPAWN_RADIUS_TINT_FACTOR * alpha;
   sprite_batch_.draw(screen_x, screen_y, size, size, *white_pixel,
                      Config::Colors::SPAWN_RADIUS_TINT_R,
                      Config::Colors::SPAWN_RADIUS_TINT_G,
@@ -51,7 +51,7 @@ void SpawnTintPass::queueCenterIndicator(float screen_x, float screen_y,
   // Draw Config-defined spawn indicator fill
   // Use full size for the new box design, not small centered square
   auto color = Config::Colors::UnpackColor(Config::Colors::SPAWN_INDICATOR_FILL);
-  float overlay_alpha = color.a * alpha;
+  float const overlay_alpha = color.a * alpha;
 
   sprite_batch_.draw(screen_x, screen_y, size, size, *white_pixel, color.r,
                      color.g, color.b, overlay_alpha);
@@ -70,21 +70,21 @@ void SpawnTintPass::renderFromCollector(const OverlayCollector &collector,
 
     // Calculate World Coordinates (Un-zoomed, but with parallax offset)
     // Same logic as ChunkRenderingStrategy
-    float center_world_x = entry.center_x * tile_size - floor_offset;
-    float center_world_y = entry.center_y * tile_size - floor_offset;
+    float const center_world_x = entry.center_x * tile_size - floor_offset;
+    float const center_world_y = entry.center_y * tile_size - floor_offset;
 
     // Radius is square (Chebyshev)
     // Full width = (radius * 2 + 1) tiles
-    float radius_px = (entry.radius * 2 + 1) * tile_size;
+    float const radius_px = (entry.radius * 2 + 1) * tile_size;
 
     // Top-left corner
-    float top_left_x = center_world_x - entry.radius * tile_size;
-    float top_left_y = center_world_y - entry.radius * tile_size;
+    float const top_left_x = center_world_x - entry.radius * tile_size;
+    float const top_left_y = center_world_y - entry.radius * tile_size;
 
     const AtlasRegion *white_pixel =
         sprite_manager_.getAtlasManager().getWhitePixel();
     if (white_pixel) {
-      float overlay_alpha = Config::Colors::SPAWN_RADIUS_TINT_FACTOR * alpha;
+      float const overlay_alpha = Config::Colors::SPAWN_RADIUS_TINT_FACTOR * alpha;
       sprite_batch_.draw(top_left_x, top_left_y, radius_px, radius_px,
                          *white_pixel, Config::Colors::SPAWN_RADIUS_TINT_R,
                          Config::Colors::SPAWN_RADIUS_TINT_G,
@@ -100,8 +100,8 @@ void SpawnTintPass::renderFromCollector(const OverlayCollector &collector,
     if (pos.z != floor_z)
       continue;
 
-    float world_x = pos.x * tile_size - floor_offset;
-    float world_y = pos.y * tile_size - floor_offset;
+    float const world_x = pos.x * tile_size - floor_offset;
+    float const world_y = pos.y * tile_size - floor_offset;
 
     queueCenterIndicator(world_x, world_y, tile_size, alpha);
   }
@@ -122,7 +122,7 @@ void SpawnTintPass::collectVisibleSpawns(const Domain::ChunkedMap &map,
 
   // EXTENDED area for spawns whose radius extends into viewport
   constexpr int kMaxSpawnRadius = 15;
-  VisibleBounds spawn_bounds = bounds.withFloorOffset(kMaxSpawnRadius);
+  VisibleBounds const spawn_bounds = bounds.withFloorOffset(kMaxSpawnRadius);
 
   buffer.clear();
   map.getVisibleChunks(spawn_bounds.start_x, spawn_bounds.start_y,
@@ -130,7 +130,7 @@ void SpawnTintPass::collectVisibleSpawns(const Domain::ChunkedMap &map,
                        static_cast<int16_t>(floor_z), buffer);
 
   // Use optimized path: skip chunks without spawns, iterate only spawn tiles
-  for (Domain::Chunk *chunk : buffer) {
+  for (Domain::Chunk  const*chunk : buffer) {
     // Skip chunks with no spawns (O(1) check)
     if (!chunk->hasSpawns())
       continue;
@@ -143,16 +143,16 @@ void SpawnTintPass::collectVisibleSpawns(const Domain::ChunkedMap &map,
       if (spawn) {
         // OPTIMIZED: Use chunk-based creature counting instead of O(r²) tile lookups
         // Calculate chunks that overlap spawn radius
-        int32_t r = spawn->radius;
-        int32_t cx = tile->getX();
-        int32_t cy = tile->getY();
-        int16_t cz = tile->getZ();
+        const int32_t r = spawn->radius;
+        const int32_t cx = tile->getX();
+        const int32_t cy = tile->getY();
+        const int16_t cz = tile->getZ();
 
         // Convert spawn bounds to chunk coordinates (>> 5 = / 32)
-        int32_t min_chunk_x = (cx - r) >> 5;
-        int32_t max_chunk_x = (cx + r) >> 5;
-        int32_t min_chunk_y = (cy - r) >> 5;
-        int32_t max_chunk_y = (cy + r) >> 5;
+        const int32_t min_chunk_x = (cx - r) >> 5;
+        const int32_t max_chunk_x = (cx + r) >> 5;
+        const int32_t min_chunk_y = (cy - r) >> 5;
+        const int32_t max_chunk_y = (cy + r) >> 5;
 
         // Sum creature counts from overlapping chunks - O(k) where k ≈ 1-4
         int32_t creature_count = 0;

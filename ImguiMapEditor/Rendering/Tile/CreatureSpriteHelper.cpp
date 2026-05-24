@@ -101,8 +101,8 @@ CreatureSpriteHelper::SpriteResult CreatureSpriteHelper::resolveSpriteId(
     
     // Calculate sprite index based on direction and animation
     // Pattern: direction (0-3), pattern_y (addons), pattern_z (mount)
-    size_t pattern_x = direction % outfit_data->pattern_x;
-    size_t frame = animation_frame % outfit_data->frames;
+    size_t const pattern_x = direction % outfit_data->pattern_x;
+    size_t const frame = animation_frame % outfit_data->frames;
     
     // Calculate linear index into sprite_ids array
     // Index = frame * (pattern_x * pattern_y * pattern_z * width * height)
@@ -110,9 +110,9 @@ CreatureSpriteHelper::SpriteResult CreatureSpriteHelper::resolveSpriteId(
     //       + pattern_y * (pattern_x * width * height)
     //       + pattern_x * (width * height)
     //       + cy * width + cx
-    size_t sprites_per_frame = outfit_data->pattern_x * outfit_data->pattern_y * 
+    size_t const sprites_per_frame = outfit_data->pattern_x * outfit_data->pattern_y * 
                                outfit_data->pattern_z * outfit_data->width * outfit_data->height;
-    size_t base_index = frame * sprites_per_frame + pattern_x * outfit_data->width * outfit_data->height;
+    size_t const base_index = frame * sprites_per_frame + pattern_x * outfit_data->width * outfit_data->height;
     
     if (base_index < outfit_data->sprite_ids.size()) {
         result.sprite_id = outfit_data->sprite_ids[base_index];
@@ -123,7 +123,7 @@ CreatureSpriteHelper::SpriteResult CreatureSpriteHelper::resolveSpriteId(
     if (outfit_data->layers > 1) {
         result.needs_colorization = true;
         // Template is at layer 1 (second layer)
-        size_t template_offset = sprites_per_frame;
+        size_t const template_offset = sprites_per_frame;
         if (base_index + template_offset < outfit_data->sprite_ids.size()) {
             result.template_sprite_id = outfit_data->sprite_ids[base_index + template_offset];
         }

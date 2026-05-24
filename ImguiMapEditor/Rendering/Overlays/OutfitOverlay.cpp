@@ -26,20 +26,20 @@ bool OutfitOverlay::render(ImDrawList *draw_list, const Domain::Outfit &outfit,
   }
 
   // Get dimensions
-  int width = std::max<int>(1, outfit_data->width);
-  int height = std::max<int>(1, outfit_data->height);
-  int layers = std::max<int>(1, outfit_data->layers);
-  int pattern_x = std::max<int>(1, outfit_data->pattern_x); // directions
-  int pattern_y = std::max<int>(1, outfit_data->pattern_y); // addons
-  int pattern_z = std::max<int>(1, outfit_data->pattern_z); // mount (0/1)
-  int frames = std::max<int>(1, outfit_data->frames);
+  int const width = std::max<int>(1, outfit_data->width);
+  int const height = std::max<int>(1, outfit_data->height);
+  int const layers = std::max<int>(1, outfit_data->layers);
+  int const pattern_x = std::max<int>(1, outfit_data->pattern_x); // directions
+  int const pattern_y = std::max<int>(1, outfit_data->pattern_y); // addons
+  int const pattern_z = std::max<int>(1, outfit_data->pattern_z); // mount (0/1)
+  int const frames = std::max<int>(1, outfit_data->frames);
 
-  float tile_size = Config::Rendering::TILE_SIZE * zoom;
+  float const tile_size = Config::Rendering::TILE_SIZE * zoom;
 
   // Apply displacement offset from DAT (center creature within tile)
-  float offset_x =
+  float const offset_x =
       outfit_data->has_offset ? outfit_data->offset_x * zoom : 0.0f;
-  float offset_y =
+  float const offset_y =
       outfit_data->has_offset ? outfit_data->offset_y * zoom : 0.0f;
 
   // Direction maps to pattern_x (0=S, 1=E, 2=N, 3=W in Tibia)
@@ -48,11 +48,11 @@ bool OutfitOverlay::render(ImDrawList *draw_list, const Domain::Outfit &outfit,
     dir = direction;
   }
   // Use animation_frame modulo available frames (clamp to valid range)
-  int frame = (frames > 1) ? (animation_frame % frames) : 0;
-  int mount_z = 0; // no mount
+  int const frame = (frames > 1) ? (animation_frame % frames) : 0;
+  int const mount_z = 0; // no mount
 
   // Check if outfit has template layer (layers >= 2)
-  bool has_template = (layers >= 2);
+  bool const has_template = (layers >= 2);
 
   bool any_rendered = false;
 
@@ -67,22 +67,22 @@ bool OutfitOverlay::render(ImDrawList *draw_list, const Domain::Outfit &outfit,
     for (int h = 0; h < height; ++h) {
       for (int w = 0; w < width; ++w) {
         // Get base sprite index (layer 0)
-        uint32_t base_sprite_idx = Utils::SpriteUtils::getSpriteIndex(
+        uint32_t const base_sprite_idx = Utils::SpriteUtils::getSpriteIndex(
             outfit_data, w, h, 0, dir, addon_y, mount_z, frame);
 
         if (base_sprite_idx >= outfit_data->sprite_ids.size()) {
           continue;
         }
 
-        uint32_t base_sprite_id = outfit_data->sprite_ids[base_sprite_idx];
+        uint32_t const base_sprite_id = outfit_data->sprite_ids[base_sprite_idx];
         if (base_sprite_id == 0)
           continue;
 
-        Rendering::Texture *texture = nullptr;
+        Rendering::Texture  const*texture = nullptr;
 
         if (has_template) {
           // Get template sprite index (layer 1)
-          uint32_t template_sprite_idx = Utils::SpriteUtils::getSpriteIndex(
+          uint32_t const template_sprite_idx = Utils::SpriteUtils::getSpriteIndex(
               outfit_data, w, h, 1, dir, addon_y, mount_z, frame);
           uint32_t template_sprite_id = 0;
           if (template_sprite_idx < outfit_data->sprite_ids.size()) {
@@ -145,14 +145,14 @@ void OutfitOverlay::renderName(ImDrawList *draw_list, const std::string &name,
 
   // Zoom check removed - controlled by caller (SpawnLabelOverlay + LOD Policy)
 
-  ImVec2 text_size = ImGui::CalcTextSize(name.c_str());
+  ImVec2 const text_size = ImGui::CalcTextSize(name.c_str());
 
   // Position above the sprite
-  ImVec2 text_pos(center.x - text_size.x / 2.0f,
+  ImVec2 const text_pos(center.x - text_size.x / 2.0f,
                   center.y - sprite_height / 2.0f - text_size.y - 4.0f);
 
   // Background for readability
-  float padding = 2.0f;
+  float const padding = 2.0f;
   draw_list->AddRectFilled(
       ImVec2(text_pos.x - padding, text_pos.y - 1),
       ImVec2(text_pos.x + text_size.x + padding, text_pos.y + text_size.y + 1),

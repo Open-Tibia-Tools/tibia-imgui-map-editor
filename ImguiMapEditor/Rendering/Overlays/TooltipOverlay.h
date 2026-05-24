@@ -45,14 +45,14 @@ public:
 private:
   bool is_lod_active_ = false;
 
-  void drawSpeechBubble(ImDrawList *draw_list, const glm::vec2 &tile_pos,
+  static void drawSpeechBubble(ImDrawList *draw_list, const glm::vec2 &tile_pos,
                         const std::string &text, bool is_waypoint, float zoom,
                         float scale);
 
-  void drawParchmentTooltip(ImDrawList *draw_list, const glm::vec2 &pos,
+  static void drawParchmentTooltip(ImDrawList *draw_list, const glm::vec2 &pos,
                             const std::string &text);
 
-  void drawParchmentTooltipColored(ImDrawList *draw_list, const glm::vec2 &pos,
+  static void drawParchmentTooltipColored(ImDrawList *draw_list, const glm::vec2 &pos,
                                    const std::string &text, ImU32 bg_color,
                                    ImU32 text_color);
 

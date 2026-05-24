@@ -21,7 +21,7 @@ void Chunk::setTile(int local_x, int local_y, std::unique_ptr<Tile> tile) {
     return;
   }
 
-  int idx = toIndex(local_x, local_y);
+  int const idx = toIndex(local_x, local_y);
 
   // Update count
   const bool had_tile = tiles_[idx] != nullptr;
@@ -65,7 +65,7 @@ std::unique_ptr<Tile> Chunk::removeTile(int local_x, int local_y) {
     return nullptr;
   }
 
-  int idx = toIndex(local_x, local_y);
+  int const idx = toIndex(local_x, local_y);
 
   if (tiles_[idx]) {
     non_empty_count_--;
@@ -117,7 +117,7 @@ Tile *ChunkedFloor::getTile(int32_t x, int32_t y) const {
   int local_x, local_y;
   worldToChunk(x, y, chunk_x, chunk_y, local_x, local_y);
 
-  Chunk *chunk = getChunk(chunk_x, chunk_y);
+  Chunk  const*chunk = getChunk(chunk_x, chunk_y);
   if (!chunk) {
     return nullptr;
   }
@@ -142,7 +142,7 @@ Tile *ChunkedFloor::getOrCreateTile(int32_t x, int32_t y) {
 
   // Create new tile
   // Use constructor instead of designated initializer as Position is not an aggregate
-  Position pos(x, y, 0);
+  Position const pos(x, y, 0);
 
   auto new_tile = std::make_unique<Tile>(pos);
   Tile *ptr = new_tile.get();
@@ -170,7 +170,7 @@ void ChunkedFloor::setTile(int32_t x, int32_t y, std::unique_ptr<Tile> tile) {
   }
 }
 
-std::unique_ptr<Tile> ChunkedFloor::removeTile(int32_t x, int32_t y) {
+std::unique_ptr<Tile> ChunkedFloor::removeTile(int32_t x, int32_t y) const {
   int32_t chunk_x, chunk_y;
   int local_x, local_y;
   worldToChunk(x, y, chunk_x, chunk_y, local_x, local_y);
@@ -184,7 +184,7 @@ std::unique_ptr<Tile> ChunkedFloor::removeTile(int32_t x, int32_t y) {
 }
 
 Chunk *ChunkedFloor::getChunk(int32_t chunk_x, int32_t chunk_y) const {
-  uint64_t key = chunkKey(chunk_x, chunk_y);
+  uint64_t const key = chunkKey(chunk_x, chunk_y);
   auto it = chunks_.find(key);
   if (it != chunks_.end()) {
     return it->second.get();
@@ -193,7 +193,7 @@ Chunk *ChunkedFloor::getChunk(int32_t chunk_x, int32_t chunk_y) const {
 }
 
 Chunk *ChunkedFloor::getOrCreateChunk(int32_t chunk_x, int32_t chunk_y) {
-  uint64_t key = chunkKey(chunk_x, chunk_y);
+  uint64_t const key = chunkKey(chunk_x, chunk_y);
   auto it = chunks_.find(key);
   if (it != chunks_.end()) {
     return it->second.get();
@@ -216,8 +216,8 @@ void ChunkedFloor::getChunksInRegion(int32_t min_x, int32_t min_y,
   // Convert to chunk coordinates
   int32_t min_chunk_x = min_x >> 5; // floor(min_x / 32)
   int32_t min_chunk_y = min_y >> 5;
-  int32_t max_chunk_x = max_x >> 5;
-  int32_t max_chunk_y = max_y >> 5;
+  int32_t const max_chunk_x = max_x >> 5;
+  int32_t const max_chunk_y = max_y >> 5;
 
   // Validate bounds to prevent logic errors (inverted bounds)
   // If min > max, the region is empty.
@@ -229,8 +229,8 @@ void ChunkedFloor::getChunksInRegion(int32_t min_x, int32_t min_y,
   // Note: bounds validation above ensures (max - min + 1) is always positive
   // (>= 1) Cast to size_t BEFORE multiplication to prevent signed integer
   // overflow with large coordinate ranges.
-  size_t width = static_cast<size_t>(max_chunk_x - min_chunk_x + 1);
-  size_t height = static_cast<size_t>(max_chunk_y - min_chunk_y + 1);
+  size_t const width = static_cast<size_t>(max_chunk_x - min_chunk_x + 1);
+  size_t const height = static_cast<size_t>(max_chunk_y - min_chunk_y + 1);
 
   // Check for potential overflow in multiplication (width * height)
   // If width * height would overflow size_t, we skip reservation to avoid
@@ -240,11 +240,11 @@ void ChunkedFloor::getChunksInRegion(int32_t min_x, int32_t min_y,
     // Overflow would occur: skip reserve, vector will grow automatically if
     // needed
   } else {
-    size_t region_area = width * height;
-    size_t total_chunks = chunks_.size();
+    size_t const region_area = width * height;
+    size_t const total_chunks = chunks_.size();
 
     // Optimization: Don't reserve more than the total number of existing chunks
-    size_t reserve_count = std::min(region_area, total_chunks);
+    size_t const reserve_count = std::min(region_area, total_chunks);
 
     if (out_result.capacity() < out_result.size() + reserve_count) {
       out_result.reserve(out_result.size() + reserve_count);
@@ -259,8 +259,8 @@ void ChunkedFloor::getChunksInRegion(int32_t min_x, int32_t min_y,
       // Sparse Iteration: O(TotalChunks)
       // C++20: Iterate over values (chunks) directly using ranges
       for (const auto &chunk : chunks_ | std::views::values) {
-        int32_t cx = chunk->world_x >> 5;
-        int32_t cy = chunk->world_y >> 5;
+        int32_t const cx = chunk->world_x >> 5;
+        int32_t const cy = chunk->world_y >> 5;
 
         // Simple bounds check
         if (cx >= min_chunk_x && cx <= max_chunk_x && cy >= min_chunk_y &&
@@ -276,8 +276,8 @@ void ChunkedFloor::getChunksInRegion(int32_t min_x, int32_t min_y,
       auto y_range = std::views::iota(min_chunk_y, max_chunk_y + 1);
       auto x_range = std::views::iota(min_chunk_x, max_chunk_x + 1);
 
-      for (int32_t cy : y_range) {
-        for (int32_t cx : x_range) {
+      for (int32_t const cy : y_range) {
+        for (int32_t const cx : x_range) {
           Chunk *chunk = getChunk(cx, cy);
           if (chunk && !chunk->isEmpty()) {
             out_result.push_back(chunk);
@@ -379,7 +379,7 @@ void ChunkedMap::notifySpawnChange(const Position &pos, bool added) {
   if (pos.z < FLOOR_MIN || pos.z > FLOOR_MAX)
     return;
 
-  Tile *tile = getTile(pos);
+  Tile  const*tile = getTile(pos);
   if (!tile)
     return; // Should not happen for added=true
 
@@ -576,7 +576,7 @@ bool ChunkedMap::hasTownWithHouses(uint32_t town_id) const {
 void ChunkedMap::addWaypoint(const std::string &name, const Position &pos) {
   waypoints_.push_back({name, pos});
   // Add to O(1) lookup map - index of the waypoint we just added
-  uint64_t key = positionToKey(pos);
+  uint64_t const key = positionToKey(pos);
   waypoint_lookup_[key] = waypoints_.size() - 1;
   markChanged();
 }

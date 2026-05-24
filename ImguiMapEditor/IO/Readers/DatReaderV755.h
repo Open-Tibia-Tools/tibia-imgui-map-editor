@@ -22,7 +22,6 @@ protected:
     uint8_t transformFlag(uint8_t raw) override;
     
     // V755+ reads patternZ from file
-    bool shouldReadPatternZ() const override { return true; }
 };
 
 } // namespace IO

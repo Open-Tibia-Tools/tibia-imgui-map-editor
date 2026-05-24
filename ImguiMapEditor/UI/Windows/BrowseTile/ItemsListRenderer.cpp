@@ -33,9 +33,9 @@ void ItemsListRenderer::render(const Domain::Tile *current_tile,
     return;
 
   // Calculate total items to display
-  int ground_count = current_tile->hasGround() ? 1 : 0;
-  size_t item_count = current_tile->getItemCount();
-  int total_items = ground_count + static_cast<int>(item_count);
+  int const ground_count = current_tile->hasGround() ? 1 : 0;
+  size_t const item_count = current_tile->getItemCount();
+  int const total_items = ground_count + static_cast<int>(item_count);
 
   // Use ImGuiListClipper for performance with large item stacks (e.g. trash
   // tiles)
@@ -54,7 +54,7 @@ void ItemsListRenderer::render(const Domain::Tile *current_tile,
       } else {
         // Render Stacked Items
         // Map display index 'i' to item vector index
-        int item_idx = i - ground_count;
+        int const item_idx = i - ground_count;
 
         if (item_idx >= 0 && static_cast<size_t>(item_idx) < items.size()) {
           const Domain::Item *item = items[item_idx].get();
@@ -100,7 +100,7 @@ void ItemsListRenderer::renderItemRow(const Domain::Item *item,
     label += std::format(" x{}", item->getCount());
   }
 
-  bool is_selected = (selected_index == display_index);
+  bool const is_selected = (selected_index == display_index);
   if (ImGui::Selectable(label.c_str(), is_selected)) {
     selected_index = display_index;
     spawn_selected = false;
@@ -118,7 +118,7 @@ void ItemsListRenderer::renderItemRow(const Domain::Item *item,
   if (ImGui::BeginDragDropTarget()) {
     if (const ImGuiPayload *payload =
             ImGui::AcceptDragDropPayload("BROWSE_TILE_ITEM")) {
-      int source_index = *(const int *)payload->Data;
+      int const source_index = *(const int *)payload->Data;
       if (source_index != display_index) {
         handleItemDragDrop(source_index, display_index, current_pos,
                            selected_index);
@@ -138,8 +138,8 @@ ToolbarAction ItemsListRenderer::renderToolbar(
   if (!current_tile)
     return action;
 
-  bool has_selection = selected_index >= 0;
-  bool can_execute = has_selection && session_ && map_;
+  bool const has_selection = selected_index >= 0;
+  bool const can_execute = has_selection && session_ && map_;
 
   // Add spacing before buttons
   ImGui::Spacing();
@@ -148,9 +148,9 @@ ToolbarAction ItemsListRenderer::renderToolbar(
   ImGui::BeginDisabled(!can_execute ||
                        selected_index <= (current_tile->hasGround() ? 1 : 0));
   if (ImGui::Button(ICON_FA_ARROW_UP)) {
-    bool has_ground = current_tile->hasGround();
-    int src_idx = has_ground ? selected_index - 1 : selected_index;
-    int dst_idx = has_ground ? selected_index - 2 : selected_index - 1;
+    bool const has_ground = current_tile->hasGround();
+    int const src_idx = has_ground ? selected_index - 1 : selected_index;
+    int const dst_idx = has_ground ? selected_index - 2 : selected_index - 1;
 
     if (src_idx >= 0 && dst_idx >= 0) {
       moveItem(current_pos, src_idx, dst_idx, selected_index);
@@ -171,9 +171,9 @@ ToolbarAction ItemsListRenderer::renderToolbar(
   ImGui::BeginDisabled(!can_execute ||
                        selected_index >= static_cast<int>(max_index) - 1);
   if (ImGui::Button(ICON_FA_ARROW_DOWN)) {
-    bool has_ground = current_tile->hasGround();
-    int src_idx = has_ground ? selected_index - 1 : selected_index;
-    int dst_idx = has_ground ? selected_index : selected_index + 1;
+    bool const has_ground = current_tile->hasGround();
+    int const src_idx = has_ground ? selected_index - 1 : selected_index;
+    int const dst_idx = has_ground ? selected_index : selected_index + 1;
 
     if (src_idx >= 0 && dst_idx >= 0) {
       moveItem(current_pos, src_idx, dst_idx, selected_index);
@@ -187,12 +187,12 @@ ToolbarAction ItemsListRenderer::renderToolbar(
   ImGui::SameLine();
 
   // Delete button
-  bool can_delete_item = has_selection && session_ && map_;
-  bool can_delete_spawn =
+  bool const can_delete_item = has_selection && session_ && map_;
+  bool const can_delete_spawn =
       spawn_selected && session_ && map_ && current_tile->hasSpawn();
-  bool can_delete_creature =
+  bool const can_delete_creature =
       creature_selected && session_ && map_ && current_tile->hasCreature();
-  bool can_delete = can_delete_item || can_delete_spawn || can_delete_creature;
+  bool const can_delete = can_delete_item || can_delete_spawn || can_delete_creature;
 
   ImGui::BeginDisabled(!can_delete);
   if (ImGui::Button(ICON_FA_TRASH)) {
@@ -231,9 +231,9 @@ void ItemsListRenderer::handleItemDragDrop(int source_index, int display_index,
     // Need to re-fetch context to map indices (requires hasGround check)
     const Domain::Tile *tile = map_->getTile(current_pos);
     if (tile) {
-      bool has_ground = tile->hasGround();
-      int src_item_idx = has_ground ? source_index - 1 : source_index;
-      int dst_item_idx = has_ground ? display_index - 1 : display_index;
+      bool const has_ground = tile->hasGround();
+      int const src_item_idx = has_ground ? source_index - 1 : source_index;
+      int const dst_item_idx = has_ground ? display_index - 1 : display_index;
 
       if (src_item_idx >= 0 && dst_item_idx >= 0) {
         swapItems(current_pos, src_item_idx, dst_item_idx);
@@ -252,17 +252,17 @@ void ItemsListRenderer::checkDragOutDeletion(
       ImGui::GetDragDropPayload() != nullptr) {
     const ImGuiPayload *payload = ImGui::GetDragDropPayload();
     if (payload->IsDataType("BROWSE_TILE_ITEM")) {
-      ImVec2 mouse_pos = ImGui::GetMousePos();
-      ImVec2 window_pos = ImGui::GetWindowPos();
-      ImVec2 window_size = ImGui::GetWindowSize();
-
-      bool outside = (mouse_pos.x < window_pos.x ||
+      ImVec2 const mouse_pos = ImGui::GetMousePos();
+      ImVec2 const window_pos = ImGui::GetWindowPos();
+      ImVec2 const window_size = ImGui::GetWindowSize();
+
+      bool const outside = (mouse_pos.x < window_pos.x ||
                       mouse_pos.x > window_pos.x + window_size.x ||
                       mouse_pos.y < window_pos.y ||
                       mouse_pos.y > window_pos.y + window_size.y);
 
       if (outside) {
-        int source_index = *(const int *)payload->Data;
+        int const source_index = *(const int *)payload->Data;
         handleDelete(source_index, current_tile, current_pos, selected_index);
       }
     }
@@ -274,7 +274,7 @@ void ItemsListRenderer::handleDelete(int source_index,
                                      const Domain::Position &current_pos,
                                      int &selected_index) {
   if (session_ && map_) {
-    bool is_ground = current_tile->hasGround() && source_index == 0;
+    bool const is_ground = current_tile->hasGround() && source_index == 0;
     auto &hm = session_->getHistoryManager();
     auto &selection = session_->getSelectionService();
     hm.beginOperation("Delete item", Domain::History::ActionType::Other, &selection);
@@ -286,7 +286,7 @@ void ItemsListRenderer::handleDelete(int source_index,
       if (is_ground) {
         mutable_tile->setGround(nullptr);
       } else {
-        size_t item_idx =
+        size_t const item_idx =
             current_tile->hasGround() ? source_index - 1 : source_index;
         mutable_tile->removeItem(item_idx);
       }

@@ -22,7 +22,7 @@ public:
     /**
      * Process pick mode - detect map clicks and set temple position.
      */
-    void processPickMode(const Context& ctx);
+    static void processPickMode(const Context& ctx);
 };
 
 } // namespace MapEditor::Presentation

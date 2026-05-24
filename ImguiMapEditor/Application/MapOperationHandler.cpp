@@ -74,7 +74,7 @@ void MapOperationHandler::setExistingResources(
 void MapOperationHandler::handleOpenMap() {
   NFD::UniquePath outPath;
   nfdfilteritem_t filters[1] = {{"OTBM Maps", "otbm"}};
-  nfdresult_t result = NFD::OpenDialog(outPath, filters, 1);
+  nfdresult_t const result = NFD::OpenDialog(outPath, filters, 1);
 
   if (result == NFD_OKAY) {
     pending_map_path_ = outPath.get();
@@ -107,7 +107,7 @@ void MapOperationHandler::handleSaveMap() {
   if (save_path.empty()) {
     NFD::UniquePath outPath;
     nfdfilteritem_t filters[1] = {{"OTBM Maps", "otbm"}};
-    nfdresult_t result =
+    nfdresult_t const result =
         NFD::SaveDialog(outPath, filters, 1, nullptr, "untitled.otbm");
 
     if (result != NFD_OKAY) {
@@ -138,19 +138,19 @@ void MapOperationHandler::handleSaveAsMap() {
 
   // Suggest current filename if it exists
   std::string default_name = "untitled.otbm";
-  std::filesystem::path current_path = map->getFilename();
+  std::filesystem::path const current_path = map->getFilename();
   if (!current_path.empty()) {
     default_name = current_path.filename().string();
   }
 
-  nfdresult_t result =
+  nfdresult_t const result =
       NFD::SaveDialog(outPath, filters, 1, nullptr, default_name.c_str());
 
   if (result != NFD_OKAY) {
     return;
   }
 
-  std::filesystem::path save_path = outPath.get();
+  std::filesystem::path const save_path = outPath.get();
   map->setFilename(save_path.string());
   session->setFilePath(save_path);
 
@@ -164,7 +164,7 @@ void MapOperationHandler::performSave(EditorSession &session,
   if (!map)
     return;
 
-  Utils::ScopedFlag loading(
+  Utils::ScopedFlag const loading(
       is_loading_); // Saving is also a "loading" operation for UI blocking
 
   spdlog::info("Saving map to: {}", save_path.string());
@@ -183,7 +183,7 @@ void MapOperationHandler::performSave(EditorSession &session,
                  save_result.tiles_saved, save_result.items_saved);
     session.setModified(false);
 
-    std::string success_message =
+    std::string const success_message =
         is_save_as ? "Map saved as " + save_path.filename().string()
                    : "Map saved successfully!";
     notify(NotificationType::Success, success_message);
@@ -217,7 +217,7 @@ void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
 
   auto *client_version = versions_.getVersion(version);
   if (client_version && client_version->validateFiles()) {
-    Utils::ScopedFlag loading(is_loading_);
+    Utils::ScopedFlag const loading(is_loading_);
     loadMapFromPath(path, version);
   } else {
     std::string reason;
@@ -266,7 +266,7 @@ void MapOperationHandler::handleNewMapDirect(const std::string &map_name,
   current_version_ = client_version;
   pending_map_path_.clear();
 
-  Utils::ScopedFlag loading(is_loading_);
+  Utils::ScopedFlag const loading(is_loading_);
 
   Services::NewMapConfig map_config;
   map_config.map_name = map_name;
@@ -290,7 +290,7 @@ void MapOperationHandler::handleOpenSecMapDirect(
   current_version_ = client_version;
   pending_map_path_ = sec_folder;
 
-  Utils::ScopedFlag loading(is_loading_);
+  Utils::ScopedFlag const loading(is_loading_);
 
   auto result = loading_service_->loadSecMap(sec_folder, client_version);
 
@@ -393,7 +393,7 @@ void MapOperationHandler::handleSecondMapOpen(
     // Compatible -> load directly using current version
     spdlog::info("Map is compatible, loading directly");
     config_.addRecentFile(path.string());
-    Utils::ScopedFlag loading(is_loading_);
+    Utils::ScopedFlag const loading(is_loading_);
     loadMapFromPath(path, current_version_);
   } else {
     // Incompatible -> show compatibility popup
@@ -425,8 +425,8 @@ MapOperationHandler::checkMapCompatibility(uint32_t map_items_major,
     return result;
   }
 
-  uint32_t client_items_major = client_version->getOtbMajor();
-  uint32_t client_items_minor = client_version->getOtbVersion();
+  uint32_t const client_items_major = client_version->getOtbMajor();
+  uint32_t const client_items_minor = client_version->getOtbVersion();
 
   result.map_items_major = map_items_major;
   result.map_items_minor = map_items_minor;
@@ -435,8 +435,8 @@ MapOperationHandler::checkMapCompatibility(uint32_t map_items_major,
   result.client_version = current_version_;
 
   // Check compatibility - items major and minor must match
-  bool major_match = (client_items_major == map_items_major);
-  bool minor_match = (client_items_minor == map_items_minor);
+  bool const major_match = (client_items_major == map_items_major);
+  bool const minor_match = (client_items_minor == map_items_minor);
 
   if (major_match && minor_match) {
     result.compatible = true;

@@ -25,14 +25,14 @@ bool MaterialsXmlReader::load(const fs::path &path) {
 
   pugi::xml_document doc;
   std::string error;
-  pugi::xml_node root = XmlUtils::loadXmlFile(path, "materials", doc, error);
+  pugi::xml_node const root = XmlUtils::loadXmlFile(path, "materials", doc, error);
 
   if (!root) {
     spdlog::error("[MaterialsXmlReader] {}", error);
     return false;
   }
 
-  fs::path basePath = path.parent_path();
+  fs::path const basePath = path.parent_path();
   loadedFiles_.clear();
   loadedFiles_.insert(fs::absolute(path).string());
 
@@ -40,8 +40,8 @@ bool MaterialsXmlReader::load(const fs::path &path) {
                path.string());
 
   // Process sections in dependency order
-  for (pugi::xml_node child : root.children()) {
-    std::string nodeName = child.name();
+  for (pugi::xml_node const child : root.children()) {
+    std::string const nodeName = child.name();
 
     if (nodeName == "borders") {
       processBordersNode(child, basePath);
@@ -136,13 +136,13 @@ void MaterialsXmlReader::processIncludes(
     const pugi::xml_node &node, const fs::path &basePath,
     std::function<void(const fs::path &)> fileProcessor) {
 
-  for (pugi::xml_node include : node.children("include")) {
+  for (pugi::xml_node const include : node.children("include")) {
     // Check for file include
     std::string file = include.attribute("file").as_string();
     if (!file.empty()) {
-      fs::path filePath = basePath / file;
+      fs::path const filePath = basePath / file;
       if (fs::exists(filePath)) {
-        std::string absPath = fs::absolute(filePath).string();
+        std::string const absPath = fs::absolute(filePath).string();
         if (loadedFiles_.find(absPath) == loadedFiles_.end()) {
           loadedFiles_.insert(absPath);
           fileProcessor(filePath);
@@ -158,10 +158,10 @@ void MaterialsXmlReader::processIncludes(
     }
 
     // Check for folder include
-    std::string folder = include.attribute("folder").as_string();
+    std::string const folder = include.attribute("folder").as_string();
     if (!folder.empty()) {
-      fs::path folderPath = basePath / folder;
-      bool recursive = include.attribute("subfolders").as_bool(false);
+      fs::path const folderPath = basePath / folder;
+      bool const recursive = include.attribute("subfolders").as_bool(false);
 
       if (fs::exists(folderPath) && fs::is_directory(folderPath)) {
         auto files = collectXmlFiles(folderPath, recursive);
@@ -169,7 +169,7 @@ void MaterialsXmlReader::processIncludes(
                       files.size(), folderPath.string());
 
         for (const auto &xmlFile : files) {
-          std::string absPath = fs::absolute(xmlFile).string();
+          std::string const absPath = fs::absolute(xmlFile).string();
           if (loadedFiles_.find(absPath) == loadedFiles_.end()) {
             loadedFiles_.insert(absPath);
             fileProcessor(xmlFile);

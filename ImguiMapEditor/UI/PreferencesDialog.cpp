@@ -18,7 +18,7 @@ namespace UI {
 namespace {
 
 bool saveHotkeysToFile(const Domain::HotkeyBindingMap& bindings) {
-    std::vector<std::filesystem::path> save_paths = {"data/hotkeys.json",
+    std::vector<std::filesystem::path> const save_paths = {"data/hotkeys.json",
                                                       "../data/hotkeys.json"};
     for (const auto& path : save_paths) {
         if (std::filesystem::exists(path.parent_path()) ||
@@ -42,7 +42,7 @@ PreferencesDialog::Result PreferencesDialog::render() {
     is_open_ = true;
   }
 
-  ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+  ImVec2 const center = ImGui::GetMainViewport()->GetCenter();
   ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   ImGui::SetNextWindowSize(ImVec2(550, 450), ImGuiCond_Appearing);
 
@@ -81,7 +81,7 @@ PreferencesDialog::Result PreferencesDialog::render() {
     }
 
     // Close button at bottom
-    float button_width = 100.0f;
+    float const button_width = 100.0f;
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 40);
     ImGui::Separator();
     ImGui::SetCursorPosX((ImGui::GetWindowWidth() - button_width) * 0.5f);
@@ -126,11 +126,11 @@ void PreferencesDialog::renderSecondaryClientTab() {
 
   // Check if secondary client is already loaded
   auto *sec_client = secondary_client_.get();
-  bool is_loaded = sec_client && sec_client->isLoaded();
+  bool const is_loaded = sec_client && sec_client->isLoaded();
 
   if (is_loaded) {
     // Show loaded status with green indicator
-    bool is_active = sec_client->isActive();
+    bool const is_active = sec_client->isActive();
 
     if (is_active) {
       ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f),
@@ -226,13 +226,13 @@ void PreferencesDialog::renderSecondaryClientTab() {
     }
 
     // Load button
-    bool can_load = secondary_folder_path_[0] != '\0';
+    bool const can_load = secondary_folder_path_[0] != '\0';
     ImGui::BeginDisabled(!can_load);
     if (ImGui::Button(ICON_FA_DOWNLOAD " Load Secondary Client",
                       ImVec2(-1, 30))) {
       if (on_load_secondary_) {
         secondary_error_.clear();
-        bool success =
+        bool const success =
             on_load_secondary_(std::filesystem::path(secondary_folder_path_));
 
         if (!success) {
@@ -309,7 +309,7 @@ void PreferencesDialog::renderHotkeysTab() {
 
   // Render the imHotKey editor and handle results
   int appliedIndex = -1;
-  ImHotKey::EditResult result = ImHotKey::Edit(hotkeys.data(), hotkeys.size(),
+  ImHotKey::EditResult const result = ImHotKey::Edit(hotkeys.data(), hotkeys.size(),
                                                "HotKeys Editor", &appliedIndex);
 
   // When Apply is clicked, sync immediately
@@ -339,7 +339,7 @@ void PreferencesDialog::renderHotkeysTab() {
   ImGui::Spacing();
 
   // Show current hotkeys - table fills remaining space (minus button height)
-  float availHeight =
+  float const availHeight =
       ImGui::GetContentRegionAvail().y - 80.0f; // Leave space for button
   if (availHeight > 80.0f) { // Only show if there's enough space
     if (ImGui::BeginChild("HotkeysTableContainer", ImVec2(0, availHeight),

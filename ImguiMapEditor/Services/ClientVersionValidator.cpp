@@ -92,7 +92,7 @@ uint32_t ClientVersionValidator::detectVersion(const std::filesystem::path& clie
 }
 
 IO::OtbmVersionInfo ClientVersionValidator::readMapHeader(
-    const std::filesystem::path& map_path) const {
+    const std::filesystem::path& map_path) {
     
     if (map_path.empty() || !std::filesystem::exists(map_path)) {
         return {};
@@ -108,7 +108,7 @@ IO::OtbmVersionInfo ClientVersionValidator::readMapHeader(
     return {};
 }
 
-bool ClientVersionValidator::isMapHeaderValid(const std::filesystem::path& map_path) const {
+bool ClientVersionValidator::isMapHeaderValid(const std::filesystem::path& map_path) {
     if (map_path.empty() || !std::filesystem::exists(map_path)) {
         return false;
     }

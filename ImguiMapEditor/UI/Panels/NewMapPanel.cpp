@@ -46,7 +46,7 @@ void NewMapPanel::renderRecentClients(State &state) {
   ImGui::Separator();
 
   for (const auto &entry : recent_->getRecentClients()) {
-    bool is_default = (entry.client_version == registry_->getDefaultVersion());
+    bool const is_default = (entry.client_version == registry_->getDefaultVersion());
 
     // Get client name from registry
     std::string version_str;
@@ -100,7 +100,7 @@ void NewMapPanel::renderClientPathSelector(State &state) {
   ImGui::SameLine();
   if (ImGui::Button(ICON_FA_FOLDER_OPEN " Browse...")) {
     NFD::UniquePath outPath;
-    nfdresult_t result = NFD::PickFolder(outPath);
+    nfdresult_t const result = NFD::PickFolder(outPath);
     if (result == NFD_OKAY) {
       path_buffer_ = outPath.get();
       state.client_path = path_buffer_;

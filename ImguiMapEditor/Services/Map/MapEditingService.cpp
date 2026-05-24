@@ -40,7 +40,7 @@ bool MapEditingService::moveItems(
   extractMovables(entries, dx, dy, map, ctx);
   insertMovables(map, ctx);
 
-  bool has_moves = !ctx.moved_info.empty() || !ctx.pending_creatures.empty() ||
+  bool const has_moves = !ctx.moved_info.empty() || !ctx.pending_creatures.empty() ||
                    !ctx.pending_spawns.empty();
 
   if (has_moves) {
@@ -60,7 +60,7 @@ void MapEditingService::collectAffectedTiles(
   // Collect all unique tile positions that will be affected
   std::unordered_set<uint64_t> affected_tiles;
   for (const auto &entry : entries) {
-    Domain::Position from_pos = entry.getPosition();
+    Domain::Position const from_pos = entry.getPosition();
     Domain::Position to_pos = from_pos;
     to_pos.x += dx;
     to_pos.y += dy;
@@ -69,8 +69,8 @@ void MapEditingService::collectAffectedTiles(
   }
 
   // Record BEFORE states for all affected tiles
-  for (uint64_t packed : affected_tiles) {
-    Domain::Position tile_pos = Domain::Position::unpack(packed);
+  for (uint64_t const packed : affected_tiles) {
+    Domain::Position const tile_pos = Domain::Position::unpack(packed);
     history_manager.recordTileBefore(tile_pos, map->getTile(tile_pos));
   }
 }
@@ -91,7 +91,7 @@ void MapEditingService::extractMovables(
       spawn_moves; // from, to
 
   for (const auto &entry : entries) {
-    Domain::Position from_pos = entry.getPosition();
+    Domain::Position const from_pos = entry.getPosition();
     Domain::Position to_pos = from_pos;
     to_pos.x += dx;
     to_pos.y += dy;
@@ -119,7 +119,7 @@ void MapEditingService::extractMovables(
 
   // Extract all items from source tiles (PHASE 1)
   for (auto &[tile_key, item_list] : items_by_tile) {
-    Domain::Position from_pos = Domain::Position::unpack(tile_key);
+    Domain::Position const from_pos = Domain::Position::unpack(tile_key);
     Domain::Tile *from_tile = map->getTile(from_pos);
     if (!from_tile)
       continue;
@@ -148,7 +148,7 @@ void MapEditingService::extractMovables(
                              });
 
       if (it != items.end()) {
-        size_t index = std::distance(items.begin(), it);
+        size_t const index = std::distance(items.begin(), it);
         indexed_items.push_back({index, to_pos});
       }
     }

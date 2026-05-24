@@ -58,7 +58,7 @@ void MapContextMenu::renderTileActions(AppLogic::EditorSession *session) {
   pos_str << position_.x << ", " << position_.y << ", " << (int)position_.z;
 
   if (ImGui::MenuItem(ICON_FA_LOCATION_DOT " Copy Position")) {
-    std::string text = pos_str.str();
+    std::string const text = pos_str.str();
     ImGui::SetClipboardText(text.c_str());
     Presentation::showSuccess("Position copied to clipboard!");
   }
@@ -66,7 +66,7 @@ void MapContextMenu::renderTileActions(AppLogic::EditorSession *session) {
   if (ImGui::MenuItem(ICON_FA_COPY " Copy Ground ID", nullptr, false,
                       current_tile_ && current_tile_->getGround())) {
     if (current_tile_->getGround()) {
-      std::string id =
+      std::string const id =
           std::to_string(current_tile_->getGround()->getServerId());
       ImGui::SetClipboardText(id.c_str());
       Presentation::showSuccess("Ground ID copied to clipboard!");
@@ -100,7 +100,7 @@ void MapContextMenu::renderTileActions(AppLogic::EditorSession *session) {
 }
 
 void MapContextMenu::renderItemActions(AppLogic::EditorSession *session) {
-  bool has_items = current_tile_ && !current_tile_->getItems().empty();
+  bool const has_items = current_tile_ && !current_tile_->getItems().empty();
 
   // Check if top item is rotatable
   bool can_rotate = false;
@@ -125,7 +125,7 @@ void MapContextMenu::renderItemActions(AppLogic::EditorSession *session) {
     if (current_tile_ && !current_tile_->getItems().empty()) {
       auto &items = current_tile_->getItems();
       if (!items.empty()) {
-        std::string id = std::to_string(items.back()->getServerId());
+        std::string const id = std::to_string(items.back()->getServerId());
         ImGui::SetClipboardText(id.c_str());
         Presentation::showSuccess("Item ID copied to clipboard!");
       }
@@ -203,13 +203,13 @@ void MapContextMenu::renderItemActions(AppLogic::EditorSession *session) {
 
 void MapContextMenu::renderClipboardActions(
     AppLogic::EditorSession *session, AppLogic::ClipboardService *clipboard) {
-  bool has_selection = session && !session->getSelectionService().isEmpty();
-  bool can_paste = clipboard && clipboard->canPaste();
+  bool const has_selection = session && !session->getSelectionService().isEmpty();
+  bool const can_paste = clipboard && clipboard->canPaste();
 
   if (ImGui::MenuItem(ICON_FA_SCISSORS " Cut", "Ctrl+X", false,
                       has_selection)) {
     if (clipboard && session) {
-      size_t count = clipboard->cut(*session);
+      size_t const count = clipboard->cut(*session);
       Presentation::showInfo("Cut " + std::to_string(count) + " tiles", 3000);
     }
   }
@@ -222,7 +222,7 @@ void MapContextMenu::renderClipboardActions(
 
   if (ImGui::MenuItem(ICON_FA_COPY " Copy", "Ctrl+C", false, has_selection)) {
     if (clipboard && session) {
-      size_t count = clipboard->copy(*session);
+      size_t const count = clipboard->copy(*session);
       Presentation::showInfo("Copied " + std::to_string(count) + " tiles",
                              3000);
     }
@@ -236,7 +236,7 @@ void MapContextMenu::renderClipboardActions(
 
   if (ImGui::MenuItem(ICON_FA_PASTE " Paste", "Ctrl+V", false, can_paste)) {
     if (clipboard && session) {
-      size_t count = clipboard->paste(*session, position_);
+      size_t const count = clipboard->paste(*session, position_);
       Presentation::showSuccess("Pasted " + std::to_string(count) + " tiles");
     }
   }

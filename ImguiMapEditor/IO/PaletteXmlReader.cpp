@@ -26,19 +26,19 @@ bool PaletteXmlReader::load(const fs::path &path) {
 
   pugi::xml_document doc;
   std::string error;
-  pugi::xml_node root = XmlUtils::loadXmlFile(path, "palettes", doc, error);
+  pugi::xml_node const root = XmlUtils::loadXmlFile(path, "palettes", doc, error);
 
   if (!root) {
     spdlog::error("[PaletteXmlReader] {}", error);
     return false;
   }
 
-  fs::path basePath = path.parent_path();
+  fs::path const basePath = path.parent_path();
   loadedFiles_.clear();
   loadedFiles_.insert(fs::absolute(path).string());
 
   int paletteCount = 0;
-  for (pugi::xml_node paletteNode : root.children("palette")) {
+  for (pugi::xml_node const paletteNode : root.children("palette")) {
     parsePaletteNode(paletteNode, basePath, path);
     paletteCount++;
   }
@@ -68,7 +68,7 @@ void PaletteXmlReader::parsePaletteNode(const pugi::xml_node &node,
   palette->setSourceFile(sourceFile);
 
   // Process <tileset> children
-  for (pugi::xml_node tilesetNode : node.children("tileset")) {
+  for (pugi::xml_node const tilesetNode : node.children("tileset")) {
     auto tilesetNames = processTilesetIncludes(tilesetNode, basePath);
 
     // Resolve tileset names to actual tileset pointers - use injected registry
@@ -101,21 +101,21 @@ PaletteXmlReader::processTilesetIncludes(const pugi::xml_node &tilesetNode,
 
   std::vector<std::string> tilesetNames;
 
-  for (pugi::xml_node include : tilesetNode.children("include")) {
+  for (pugi::xml_node const include : tilesetNode.children("include")) {
     // Check for file include
-    std::string file = include.attribute("file").as_string();
+    std::string const file = include.attribute("file").as_string();
     if (!file.empty()) {
-      fs::path filePath = basePath / file;
+      fs::path const filePath = basePath / file;
 
       // Check if specific tileset attribute is set
-      std::string specificTileset = include.attribute("tileset").as_string();
+      std::string const specificTileset = include.attribute("tileset").as_string();
       if (!specificTileset.empty()) {
         tilesetNames.push_back(specificTileset);
         continue;
       }
 
       // Otherwise extract tileset name from file
-      std::string name = getTilesetNameFromFile(filePath);
+      std::string const name = getTilesetNameFromFile(filePath);
       if (!name.empty()) {
         tilesetNames.push_back(name);
       }
@@ -123,15 +123,15 @@ PaletteXmlReader::processTilesetIncludes(const pugi::xml_node &tilesetNode,
     }
 
     // Check for folder include
-    std::string folder = include.attribute("folder").as_string();
+    std::string const folder = include.attribute("folder").as_string();
     if (!folder.empty()) {
-      fs::path folderPath = basePath / folder;
-      bool recursive = include.attribute("subfolders").as_bool(false);
+      fs::path const folderPath = basePath / folder;
+      bool const recursive = include.attribute("subfolders").as_bool(false);
 
       if (fs::exists(folderPath) && fs::is_directory(folderPath)) {
         auto files = collectXmlFiles(folderPath, recursive);
         for (const auto &xmlFile : files) {
-          std::string name = getTilesetNameFromFile(xmlFile);
+          std::string const name = getTilesetNameFromFile(xmlFile);
           if (!name.empty()) {
             tilesetNames.push_back(name);
           }
@@ -184,7 +184,7 @@ std::string PaletteXmlReader::getTilesetNameFromFile(const fs::path &file) {
   }
 
   // Look for <tileset name="..."> root element
-  pugi::xml_node tileset = doc.child("tileset");
+  pugi::xml_node const tileset = doc.child("tileset");
   if (tileset) {
     return tileset.attribute("name").as_string();
   }

@@ -86,7 +86,7 @@ private:
   ToggleSecondaryCallback on_toggle_secondary_;
 
   // Tab renderers
-  void renderEditorTab();
+  static void renderEditorTab();
   void renderSecondaryClientTab();
   void renderHotkeysTab();
 };

@@ -5,7 +5,7 @@
 namespace MapEditor {
 namespace UI {
 
-void SelectedMapPanel::render() {
+void SelectedMapPanel::render() const {
   // Panel header
   ImGui::TextColored(ImVec4(0.85f, 0.88f, 0.92f, 1.0f),
                      ICON_FA_CIRCLE_INFO " Selected map information");

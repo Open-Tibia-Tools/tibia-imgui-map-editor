@@ -47,7 +47,7 @@ void VertexArray::bind() const {
     glBindVertexArray(vao_);
 }
 
-void VertexArray::unbind() const {
+void VertexArray::unbind() {
     glBindVertexArray(0);
 }
 
@@ -83,7 +83,7 @@ void VertexArray::setVertexBuffer(const void* data, size_t size, uint32_t stride
     unbind();
 }
 
-void VertexArray::updateVertexBuffer(const void* data, size_t size) {
+void VertexArray::updateVertexBuffer(const void* data, size_t size) const {
     if (vbo_ == 0 || size > vbo_size_) return;
     
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);

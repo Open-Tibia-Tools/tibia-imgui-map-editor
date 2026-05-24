@@ -50,24 +50,24 @@ void IngamePreviewRenderer::render(const Domain::ChunkedMap &map,
   if (last_frame_time_.time_since_epoch().count() == 0) {
     last_frame_time_ = now;
   }
-  double dt = std::chrono::duration<double>(now - last_frame_time_).count();
+  double const dt = std::chrono::duration<double>(now - last_frame_time_).count();
   last_frame_time_ = now;
 
   // Calculate animation ticks
-  int64_t frame_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+  int64_t const frame_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                            now.time_since_epoch())
                            .count();
   AnimationTicks anim_ticks = AnimationTicks::calculate(frame_time);
 
   // Camera position as integers for floor calculations
   int camera_z = floor;
-  int cam_x = static_cast<int>(camera_x);
-  int cam_y = static_cast<int>(camera_y);
+  int const cam_x = static_cast<int>(camera_x);
+  int const cam_y = static_cast<int>(camera_y);
 
   // Calculate visible floors using OTClient algorithm
-  int first_visible =
+  int const first_visible =
       floor_calculator_->calcFirstVisibleFloor(map, cam_x, cam_y, camera_z);
-  int last_visible = floor_calculator_->calcLastVisibleFloor(camera_z);
+  int const last_visible = floor_calculator_->calcLastVisibleFloor(camera_z);
 
   // Teleport detection: check if we moved far or changed floors
   bool teleported = false;
@@ -80,9 +80,9 @@ void IngamePreviewRenderer::render(const Domain::ChunkedMap &map,
     teleported = true;
   } else {
     // Check for teleport (moved >= 3 tiles or significant floor change)
-    int dx = std::abs(cam_x - last_camera_x_);
-    int dy = std::abs(cam_y - last_camera_y_);
-    int dz = std::abs(camera_z - last_player_z_);
+    int const dx = std::abs(cam_x - last_camera_x_);
+    int const dy = std::abs(cam_y - last_camera_y_);
+    int const dz = std::abs(camera_z - last_player_z_);
 
     if (dx >= Config::Preview::TELEPORT_THRESHOLD ||
         dy >= Config::Preview::TELEPORT_THRESHOLD ||
@@ -99,7 +99,7 @@ void IngamePreviewRenderer::render(const Domain::ChunkedMap &map,
   // Update fading progress towards target (smooth fade when not teleporting)
   if (!teleported) {
     for (int z = 0; z <= FloorConstants::MAX_Z; ++z) {
-      double target = (z >= first_visible && z <= last_visible) ? 1.0 : 0.0;
+      double const target = (z >= first_visible && z <= last_visible) ? 1.0 : 0.0;
       double current = fading_floor_progress_[z];
 
       if (current < target) {
@@ -123,20 +123,20 @@ void IngamePreviewRenderer::render(const Domain::ChunkedMap &map,
 
   // Calculate visible tile range
   float tile_size = TileRenderer::TILE_SIZE;
-  float tiles_x = viewport_width / (tile_size * zoom);
-  float tiles_y = viewport_height / (tile_size * zoom);
-
-  int start_x = static_cast<int>(std::floor(camera_x - tiles_x / 2)) - 1;
-  int end_x = static_cast<int>(std::ceil(camera_x + tiles_x / 2)) + 2;
-  int start_y = static_cast<int>(std::floor(camera_y - tiles_y / 2)) - 1;
-  int end_y = static_cast<int>(std::ceil(camera_y + tiles_y / 2)) + 2;
+  float const tiles_x = viewport_width / (tile_size * zoom);
+  float const tiles_y = viewport_height / (tile_size * zoom);
+
+  int const start_x = static_cast<int>(std::floor(camera_x - tiles_x / 2)) - 1;
+  int const end_x = static_cast<int>(std::ceil(camera_x + tiles_x / 2)) + 2;
+  int const start_y = static_cast<int>(std::floor(camera_y - tiles_y / 2)) - 1;
+  int const end_y = static_cast<int>(std::ceil(camera_y + tiles_y / 2)) + 2;
 
   // Underground View Alignment (Z > 7)
   float underground_offset_x = 0.0f;
   float underground_offset_y = 0.0f;
   if (camera_z > FloorConstants::SEA_FLOOR) {
-    int off_x = (static_cast<int>(camera_x) % 2);
-    int off_y = (static_cast<int>(camera_y) % 2);
+    int const off_x = (static_cast<int>(camera_x) % 2);
+    int const off_y = (static_cast<int>(camera_y) % 2);
     underground_offset_x = static_cast<float>(off_x) * tile_size * zoom;
     underground_offset_y = static_cast<float>(off_y) * tile_size * zoom;
   }
@@ -144,14 +144,14 @@ void IngamePreviewRenderer::render(const Domain::ChunkedMap &map,
   std::vector<uint32_t> missing_sprites;
   missing_sprites.reserve(64);
 
-  glm::mat4 mvp = projection_ * view_;
+  glm::mat4 const mvp = projection_ * view_;
   sprite_batch_.begin(mvp);
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   // Find render range based on fading progress
-  int render_start_z = last_visible;
+  int const render_start_z = last_visible;
   int render_end_z = 0;
   for (int z = 0; z <= last_visible; ++z) {
     if (fading_floor_progress_[z] > 0.001) {
@@ -176,10 +176,10 @@ void IngamePreviewRenderer::render(const Domain::ChunkedMap &map,
         continue;
 
       // Transform world bounds to chunk-local space
-      int local_min_x = start_x - chunk->world_x;
-      int local_min_y = start_y - chunk->world_y;
-      int local_max_x = end_x - chunk->world_x;
-      int local_max_y = end_y - chunk->world_y;
+      int const local_min_x = start_x - chunk->world_x;
+      int const local_min_y = start_y - chunk->world_y;
+      int const local_max_x = end_x - chunk->world_x;
+      int const local_max_y = end_y - chunk->world_y;
 
       // Use Diagonal Region Iteration for correct depth sorting AND culling
       // (Fixes "Ingame Preview depth issues" and "Iterating invisible tiles")
@@ -187,19 +187,19 @@ void IngamePreviewRenderer::render(const Domain::ChunkedMap &map,
           local_min_x, local_min_y, local_max_x, local_max_y,
           [&](const Domain::Tile *tile, int lx, int ly) {
             // Reconstruct world coordinates from chunk + local
-            int tile_x = chunk->world_x + lx;
-            int tile_y = chunk->world_y + ly;
+            int const tile_x = chunk->world_x + lx;
+            int const tile_y = chunk->world_y + ly;
 
             // Calculate screen position
-            float screen_x =
+            float const screen_x =
                 (tile_x - camera_x) * tile_size * zoom + viewport_width / 2.0f;
 
             // Z offset for floor perspective (OTClient style)
-            float z_offset =
+            float const z_offset =
                 static_cast<float>(camera_z - z) * tile_size * zoom;
 
-            float final_screen_x = screen_x - z_offset + underground_offset_x;
-            float final_screen_y = (tile_y - camera_y) * tile_size * zoom +
+            float const final_screen_x = screen_x - z_offset + underground_offset_x;
+            float const final_screen_y = (tile_y - camera_y) * tile_size * zoom +
                                    viewport_height / 2.0f - z_offset +
                                    underground_offset_y;
 
@@ -220,7 +220,7 @@ void IngamePreviewRenderer::render(const Domain::ChunkedMap &map,
   glDisable(GL_BLEND);
 
   // Apply lighting if enabled
-  bool lighting_enabled =
+  bool const lighting_enabled =
       view_settings && view_settings->preview_lighting_enabled;
   if (lighting_enabled && light_manager_ && client_data_) {
     Domain::LightConfig config;

@@ -54,12 +54,12 @@ void processNode(BinaryNode* node, NodeFileWriteHandle& writer,
         // Item node: first 2 bytes after type are the item ID
         uint16_t item_id;
         if (node->getU16(item_id)) {
-            uint16_t new_id = convertId(item_id, direction, client_data, converted, skipped);
+            uint16_t const new_id = convertId(item_id, direction, client_data, converted, skipped);
             writer.writeU16(new_id);
         }
         
         // Copy remaining bytes (attributes) as-is
-        size_t remaining = node->bytesRemaining();
+        size_t const remaining = node->bytesRemaining();
         if (remaining > 0) {
             std::string data;
             if (node->getRAW(data, remaining)) {
@@ -106,7 +106,7 @@ void processNode(BinaryNode* node, NodeFileWriteHandle& writer,
                     // Inline item - just ID, needs conversion
                     uint16_t item_id;
                     if (node->getU16(item_id)) {
-                        uint16_t new_id = convertId(item_id, direction, client_data, converted, skipped);
+                        uint16_t const new_id = convertId(item_id, direction, client_data, converted, skipped);
                         writer.writeU8(attr);
                         writer.writeU16(new_id);
                     }
@@ -189,7 +189,7 @@ void processNode(BinaryNode* node, NodeFileWriteHandle& writer,
                 case static_cast<uint8_t>(OtbmAttribute::AttributeMap): {
                     writer.writeU8(attr);
                     // AttributeMap is variable-length and complex, copy all remaining data
-                    size_t remaining = node->bytesRemaining();
+                    size_t const remaining = node->bytesRemaining();
                     if (remaining > 0) {
                         std::string data;
                         if (node->getRAW(data, remaining)) {
@@ -205,7 +205,7 @@ void processNode(BinaryNode* node, NodeFileWriteHandle& writer,
                     // Write the byte back and stop parsing
                     spdlog::trace("OtbmIdConverter: Unknown tile attribute {} at position, stopping", attr);
                     writer.writeU8(attr);
-                    size_t remaining = node->bytesRemaining();
+                    size_t const remaining = node->bytesRemaining();
                     if (remaining > 0) {
                         std::string data;
                         if (node->getRAW(data, remaining)) {
@@ -220,7 +220,7 @@ void processNode(BinaryNode* node, NodeFileWriteHandle& writer,
     }
     else {
         // All other nodes: copy data as-is
-        size_t remaining = node->bytesRemaining();
+        size_t const remaining = node->bytesRemaining();
         if (remaining > 0) {
             std::string data;
             if (node->getRAW(data, remaining)) {

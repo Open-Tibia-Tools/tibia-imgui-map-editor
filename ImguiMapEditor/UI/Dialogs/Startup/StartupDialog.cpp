@@ -89,11 +89,11 @@ void StartupDialog::setSelectedIndex(int index) {
 
 void StartupDialog::render(const std::vector<RecentMapEntry> &recent_maps,
                            const std::vector<uint32_t> &recent_clients) {
-  ImGuiIO &io = ImGui::GetIO();
+  ImGuiIO  const&io = ImGui::GetIO();
 
   // Centered modal window with default size 1280x720
   const ImVec2 default_size(1280.0f, 720.0f);
-  ImVec2 center = ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f);
+  ImVec2 const center = ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f);
   ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
   ImGui::SetNextWindowSize(default_size, ImGuiCond_Appearing);
   ImGui::SetNextWindowSizeConstraints(ImVec2(900, 550),
@@ -107,12 +107,12 @@ void StartupDialog::render(const std::vector<RecentMapEntry> &recent_maps,
   ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16, 16));
 
-  ImGuiWindowFlags flags =
+  ImGuiWindowFlags const flags =
       ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
 
   if (ImGui::Begin("Tibia Map Editor - Startup", nullptr, flags)) {
-    ImVec2 window_size = ImGui::GetWindowSize();
-    ImVec2 content_region = ImGui::GetContentRegionAvail();
+    ImVec2 const window_size = ImGui::GetWindowSize();
+    ImVec2 const content_region = ImGui::GetContentRegionAvail();
 
     // ===== HEADER SECTION =====
     renderHeader();
@@ -121,15 +121,15 @@ void StartupDialog::render(const std::vector<RecentMapEntry> &recent_maps,
     ImGui::Spacing();
 
     // ===== MAIN CONTENT AREA =====
-    float footer_height = 60.0f;
-    float header_offset = 70.0f;
-    float main_height = content_region.y - footer_height - header_offset;
+    float const footer_height = 60.0f;
+    float const header_offset = 70.0f;
+    float const main_height = content_region.y - footer_height - header_offset;
 
     // Layout dimensions
-    float sidebar_width = 180.0f;
-    float spacing = 12.0f;
-    float remaining_width = content_region.x - sidebar_width - spacing;
-    float panel_width = (remaining_width - spacing * 3) / 4.0f;
+    float const sidebar_width = 180.0f;
+    float const spacing = 12.0f;
+    float const remaining_width = content_region.x - sidebar_width - spacing;
+    float const panel_width = (remaining_width - spacing * 3) / 4.0f;
 
     // ===== LEFT SIDEBAR =====
     ImGui::BeginChild("##Sidebar", ImVec2(sidebar_width, main_height), true);
@@ -221,10 +221,10 @@ void StartupDialog::renderHeader() {
       "Welcome! Start a new project or continue where you left off.");
 
   // Header buttons on the right (Preferences + Client Configuration)
-  float button_spacing = 8.0f;
-  float total_buttons_width = kUniformButtonSize.x * 2 + button_spacing;
-  float right_padding = 8.0f;
-  float button_y = (header_height - kUniformButtonSize.y) / 2.0f;
+  float const button_spacing = 8.0f;
+  float const total_buttons_width = kUniformButtonSize.x * 2 + button_spacing;
+  float const right_padding = 8.0f;
+  float const button_y = (header_height - kUniformButtonSize.y) / 2.0f;
 
   // Position first button
   ImGui::SameLine(ImGui::GetWindowWidth() - total_buttons_width -
@@ -340,7 +340,7 @@ void StartupDialog::renderRecentClientsPanel(
 }
 
 void StartupDialog::renderFooter() {
-  ImVec2 region = ImGui::GetContentRegionAvail();
+  ImVec2 const region = ImGui::GetContentRegionAvail();
 
   // Uniform button size for all buttons in the UI
   const ImVec2 kUniformButtonSize(150.0f, 36.0f);
@@ -350,7 +350,7 @@ void StartupDialog::renderFooter() {
   ImGui::BeginChild("##Footer", ImVec2(0, footer_height), false,
                     ImGuiWindowFlags_NoScrollbar);
 
-  float button_y = (footer_height - kUniformButtonSize.y) / 2.0f;
+  float const button_y = (footer_height - kUniformButtonSize.y) / 2.0f;
 
   // Exit button (left)
   ImGui::SetCursorPosY(button_y);
@@ -367,9 +367,9 @@ void StartupDialog::renderFooter() {
   ImGui::TextColored(ImVec4(0.5f, 0.52f, 0.55f, 1.0f), "Version 2.4.1");
 
   // Right side buttons: Ignore Signatures toggle + Load Map
-  float button_spacing = 8.0f;
-  float right_buttons_width = kUniformButtonSize.x * 2 + button_spacing;
-  float right_padding = 8.0f;
+  float const button_spacing = 8.0f;
+  float const right_buttons_width = kUniformButtonSize.x * 2 + button_spacing;
+  float const right_padding = 8.0f;
 
   ImGui::SameLine(region.x - right_buttons_width - right_padding);
   ImGui::SetCursorPosY(button_y);
@@ -401,7 +401,7 @@ void StartupDialog::renderFooter() {
   ImGui::SameLine(0, button_spacing);
 
   // Load Map button (primary - blue)
-  bool can_load = load_enabled_ || ignore_signatures_;
+  bool const can_load = load_enabled_ || ignore_signatures_;
 
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.50f, 0.85f, 1.0f));
   ImGui::PushStyleColor(ImGuiCol_ButtonHovered,

@@ -24,9 +24,9 @@ public:
    * @param platform The platform manager handling window state.
    * @param version_manager The client version manager handling secondary clients.
    */
-  void saveApplicationState(Services::SettingsRegistry& settings,
+  static void saveApplicationState(Services::SettingsRegistry& settings,
                             const PlatformManager& platform,
-                            const ClientVersionManager& version_manager) const;
+                            const ClientVersionManager& version_manager) ;
 };
 
 } // namespace MapEditor

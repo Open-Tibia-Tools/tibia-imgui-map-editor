@@ -15,12 +15,12 @@ void StatusOverlay::render(ImDrawList *draw_list,
     return;
 
   // Calculate cursor tile position
-  ImGuiIO &io = ImGui::GetIO();
-  glm::vec2 mouse_pos(io.MousePos.x, io.MousePos.y);
+  ImGuiIO  const&io = ImGui::GetIO();
+  glm::vec2 const mouse_pos(io.MousePos.x, io.MousePos.y);
 
   // Check if mouse is within viewport bounds
   // Note: we accept the passed in 'is_hovered' state from the panel
-  bool mouse_in_viewport = is_hovered;
+  bool const mouse_in_viewport = is_hovered;
 
   Domain::Position cursor_tile;
   if (mouse_in_viewport) {
@@ -49,11 +49,11 @@ void StatusOverlay::render(ImDrawList *draw_list,
   status_str += std::format("{} {:.0f}%   {} {:.1f} FPS", ICON_FA_MAGNIFYING_GLASS, camera.getZoom() * 100.0f, fps_icon, framerate);
 
   const char* pos_text = status_str.c_str();
-  glm::vec2 vp_pos = camera.getViewportPos();
-  glm::vec2 vp_size = camera.getViewportSize();
-  ImVec2 text_pos(vp_pos.x + 10, vp_pos.y + vp_size.y - 25);
+  glm::vec2 const vp_pos = camera.getViewportPos();
+  glm::vec2 const vp_size = camera.getViewportSize();
+  ImVec2 const text_pos(vp_pos.x + 10, vp_pos.y + vp_size.y - 25);
 
-  ImVec2 text_size = ImGui::CalcTextSize(pos_text);
+  ImVec2 const text_size = ImGui::CalcTextSize(pos_text);
   draw_list->AddRectFilled(
       ImVec2(text_pos.x - 5, text_pos.y - 2),
       ImVec2(text_pos.x + text_size.x + 5, text_pos.y + text_size.y + 2),
@@ -65,7 +65,7 @@ void StatusOverlay::render(ImDrawList *draw_list,
   ImGui::SetCursorScreenPos(ImVec2(text_pos.x + text_size.x + 8, text_pos.y));
   if (mouse_in_viewport) {
     if (ImGui::SmallButton(ICON_FA_COPY "##CopyPos")) {
-      std::string clip_text = std::format("{}, {}, {}", cursor_tile.x, cursor_tile.y, cursor_tile.z);
+      std::string const clip_text = std::format("{}, {}, {}", cursor_tile.x, cursor_tile.y, cursor_tile.z);
       ImGui::SetClipboardText(clip_text.c_str());
       Presentation::showSuccess("Position copied to clipboard");
     }

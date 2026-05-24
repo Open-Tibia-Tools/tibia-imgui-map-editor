@@ -20,7 +20,6 @@ public:
 protected:
     // No overrides needed for readItemFlags/transformFlag as this is the canonical version
     
-    bool shouldReadPatternZ() const override { return true; }
     bool usesExtendedSprites() const override { return false; }
 };
 

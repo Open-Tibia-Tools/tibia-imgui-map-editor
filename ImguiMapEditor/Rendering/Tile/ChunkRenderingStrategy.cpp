@@ -49,8 +49,8 @@ void ChunkRenderingStrategy::renderFromCache(
 void ChunkRenderingStrategy::renderCached(const Domain::Chunk &chunk,
                                           const Context &ctx) {
 
-  int32_t chunk_x = chunk.world_x / Domain::Chunk::SIZE;
-  int32_t chunk_y = chunk.world_y / Domain::Chunk::SIZE;
+  const int32_t chunk_x = chunk.world_x / Domain::Chunk::SIZE;
+  const int32_t chunk_y = chunk.world_y / Domain::Chunk::SIZE;
 
   auto *cached = ctx.state.chunk_cache.getOrCreate(
       chunk_x, chunk_y, static_cast<int8_t>(ctx.floor_z));
@@ -58,7 +58,7 @@ void ChunkRenderingStrategy::renderCached(const Domain::Chunk &chunk,
   // FIX: Check floor_offset in addition to validity and generation.
   // floor_offset depends on current_floor for underground floors, so cached
   // positions become invalid when current_floor changes.
-  bool cache_valid =
+  const bool cache_valid =
       cached && cached->valid &&
       cached->generation >= ctx.state.chunk_cache.getGlobalGeneration() &&
       cached->floor_offset == ctx.floor_offset;
@@ -78,15 +78,15 @@ void ChunkRenderingStrategy::generateCachedChunk(
   cached->tiles.reserve(chunk.getNonEmptyCount() * 2);
 
   // Track missing sprites count BEFORE generation to detect new missing sprites
-  size_t missing_before = ctx.missing_sprites.size();
+  const size_t missing_before = ctx.missing_sprites.size();
 
   // ISOMETRIC DIAGONAL ITERATION (OTClient parity)
   // Tiles at NW drawn first, tiles at SE drawn last for correct depth
   chunk.forEachTileDiagonal([&](const Domain::Tile *tile, int lx, int ly) {
-    int tile_x = ctx.chunk_wx + lx;
-    int tile_y = ctx.chunk_wy + ly;
-    float screen_x = ctx.chunk_screen_x + lx * TILE_SIZE;
-    float screen_y = ctx.chunk_screen_y + ly * TILE_SIZE;
+    const int tile_x = ctx.chunk_wx + lx;
+    const int tile_y = ctx.chunk_wy + ly;
+    const float screen_x = ctx.chunk_screen_x + lx * TILE_SIZE;
+    const float screen_y = ctx.chunk_screen_y + ly * TILE_SIZE;
 
     tile_renderer_.queueTileToTileCache(
         *tile, tile_x, tile_y, ctx.floor_z, screen_x, screen_y, ctx.anim_ticks,
@@ -99,7 +99,7 @@ void ChunkRenderingStrategy::generateCachedChunk(
   // FIX: Only mark cache as valid if ALL sprites were available during
   // generation. If any sprites were missing, the chunk will be regenerated on
   // the next frame when those sprites may have finished loading asynchronously.
-  bool had_missing_sprites = ctx.missing_sprites.size() > missing_before;
+  const bool had_missing_sprites = ctx.missing_sprites.size() > missing_before;
   cached->valid = !had_missing_sprites;
   cached->floor_offset = ctx.floor_offset; // Store for cache invalidation check
   cached->generation = ctx.state.chunk_cache.getGlobalGeneration();
@@ -112,10 +112,10 @@ void ChunkRenderingStrategy::renderDynamic(const Domain::Chunk &chunk,
   // Tiles at NW drawn first, tiles at SE drawn last for correct depth
   chunk.forEachTileDiagonal([&](const Domain::Tile *tile, int lx, int ly) {
     // Calc coords incrementally using context
-    int tile_x = ctx.chunk_wx + lx;
-    int tile_y = ctx.chunk_wy + ly;
-    float screen_x = ctx.chunk_screen_x + lx * TILE_SIZE;
-    float screen_y = ctx.chunk_screen_y + ly * TILE_SIZE;
+    const int tile_x = ctx.chunk_wx + lx;
+    const int tile_y = ctx.chunk_wy + ly;
+    const float screen_x = ctx.chunk_screen_x + lx * TILE_SIZE;
+    const float screen_y = ctx.chunk_screen_y + ly * TILE_SIZE;
 
     // Pass explicit coords
     tile_renderer_.queueTile(*tile, tile_x, tile_y, ctx.floor_z, screen_x,

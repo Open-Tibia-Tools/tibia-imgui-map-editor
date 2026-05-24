@@ -51,7 +51,7 @@ public:
    * @param input_state Helper struct or arguments for input-dependent overlays
    * (optional, for now passing args directly)
    */
-  void render(ImDrawList *draw_list, const UI::MapViewCamera &camera,
+  static void render(ImDrawList *draw_list, const UI::MapViewCamera &camera,
               const AppLogic::EditorSession *session, bool is_hovered,
               float framerate);
 

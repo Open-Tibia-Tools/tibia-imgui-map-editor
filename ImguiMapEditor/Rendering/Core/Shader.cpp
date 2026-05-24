@@ -8,13 +8,13 @@ namespace Rendering {
 Shader::Shader(const std::string& vertex_source, const std::string& fragment_source) {
     std::string vs_error, fs_error;
     
-    GLuint vs = compileShader(GL_VERTEX_SHADER, vertex_source, vs_error);
+    GLuint const vs = compileShader(GL_VERTEX_SHADER, vertex_source, vs_error);
     if (vs == 0) {
         error_ = "Vertex shader: " + vs_error;
         return;
     }
     
-    GLuint fs = compileShader(GL_FRAGMENT_SHADER, fragment_source, fs_error);
+    GLuint const fs = compileShader(GL_FRAGMENT_SHADER, fragment_source, fs_error);
     if (fs == 0) {
         glDeleteShader(vs);
         error_ = "Fragment shader: " + fs_error;
@@ -73,7 +73,7 @@ void Shader::use() const {
     glUseProgram(program_);
 }
 
-void Shader::unbind() const {
+void Shader::unbind() {
     glUseProgram(0);
 }
 
@@ -111,7 +111,7 @@ GLint Shader::getUniformLocation(const std::string& name) {
         return it->second;
     }
     
-    GLint location = glGetUniformLocation(program_, name.c_str());
+    GLint const location = glGetUniformLocation(program_, name.c_str());
     uniform_cache_[name] = location;
     return location;
 }
@@ -125,7 +125,7 @@ void Shader::release() {
 }
 
 GLuint Shader::compileShader(GLenum type, const std::string& source, std::string& error) {
-    GLuint shader = glCreateShader(type);
+    GLuint const shader = glCreateShader(type);
     const char* src = source.c_str();
     glShaderSource(shader, 1, &src, nullptr);
     glCompileShader(shader);

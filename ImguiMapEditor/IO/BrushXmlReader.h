@@ -87,15 +87,15 @@ private:
   void parseBrush(const pugi::xml_node &node);
 
   // Type-specific parsers
-  void parseGroundBrush(const pugi::xml_node &node, const std::string &name,
+  static void parseGroundBrush(const pugi::xml_node &node, const std::string &name,
                         uint32_t lookId);
-  void parseWallBrush(const pugi::xml_node &node, const std::string &name,
+  static void parseWallBrush(const pugi::xml_node &node, const std::string &name,
                       uint32_t lookId);
-  void parseDoodadBrush(const pugi::xml_node &node, const std::string &name,
+  static void parseDoodadBrush(const pugi::xml_node &node, const std::string &name,
                         uint32_t lookId);
-  void parseTableBrush(const pugi::xml_node &node, const std::string &name,
+  static void parseTableBrush(const pugi::xml_node &node, const std::string &name,
                        uint32_t lookId);
-  void parseCarpetBrush(const pugi::xml_node &node, const std::string &name,
+  static void parseCarpetBrush(const pugi::xml_node &node, const std::string &name,
                         uint32_t lookId);
 
   Dependencies deps_;

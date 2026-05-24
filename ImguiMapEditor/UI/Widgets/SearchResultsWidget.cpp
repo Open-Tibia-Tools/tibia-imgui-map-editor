@@ -36,10 +36,10 @@ void SearchResultsWidget::render(bool* p_open) {
     
     if (ImGui::Begin(ICON_FA_MAGNIFYING_GLASS " Search Map###SearchResults", p_open)) {
         // Search bar + buttons on same line
-        float icon_button_width = 30.0f;
-        float adv_button_width = 45.0f;
+        float const icon_button_width = 30.0f;
+        float const adv_button_width = 45.0f;
         ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - icon_button_width - adv_button_width - 16);
-        bool enter_pressed = ImGui::InputTextWithHint(
+        bool const enter_pressed = ImGui::InputTextWithHint(
             "##SearchInput", "Name or ID...",
             search_buffer_, sizeof(search_buffer_),
             ImGuiInputTextFlags_EnterReturnsTrue
@@ -75,8 +75,8 @@ void SearchResultsWidget::render(bool* p_open) {
         Utils::SetTooltipOnHover("Advanced Search...");
         
         // Toggle buttons for Items/Creatures
-        ImVec4 active_color = ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive);
-        ImVec4 normal_color = ImGui::GetStyleColorVec4(ImGuiCol_Button);
+        ImVec4 const active_color = ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive);
+        ImVec4 const normal_color = ImGui::GetStyleColorVec4(ImGuiCol_Button);
         
         ImGui::PushStyleColor(ImGuiCol_Button, search_items_ ? active_color : normal_color);
         if (ImGui::Button(ICON_FA_CUBE " Items")) {
@@ -101,14 +101,14 @@ void SearchResultsWidget::render(bool* p_open) {
 
         if (results_.empty()) {
             // New Empty State Logic
-            bool is_search_active = !std::string_view(search_buffer_).empty();
+            bool const is_search_active = !std::string_view(search_buffer_).empty();
             const char* icon = is_search_active ? ICON_FA_CIRCLE_EXCLAMATION : ICON_FA_KEYBOARD;
             const char* text = is_search_active ? "No results found" : "Type to search...";
 
             // Center text
-            ImVec2 window_size = ImGui::GetWindowSize();
-            std::string full_text = std::format("{} {}", icon, text);
-            ImVec2 text_size = ImGui::CalcTextSize(full_text.c_str());
+            ImVec2 const window_size = ImGui::GetWindowSize();
+            std::string const full_text = std::format("{} {}", icon, text);
+            ImVec2 const text_size = ImGui::CalcTextSize(full_text.c_str());
 
             ImGui::SetCursorPos(ImVec2(
                 (window_size.x - text_size.x) * 0.5f,
@@ -124,7 +124,7 @@ void SearchResultsWidget::render(bool* p_open) {
             while (clipper.Step()) {
                 for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
                     const auto& result = results_[i];
-                    bool is_selected = (i == selected_index_);
+                    bool const is_selected = (i == selected_index_);
 
                     const char* icon;
                     if (result.isCreature()) {
@@ -193,7 +193,7 @@ void SearchResultsWidget::renderPreview(const Domain::Search::MapSearchResult& r
         if (item_type) {
             if (auto* texture = Utils::GetItemPreview(*sprite_manager_, item_type)) {
                 // Dynamic size: max(width, height) * 32
-                float preview_size = static_cast<float>(std::max(item_type->width, item_type->height) * 32);
+                float const preview_size = static_cast<float>(std::max(item_type->width, item_type->height) * 32);
                 ImGui::Image((void*)(intptr_t)texture->id(), ImVec2(preview_size, preview_size));
                 rendered = true;
             }
@@ -202,7 +202,7 @@ void SearchResultsWidget::renderPreview(const Domain::Search::MapSearchResult& r
         // Creature outfit sprite using helper
         auto preview = Utils::GetCreaturePreview(*client_data_, *sprite_manager_, result.creature_name);
         if (preview && preview.texture) {
-            float preview_size = preview.size;
+            float const preview_size = preview.size;
             ImGui::Image((void*)(intptr_t)preview.texture->id(), ImVec2(preview_size, preview_size));
             rendered = true;
         }
@@ -228,7 +228,7 @@ void SearchResultsWidget::doSearch() {
         query, Services::MapSearchMode::ByName,
         search_items_, search_creatures_, MAX_RESULTS);
     
-    bool is_number = !query.empty() && std::all_of(query.begin(), query.end(), ::isdigit);
+    bool const is_number = !query.empty() && std::all_of(query.begin(), query.end(), ::isdigit);
     
     auto append_results = [&](const auto& source) {
         if (results_.size() >= MAX_RESULTS) return;

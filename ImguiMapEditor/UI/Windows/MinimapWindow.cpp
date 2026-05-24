@@ -28,8 +28,8 @@ void MinimapWindow::setViewportSyncCallback(ViewportSyncCallback callback) {
 
 void MinimapWindow::syncWithCamera(int32_t x, int32_t y, int16_t floor) {
     // Only sync when main camera position/floor actually changes
-    bool position_changed = (x != main_camera_x_) || (y != main_camera_y_);
-    bool floor_changed = (floor != last_synced_floor_);
+    bool const position_changed = (x != main_camera_x_) || (y != main_camera_y_);
+    bool const floor_changed = (floor != last_synced_floor_);
     
     main_camera_x_ = x;
     main_camera_y_ = y;
@@ -85,7 +85,7 @@ void MinimapWindow::renderToolbar() {
     ImGui::SameLine();
     
     // Floor controls (inline with zoom)
-    int16_t floor = renderer_.getFloor();
+    int16_t const floor = renderer_.getFloor();
     ImGui::Text("F:%d", floor);
     ImGui::SameLine();
     
@@ -113,7 +113,7 @@ void MinimapWindow::renderToolbar() {
 
     // Sync button (only if desynced)
     // Desync logic: if minimap center is significantly different from main camera
-    bool is_desynced = (renderer_.getCenterX() != main_camera_x_ || renderer_.getCenterY() != main_camera_y_);
+    bool const is_desynced = (renderer_.getCenterX() != main_camera_x_ || renderer_.getCenterY() != main_camera_y_);
 
     if (is_desynced) {
         ImGui::SameLine();
@@ -134,9 +134,9 @@ void MinimapWindow::renderToolbar() {
 
 void MinimapWindow::renderMinimapImage() {
     // Get available space for minimap
-    ImVec2 content_region = ImGui::GetContentRegionAvail();
-    int width = static_cast<int>(content_region.x);
-    int height = static_cast<int>(content_region.y);
+    ImVec2 const content_region = ImGui::GetContentRegionAvail();
+    int const width = static_cast<int>(content_region.x);
+    int const height = static_cast<int>(content_region.y);
     
     if (width <= 0 || height <= 0) return;
     
@@ -146,7 +146,7 @@ void MinimapWindow::renderMinimapImage() {
     // Render the minimap texture
     auto tex_id = renderer_.getTextureId();
     if (tex_id != 0) {
-        ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
+        ImVec2 const cursor_pos = ImGui::GetCursorScreenPos();
         
         // Draw minimap with dark background
         ImGui::Image(
@@ -155,14 +155,14 @@ void MinimapWindow::renderMinimapImage() {
             ImVec2(0, 0), ImVec2(1, 1)
         );
         
-        ImGuiIO& io = ImGui::GetIO();
-        bool is_hovered = ImGui::IsItemHovered();
+        ImGuiIO const& io = ImGui::GetIO();
+        bool const is_hovered = ImGui::IsItemHovered();
         
         // Scroll handling (when hovered)
         if (is_hovered && io.MouseWheel != 0) {
             if (io.KeyCtrl) {
                 // Ctrl+scroll: floor change (inverted: scroll down = floor up, scroll up = floor down)
-                int16_t floor = renderer_.getFloor();
+                int16_t const floor = renderer_.getFloor();
                 if (io.MouseWheel > 0 && floor < 15) {
                     renderer_.setFloor(floor + 1);
                 } else if (io.MouseWheel < 0 && floor > 0) {
@@ -187,7 +187,7 @@ void MinimapWindow::renderMinimapImage() {
                 // Start drag for panning
                 is_dragging_ = true;
                 drag_start_screen_ = io.MousePos;
-                Rendering::MinimapBounds bounds = renderer_.getViewBounds();
+                Rendering::MinimapBounds const bounds = renderer_.getViewBounds();
                 drag_start_center_x_ = (bounds.min_x + bounds.max_x) / 2;
                 drag_start_center_y_ = (bounds.min_y + bounds.max_y) / 2;
             }
@@ -196,15 +196,15 @@ void MinimapWindow::renderMinimapImage() {
         // Handle dragging
         if (is_dragging_) {
             if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-                Rendering::MinimapBounds bounds = renderer_.getViewBounds();
-                float world_width = static_cast<float>(bounds.max_x - bounds.min_x);
-                float world_height = static_cast<float>(bounds.max_y - bounds.min_y);
+                Rendering::MinimapBounds const bounds = renderer_.getViewBounds();
+                float const world_width = static_cast<float>(bounds.max_x - bounds.min_x);
+                float const world_height = static_cast<float>(bounds.max_y - bounds.min_y);
                 
                 if (world_width > 0 && world_height > 0) {
-                    ImVec2 delta = ImVec2(drag_start_screen_.x - io.MousePos.x, 
+                    ImVec2 const delta = ImVec2(drag_start_screen_.x - io.MousePos.x, 
                                           drag_start_screen_.y - io.MousePos.y);
-                    int32_t dx = static_cast<int32_t>(delta.x / width * world_width);
-                    int32_t dy = static_cast<int32_t>(delta.y / height * world_height);
+                    int32_t const dx = static_cast<int32_t>(delta.x / width * world_width);
+                    int32_t const dy = static_cast<int32_t>(delta.y / height * world_height);
                     
                     renderer_.setViewCenter(drag_start_center_x_ + dx, drag_start_center_y_ + dy);
                 }
@@ -215,16 +215,16 @@ void MinimapWindow::renderMinimapImage() {
         
         // Draw viewport rectangle overlay
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
-        Rendering::MinimapBounds bounds = renderer_.getViewBounds();
+        Rendering::MinimapBounds const bounds = renderer_.getViewBounds();
         
         // Calculate main viewport position on minimap using view bounds
         // Map world coordinates to screen coordinates
-        float world_width = static_cast<float>(bounds.max_x - bounds.min_x);
-        float world_height = static_cast<float>(bounds.max_y - bounds.min_y);
+        float const world_width = static_cast<float>(bounds.max_x - bounds.min_x);
+        float const world_height = static_cast<float>(bounds.max_y - bounds.min_y);
         
         if (world_width > 0 && world_height > 0) {
-            float cx = cursor_pos.x + (main_camera_x_ - bounds.min_x) / world_width * width;
-            float cy = cursor_pos.y + (main_camera_y_ - bounds.min_y) / world_height * height;
+            float const cx = cursor_pos.x + (main_camera_x_ - bounds.min_x) / world_width * width;
+            float const cy = cursor_pos.y + (main_camera_y_ - bounds.min_y) / world_height * height;
             
             // Clamp to visible area
             if (cx >= cursor_pos.x && cx <= cursor_pos.x + width &&
@@ -244,11 +244,11 @@ void MinimapWindow::handleMouseClick() {
     if (!viewport_sync_callback_ || !data_source_) return;
     
     // Get click position relative to minimap
-    ImVec2 mouse_pos = ImGui::GetMousePos();
-    ImVec2 item_min = ImGui::GetItemRectMin();
-    
-    int screen_x = static_cast<int>(mouse_pos.x - item_min.x);
-    int screen_y = static_cast<int>(mouse_pos.y - item_min.y);
+    ImVec2 const mouse_pos = ImGui::GetMousePos();
+    ImVec2 const item_min = ImGui::GetItemRectMin();
+    
+    int const screen_x = static_cast<int>(mouse_pos.x - item_min.x);
+    int const screen_y = static_cast<int>(mouse_pos.y - item_min.y);
     
     // Convert to world coordinates
     int32_t world_x, world_y;

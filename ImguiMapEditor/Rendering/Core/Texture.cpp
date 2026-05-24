@@ -59,11 +59,11 @@ void Texture::bind(uint32_t slot) const {
     glBindTexture(GL_TEXTURE_2D, id_);
 }
 
-void Texture::unbind() const {
+void Texture::unbind() {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Texture::update(const uint8_t* rgba_data) {
+void Texture::update(const uint8_t* rgba_data) const {
     if (id_ == 0) return;
     
     glBindTexture(GL_TEXTURE_2D, id_);

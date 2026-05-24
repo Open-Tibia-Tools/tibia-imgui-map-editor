@@ -28,7 +28,7 @@ EditTownsDialog::Result EditTownsDialog::render() {
     if (!is_open_) return result;
     
     // Center dialog on first appearance
-    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImVec2 const center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(500, 450), ImGuiCond_FirstUseEver);
     
@@ -39,17 +39,17 @@ EditTownsDialog::Result EditTownsDialog::render() {
         ImGui::Text("Towns:");
         
         // Listbox with towns
-        ImVec2 listbox_size(ImGui::GetContentRegionAvail().x, 150);
+        ImVec2 const listbox_size(ImGui::GetContentRegionAvail().x, 150);
         if (ImGui::BeginListBox("##TownList", listbox_size)) {
             // C++20: Use iota for index-based iteration
-            for (size_t i : std::views::iota(size_t(0), towns_.size())) {
+            for (size_t const i : std::views::iota(size_t(0), towns_.size())) {
                 const auto& town = towns_[i];
                 
                 // Format: "ID: Name"
                 char label[300];
                 snprintf(label, sizeof(label), "%u: %s", town.id, town.name.c_str());
                 
-                bool is_selected = (static_cast<int>(i) == selected_index_);
+                bool const is_selected = (static_cast<int>(i) == selected_index_);
                 if (ImGui::Selectable(label, is_selected)) {
                     selected_index_ = static_cast<int>(i);
                     updateSelectionBuffers();
@@ -76,7 +76,7 @@ EditTownsDialog::Result EditTownsDialog::render() {
         
         ImGui::SameLine();
         
-        bool can_remove = canRemoveSelectedTown();
+        bool const can_remove = canRemoveSelectedTown();
         ImGui::BeginDisabled(!can_remove);
         if (ImGui::Button(ICON_FA_TRASH " Remove")) {
             if (selected_index_ >= 0 && selected_index_ < static_cast<int>(towns_.size())) {
@@ -136,7 +136,7 @@ EditTownsDialog::Result EditTownsDialog::render() {
         ImGui::Separator();
         
         // === Edit Section ===
-        bool has_selection = selected_index_ >= 0 && selected_index_ < static_cast<int>(towns_.size());
+        bool const has_selection = selected_index_ >= 0 && selected_index_ < static_cast<int>(towns_.size());
         
         ImGui::BeginDisabled(!has_selection);
         
@@ -226,10 +226,10 @@ EditTownsDialog::Result EditTownsDialog::render() {
         ImGui::Separator();
         
         // === OK / Cancel ===
-        float button_width = 120.0f;
-        float spacing = ImGui::GetStyle().ItemSpacing.x;
-        float total_width = button_width * 2 + spacing;
-        float start_x = (ImGui::GetContentRegionAvail().x - total_width) * 0.5f;
+        float const button_width = 120.0f;
+        float const spacing = ImGui::GetStyle().ItemSpacing.x;
+        float const total_width = button_width * 2 + spacing;
+        float const start_x = (ImGui::GetContentRegionAvail().x - total_width) * 0.5f;
         
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + start_x);
         
@@ -336,7 +336,7 @@ void EditTownsDialog::applyChangesToMap() {
     });
 
     // Apply removals
-    for (uint32_t id : ids_to_remove) {
+    for (uint32_t const id : ids_to_remove) {
         map_->removeTown(id);
     }
     
@@ -374,7 +374,7 @@ bool EditTownsDialog::canRemoveSelectedTown() const {
     
     if (!map_) return true;
     
-    uint32_t town_id = towns_[selected_index_].id;
+    uint32_t const town_id = towns_[selected_index_].id;
     
     // Check if any house belongs to this town
     return !map_->hasTownWithHouses(town_id);

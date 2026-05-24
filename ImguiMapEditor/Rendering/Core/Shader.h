@@ -33,7 +33,7 @@ public:
     
     // Use this shader program
     void use() const;
-    void unbind() const;
+    static void unbind() ;
     
     // Uniform setters
     void setInt(const std::string& name, int value);

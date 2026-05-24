@@ -23,7 +23,7 @@ public:
     void render(AppLogic::EditorSession* session);
 
 private:
-    void renderSelectionActions(AppLogic::EditorSession* session);
+    static void renderSelectionActions(AppLogic::EditorSession* session);
     void renderSelectionModeOptions();
     void renderFloorScopeOptions();
     

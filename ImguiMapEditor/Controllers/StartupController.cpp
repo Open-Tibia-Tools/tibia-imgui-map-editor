@@ -84,7 +84,7 @@ std::vector<UI::RecentMapEntry> StartupController::getRecentMaps() const {
   auto recent_files = config_.getRecentFiles();
 
   for (const auto &file_path : recent_files) {
-    std::filesystem::path path(file_path);
+    std::filesystem::path const path(file_path);
 
     UI::RecentMapEntry entry;
     entry.path = path;
@@ -208,7 +208,7 @@ void StartupController::handleClientAutoMatch(
   spdlog::info("Attempting client auto-match for: {}", map_path.string());
 
   UI::ClientInfo client_info;
-  Domain::ClientVersion *matched_version = nullptr;
+  Domain::ClientVersion  const*matched_version = nullptr;
 
   // Primary method: Use OTBM header's OTB Minor version (= otbId =
   // ClientVersionID) This is the RME-compatible approach
@@ -265,10 +265,10 @@ void StartupController::handleClientAutoMatch(
     // CRITICAL: Items Major and Minor MUST match. OTBM version mismatch is just
     // a warning.
     const auto &map_info = dialog_.getSelectedMapInfo();
-    bool otbm_match = (client_info.otbm_version == map_info.otbm_version);
-    bool major_match =
+    bool const otbm_match = (client_info.otbm_version == map_info.otbm_version);
+    bool const major_match =
         (client_info.items_major_version == map_info.items_major_version);
-    bool minor_match =
+    bool const minor_match =
         (client_info.items_minor_version == map_info.items_minor_version);
 
     // Items versions are critical - they determine item ID mapping
@@ -357,11 +357,11 @@ void StartupController::handleClientSelection(uint32_t version) {
   // Determine match status with currently selected map (if any)
   const auto &map_info = dialog_.getSelectedMapInfo();
   if (map_info.valid) {
-    bool major_match =
+    bool const major_match =
         (client_info.items_major_version == map_info.items_major_version);
-    bool minor_match =
+    bool const minor_match =
         (client_info.items_minor_version == map_info.items_minor_version);
-    bool items_compatible = major_match && minor_match;
+    bool const items_compatible = major_match && minor_match;
 
     if (items_compatible) {
       client_info.signatures_match = true;
@@ -394,10 +394,10 @@ void StartupController::handleBrowseMap() {
 
   NFD::UniquePath outPath;
   nfdfilteritem_t filterItem[1] = {{"Map Files", "otbm,map"}};
-  nfdresult_t result = NFD::OpenDialog(outPath, filterItem, 1);
+  nfdresult_t const result = NFD::OpenDialog(outPath, filterItem, 1);
 
   if (result == NFD_OKAY) {
-    std::filesystem::path path(outPath.get());
+    std::filesystem::path const path(outPath.get());
 
     // Add to recent files
     config_.addRecentFile(path.string());
@@ -411,10 +411,10 @@ void StartupController::handleBrowseSecMap() {
   spdlog::info("Opening folder dialog for .sec map selection");
 
   NFD::UniquePath outPath;
-  nfdresult_t result = NFD::PickFolder(outPath);
+  nfdresult_t const result = NFD::PickFolder(outPath);
 
   if (result == NFD_OKAY) {
-    std::filesystem::path path(outPath.get());
+    std::filesystem::path const path(outPath.get());
 
     // Validate .sec folder (should contain .sec files)
     bool has_sec_files = false;

@@ -12,7 +12,7 @@ public:
   void setMapInfo(const SelectedMapInfo &info) { map_info_ = info; }
   const SelectedMapInfo &getMapInfo() const { return map_info_; }
 
-  void render();
+  void render() const;
 
 private:
   SelectedMapInfo map_info_;

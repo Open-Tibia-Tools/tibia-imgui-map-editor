@@ -26,7 +26,7 @@ void ItemPropertiesDialog::open(Domain::Item *item, SaveCallback on_save) {
   unique_id_ = item->getUniqueId();
 
   // Text
-  std::string text = item->getText();
+  std::string const text = item->getText();
   strncpy(text_buffer_, text.c_str(), sizeof(text_buffer_) - 1);
   text_buffer_[sizeof(text_buffer_) - 1] = '\0';
 
@@ -186,13 +186,13 @@ void ItemPropertiesDialog::renderContentsTab() {
 
 bool ItemPropertiesDialog::renderSlotButton(Domain::Item *item, float size,
                                             bool selected) {
-  ImVec2 pos = ImGui::GetCursorScreenPos();
+  ImVec2 const pos = ImGui::GetCursorScreenPos();
   ImDrawList *dl = ImGui::GetWindowDrawList();
 
   // Slot background
-  ImU32 bg_color =
+  ImU32 const bg_color =
       selected ? IM_COL32(80, 80, 120, 255) : IM_COL32(40, 40, 40, 255);
-  ImU32 border_color =
+  ImU32 const border_color =
       selected ? IM_COL32(120, 120, 180, 255) : IM_COL32(80, 80, 80, 255);
 
   dl->AddRectFilled(pos, ImVec2(pos.x + size, pos.y + size), bg_color);

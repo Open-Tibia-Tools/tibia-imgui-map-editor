@@ -39,7 +39,7 @@ void Tile::addItem(std::unique_ptr<Item> item) {
   // Check if this is a ground item (first item or has ground flag)
   const ItemType *type = item->getType();
   bool is_ground = false;
-  uint16_t sid = item->getServerId();
+  uint16_t const sid = item->getServerId();
 
   if (type) {
     // Use OTB's ItemGroup::Ground for classification (like original RME)
@@ -191,9 +191,9 @@ bool Tile::hasHookEast() const {
 }
 
 void Tile::setSpawn(std::unique_ptr<Spawn> spawn) {
-  bool had_spawn = (spawn_ != nullptr);
+  bool const had_spawn = (spawn_ != nullptr);
   spawn_ = std::move(spawn);
-  bool has_spawn = (spawn_ != nullptr);
+  bool const has_spawn = (spawn_ != nullptr);
 
   if (parent_chunk_) {
     parent_chunk_->invalidateSpawns();
@@ -215,9 +215,9 @@ std::unique_ptr<Spawn> Tile::removeSpawn() {
 }
 
 void Tile::setCreature(std::unique_ptr<Creature> creature) {
-  bool had_creature = (creature_ != nullptr);
+  bool const had_creature = (creature_ != nullptr);
   creature_ = std::move(creature);
-  bool has_creature = (creature_ != nullptr);
+  bool const has_creature = (creature_ != nullptr);
 
   if (parent_chunk_) {
     // Only update count if existence changed

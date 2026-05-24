@@ -159,11 +159,11 @@ void MapSearchService::searchContainerItems(
 
 bool MapSearchService::matchesFuzzy(const std::string& text, 
                                      const std::string& query) const {
-    std::string text_lower = toLower(text);
+    std::string const text_lower = toLower(text);
     return text_lower.find(query) != std::string::npos;
 }
 
-std::string MapSearchService::toLower(const std::string& str) const {
+std::string MapSearchService::toLower(const std::string& str) {
     std::string result = str;
     std::transform(result.begin(), result.end(), result.begin(),
                    [](unsigned char c) { return std::tolower(c); });
@@ -182,7 +182,7 @@ std::vector<const Domain::ItemType*> MapSearchService::searchItemDatabase(
         return results;
     }
     
-    std::string query_lower = toLower(query);
+    std::string const query_lower = toLower(query);
     uint16_t search_id = 0;
     bool is_numeric = false;
     
@@ -277,7 +277,7 @@ std::vector<const Domain::ItemType*> MapSearchService::searchItemDatabase(
 
                 // Floor change check: check specific boolean flags instead of generic OTB flag
                 if (properties.floor_change) {
-                    bool is_floor_change = item_type.floor_change || 
+                    bool const is_floor_change = item_type.floor_change || 
                                           item_type.floor_change_down ||
                                           item_type.floor_change_north ||
                                           item_type.floor_change_east ||

@@ -33,12 +33,12 @@ public:
     /**
      * Begin a new ImGui frame.
      */
-    void newFrame();
+    static void newFrame();
     
     /**
      * Render ImGui draw data.
      */
-    void renderDrawData();
+    static void renderDrawData();
     
     bool isInitialized() const { return initialized_; }
 

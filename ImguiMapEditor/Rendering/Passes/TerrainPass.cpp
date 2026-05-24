@@ -46,7 +46,7 @@ void TerrainPass::render(const RenderContext &context) {
     return;
 
   // Calculate floor range
-  bool show_all_floors = context.view_settings->show_all_floors;
+  bool const show_all_floors = context.view_settings->show_all_floors;
   FloorRange floor_range = FloorIterator::calculateRangeWithToggle(
       context.current_floor, show_all_floors);
 
@@ -82,7 +82,7 @@ void TerrainPass::render(const RenderContext &context) {
   for (int map_z = floor_range.start_z; map_z >= floor_range.super_end_z;
        map_z--) {
     // Draw shade overlay at floor boundary
-    bool show_shade = context.view_settings->show_shade;
+    bool const show_shade = context.view_settings->show_shade;
     if (white_pixel && shade_renderer_ &&
         FloorIterator::shouldDrawShade(map_z, floor_range, show_shade)) {
       // Note: Viewport width/height used for full-screen shade
@@ -117,24 +117,24 @@ void TerrainPass::renderMainFloor(const RenderContext &context, int floor) {
   was_lod_active_ = is_lod_active_;
 
   // Expand viewport bounds per floor (RME parallax effect)
-  int floor_diff =
+  int const floor_diff =
       FloorIterator::calculateRangeWithToggle(
           context.current_floor, context.view_settings->show_all_floors)
           .start_z -
       floor;
 
-  FloorRange floor_range = FloorIterator::calculateRangeWithToggle(
+  FloorRange const floor_range = FloorIterator::calculateRangeWithToggle(
       context.current_floor, context.view_settings->show_all_floors);
-  int floor_diff_val = floor_range.start_z - floor;
-
-  VisibleBounds floor_bounds =
+  int const floor_diff_val = floor_range.start_z - floor;
+
+  VisibleBounds const floor_bounds =
       context.visible_bounds.withFloorOffset(floor_diff_val);
 
   // Calculate floor offset for parallax
-  float floor_offset =
+  float const floor_offset =
       FloorIterator::getFloorOffset(context.current_floor, floor);
 
-  float zoom = context.camera.getZoom();
+  float const zoom = context.camera.getZoom();
 
   // Configure tile renderer for current zoom
   tile_renderer_.setZoom(zoom);
@@ -165,8 +165,8 @@ void TerrainPass::renderMainFloor(const RenderContext &context, int floor) {
                                  sprite_manager_.getSpriteLUT());
 
     for (const VisibleChunk &vc : chunk_visibility_.getVisibleChunks()) {
-      Domain::Chunk *chunk = vc.chunk;
-      ChunkRenderingStrategy::Context chunk_ctx(
+      Domain::Chunk  const*chunk = vc.chunk;
+      ChunkRenderingStrategy::Context const chunk_ctx(
           context.state, context.anim_ticks, context.missing_sprites_buffer,
           tiles_rendered, floor, floor_offset, *chunk);
 
@@ -184,8 +184,8 @@ void TerrainPass::renderMainFloor(const RenderContext &context, int floor) {
     // === DYNAMIC / SPRITE MODE ===
     // Proceed using the existing Sprite Batch session
     for (const VisibleChunk &vc : chunk_visibility_.getVisibleChunks()) {
-      Domain::Chunk *chunk = vc.chunk;
-      ChunkRenderingStrategy::Context chunk_ctx(
+      Domain::Chunk  const*chunk = vc.chunk;
+      ChunkRenderingStrategy::Context const chunk_ctx(
           context.state, context.anim_ticks, context.missing_sprites_buffer,
           tiles_rendered, floor, floor_offset, *chunk);
 
@@ -203,7 +203,7 @@ void TerrainPass::renderMainFloor(const RenderContext &context, int floor) {
   // Check LOD Policy: Should we show detailed spawn tints?
   // Re-using SHOW_SPAWN_LABELS policy for consistency (if labels are hidden,
   // tints should be too)
-  bool show_spawn_overlays = !is_lod_active_ || LODPolicy::SHOW_SPAWN_LABELS;
+  bool const show_spawn_overlays = !is_lod_active_ || LODPolicy::SHOW_SPAWN_LABELS;
 
   if (show_spawn_overlays && context.view_settings->show_spawns &&
       context.view_settings->show_spawn_radius && spawn_renderer_) {

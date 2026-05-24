@@ -96,7 +96,7 @@ private:
         size_t limit) const;
     Domain::Search::MapSearchResult createResult(
         const Domain::Tile* tile, const Domain::Item* item) const;
-    std::string toLower(const std::string& str) const;
+    static std::string toLower(const std::string& str) ;
     
     const Domain::ChunkedMap* map_ = nullptr;
     const ClientDataService* client_data_ = nullptr;

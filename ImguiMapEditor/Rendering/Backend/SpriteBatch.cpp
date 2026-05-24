@@ -253,12 +253,12 @@ void SpriteBatch::flush(const AtlasManager &atlas_manager) {
 
   glBindBuffer(GL_ARRAY_BUFFER, ring_buffer_.getBufferId());
 
-  size_t total_sprites = pending_sprites_.size();
+  size_t const total_sprites = pending_sprites_.size();
   size_t processed_sprites = 0;
-  size_t max_per_batch = ring_buffer_.getMaxElements();
+  size_t const max_per_batch = ring_buffer_.getMaxElements();
 
   while (processed_sprites < total_sprites) {
-    size_t batch_size =
+    size_t const batch_size =
         std::min(total_sprites - processed_sprites, max_per_batch);
 
     void *buffer_ptr = ring_buffer_.waitAndMap(batch_size);
@@ -269,7 +269,7 @@ void SpriteBatch::flush(const AtlasManager &atlas_manager) {
            batch_size * sizeof(SpriteInstance));
     ring_buffer_.finishWrite();
 
-    size_t section_offset = ring_buffer_.getCurrentSectionOffset();
+    size_t const section_offset = ring_buffer_.getCurrentSectionOffset();
 
     // Update attribute pointers for ring buffer
     // Note: Using glVertexAttribPointer repeatedly inside render loop is not
@@ -325,7 +325,7 @@ void SpriteBatch::drawTileInstances(GLuint vbo, size_t count,
 
   // Check if we're already in tile batch mode (beginTileBatch was called)
   // If so, shader and textures are already bound - just draw
-  bool needs_full_setup = (mode_ != BatchMode::Tiles);
+  bool const needs_full_setup = (mode_ != BatchMode::Tiles);
 
   if (needs_full_setup) {
     // STANDALONE MODE: Called without beginTileBatch (e.g., GhostFloorRenderer)

@@ -74,7 +74,7 @@ public:
   void toggleVisible() { visible_ = !visible_; }
 
   // Session state persistence
-  void saveState(AppLogic::EditorSession &session);
+  void saveState(AppLogic::EditorSession &session) const;
   void restoreState(const AppLogic::EditorSession &session);
 
   // Programmatic selection (for syncing with map viewport clicks)

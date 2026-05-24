@@ -72,7 +72,7 @@ void DatReaderBase::readCategory(BinaryReader& reader, std::vector<ClientItem>& 
     // Casting to int prevents infinite loop if max_id is UINT16_MAX
     auto ids = std::views::iota(static_cast<int>(min_id), static_cast<int>(max_id) + 1);
 
-    for (int id : ids) {
+    for (int const id : ids) {
         ClientItem item;
         item.id = static_cast<uint16_t>(id);
         item.category = category;
@@ -259,7 +259,7 @@ void DatReaderBase::readItemFlags(ClientItem& item, BinaryReader& reader) {
                 item.trade_as = reader.readU16();
                 item.show_as = reader.readU16();
                 {
-                    uint16_t name_len = reader.readU16();
+                    uint16_t const name_len = reader.readU16();
                     item.market_name = reader.readString(name_len);
                 }
                 item.market_profession = reader.readU16();
@@ -365,14 +365,14 @@ void DatReaderBase::readSpriteData(ClientItem& item, BinaryReader& reader) {
             
             item.frame_durations.reserve(item.frames);
             for (uint8_t f = 0; f < item.frames; ++f) {
-                uint32_t min_duration = reader.readU32();
-                uint32_t max_duration = reader.readU32();
+                uint32_t const min_duration = reader.readU32();
+                uint32_t const max_duration = reader.readU32();
                 item.frame_durations.emplace_back(min_duration, max_duration);
             }
         }
         
         // Read sprite IDs
-        uint32_t sprite_count = item.getTotalSprites();
+        uint32_t const sprite_count = item.getTotalSprites();
         item.sprite_ids.reserve(sprite_count);
         
         std::generate_n(std::back_inserter(item.sprite_ids), sprite_count, [&]() {

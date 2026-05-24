@@ -190,8 +190,8 @@ void MapInputController::onLeftDragEnd(const Domain::Position &pos,
     return;
 
   // Position delta
-  int32_t dx = pos.x - drag_start_pos_.x;
-  int32_t dy = pos.y - drag_start_pos_.y;
+  int32_t const dx = pos.x - drag_start_pos_.x;
+  int32_t const dy = pos.y - drag_start_pos_.y;
 
   if (dx == 0 && dy == 0)
     return;
@@ -262,7 +262,7 @@ void MapInputController::onDoubleClick(const Domain::Position &pos,
     const Domain::Item *item_ptr =
         static_cast<const Domain::Item *>(entry.entity_ptr);
     if (item_ptr && open_item_properties_callback_) {
-      Domain::Tile *mutable_tile = map->getTile(entry.getPosition());
+      Domain::Tile  const*mutable_tile = map->getTile(entry.getPosition());
       if (mutable_tile) {
         auto &items = mutable_tile->getItems();
         for (auto &item : items) {

@@ -32,8 +32,8 @@ void SelectionMenu::renderSelectionActions(AppLogic::EditorSession *session) {
 }
 
 void SelectionMenu::renderSelectionModeOptions() {
-  bool is_smart = !settings_.use_pixel_perfect;
-  bool is_pixel_perfect = settings_.use_pixel_perfect;
+  bool const is_smart = !settings_.use_pixel_perfect;
+  bool const is_pixel_perfect = settings_.use_pixel_perfect;
 
   if (ImGui::MenuItem(ICON_FA_WAND_MAGIC_SPARKLES " Smart Selection", nullptr,
                       is_smart)) {
@@ -57,9 +57,9 @@ void SelectionMenu::renderSelectionModeOptions() {
 void SelectionMenu::renderFloorScopeOptions() {
   using Scope = Domain::SelectionFloorScope;
 
-  bool is_current = (settings_.floor_scope == Scope::CurrentFloor);
-  bool is_visible = (settings_.floor_scope == Scope::VisibleFloors);
-  bool is_all = (settings_.floor_scope == Scope::AllFloors);
+  bool const is_current = (settings_.floor_scope == Scope::CurrentFloor);
+  bool const is_visible = (settings_.floor_scope == Scope::VisibleFloors);
+  bool const is_all = (settings_.floor_scope == Scope::AllFloors);
 
   if (ImGui::MenuItem(ICON_FA_LAYER_GROUP " Current Floor", nullptr,
                       is_current)) {

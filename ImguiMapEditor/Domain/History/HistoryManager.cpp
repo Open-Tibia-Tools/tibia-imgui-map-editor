@@ -51,8 +51,8 @@ void HistoryManager::endOperation(ChunkedMap* map, Services::Selection::Selectio
     }
     
     // Check if we have any changes (tiles or selection)
-    bool has_tile_changes = !before_states_.empty();
-    bool has_selection_changes = selection_before_.has_value();
+    bool const has_tile_changes = !before_states_.empty();
+    bool const has_selection_changes = selection_before_.has_value();
     
     if (!has_tile_changes && !has_selection_changes) {
         // No changes recorded

@@ -33,11 +33,11 @@ void QuickSearchPopup::render() {
     if (!is_open_) return;
     
     // Center popup
-    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImVec2 const center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.3f));
     ImGui::SetNextWindowSize(ImVec2(500, 0), ImGuiCond_Appearing);
     
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | 
+    ImGuiWindowFlags const flags = ImGuiWindowFlags_NoTitleBar | 
                              ImGuiWindowFlags_NoResize |
                              ImGuiWindowFlags_NoMove |
                              ImGuiWindowFlags_NoScrollbar |
@@ -56,7 +56,7 @@ void QuickSearchPopup::render() {
         }
         
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 8));
-        bool input_changed = ImGui::InputTextWithHint(
+        bool const input_changed = ImGui::InputTextWithHint(
             "##SearchInput", 
             ICON_FA_MAGNIFYING_GLASS " Search items by name or ID...",
             search_buffer_, 
@@ -78,7 +78,7 @@ void QuickSearchPopup::render() {
         handleKeyboardNavigation();
         
         // Update search if query changed
-        std::string current_query(search_buffer_);
+        std::string const current_query(search_buffer_);
         if (current_query != last_query_) {
             last_query_ = current_query;
             doSearch();
@@ -90,7 +90,7 @@ void QuickSearchPopup::render() {
             
             for (size_t i = 0; i < std::min(results_.size(), MAX_VISIBLE_RESULTS); ++i) {
                 const auto& result = results_[i];
-                bool is_selected = (static_cast<int>(i) == selected_index_);
+                bool const is_selected = (static_cast<int>(i) == selected_index_);
                 
                 ImGui::PushID(static_cast<int>(i));
                 

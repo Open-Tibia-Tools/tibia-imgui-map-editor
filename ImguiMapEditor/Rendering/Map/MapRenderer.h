@@ -53,7 +53,7 @@ class MapRenderer : public IRenderer {
 public:
   MapRenderer(Services::ClientDataService *client_data,
               Services::SpriteManager *sprite_manager);
-  ~MapRenderer();
+  ~MapRenderer() override;
 
   MapRenderer(const MapRenderer &) = delete;
   MapRenderer &operator=(const MapRenderer &) = delete;

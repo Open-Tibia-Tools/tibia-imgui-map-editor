@@ -254,18 +254,18 @@ void BrushController::endStroke() {
 // Bresenham's line algorithm implementation
 std::vector<Domain::Position>
 BrushController::getLinePositions(const Domain::Position &from,
-                                  const Domain::Position &to) const {
+                                  const Domain::Position &to) {
 
   std::vector<Domain::Position> positions;
 
   int32_t x0 = from.x, y0 = from.y;
   int32_t x1 = to.x, y1 = to.y;
-  int16_t z = from.z; // Stay on same floor
-
-  int32_t dx = std::abs(x1 - x0);
-  int32_t dy = -std::abs(y1 - y0);
-  int32_t sx = x0 < x1 ? 1 : -1;
-  int32_t sy = y0 < y1 ? 1 : -1;
+  int16_t const z = from.z; // Stay on same floor
+
+  int32_t const dx = std::abs(x1 - x0);
+  int32_t const dy = -std::abs(y1 - y0);
+  int32_t const sx = x0 < x1 ? 1 : -1;
+  int32_t const sy = y0 < y1 ? 1 : -1;
   int32_t err = dx + dy;
 
   while (true) {
@@ -274,7 +274,7 @@ BrushController::getLinePositions(const Domain::Position &from,
     if (x0 == x1 && y0 == y1)
       break;
 
-    int32_t e2 = 2 * err;
+    int32_t const e2 = 2 * err;
     if (e2 >= dy) {
       if (x0 == x1)
         break;

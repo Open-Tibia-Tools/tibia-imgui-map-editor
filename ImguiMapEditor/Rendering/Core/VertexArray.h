@@ -34,7 +34,7 @@ public:
     VertexArray& operator=(const VertexArray&) = delete;
     
     void bind() const;
-    void unbind() const;
+    static void unbind() ;
     
     /**
      * Set vertex buffer data with layout
@@ -51,7 +51,7 @@ public:
     /**
      * Update vertex buffer data (must be same size or smaller)
      */
-    void updateVertexBuffer(const void* data, size_t size);
+    void updateVertexBuffer(const void* data, size_t size) const;
     
     /**
      * Set index buffer

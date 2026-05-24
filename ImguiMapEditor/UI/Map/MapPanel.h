@@ -42,7 +42,7 @@ namespace UI {
 class MapPanel : public Presentation::IUIComponent {
 public:
   MapPanel();
-  ~MapPanel() = default;
+  ~MapPanel() override = default;
 
   void render(Domain::ChunkedMap *map, Rendering::RenderState &state,
               Rendering::MapRenderer *renderer);

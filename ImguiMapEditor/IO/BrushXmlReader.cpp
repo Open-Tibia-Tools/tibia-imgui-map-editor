@@ -31,7 +31,7 @@ bool BrushXmlReader::loadFile(const fs::path &path) {
     return false;
   }
 
-  std::string absPath = fs::absolute(path).string();
+  std::string const absPath = fs::absolute(path).string();
   if (loadedFiles_.find(absPath) != loadedFiles_.end()) {
     spdlog::debug("[BrushXmlReader] Already loaded: {}", path.string());
     return true;
@@ -79,8 +79,8 @@ size_t BrushXmlReader::loadDirectory(const fs::path &dir) {
 
 void BrushXmlReader::parseBrushesRoot(const pugi::xml_node &root,
                                       const fs::path &sourceFile) {
-  for (pugi::xml_node child : root.children()) {
-    std::string nodeName = child.name();
+  for (pugi::xml_node const child : root.children()) {
+    std::string const nodeName = child.name();
 
     if (nodeName == "brush") {
       parseBrush(child);
@@ -141,9 +141,9 @@ void BrushXmlReader::parseGroundBrush(const pugi::xml_node &node,
 
   // Parse ground items
   std::vector<std::pair<uint32_t, uint32_t>> groundItems;
-  for (pugi::xml_node itemNode : node.children("item")) {
-    uint32_t id = itemNode.attribute("id").as_uint(0);
-    uint32_t chance = itemNode.attribute("chance").as_uint(1);
+  for (pugi::xml_node const itemNode : node.children("item")) {
+    uint32_t const id = itemNode.attribute("id").as_uint(0);
+    uint32_t const chance = itemNode.attribute("chance").as_uint(1);
     if (id != 0) {
       groundItems.emplace_back(id, chance);
       if (lookId == 0) {
@@ -154,18 +154,18 @@ void BrushXmlReader::parseGroundBrush(const pugi::xml_node &node,
 
   // Parse borders
   BorderBlock borders;
-  for (pugi::xml_node borderNode : node.children("border")) {
-    std::string toName = borderNode.attribute("to").as_string();
-    uint32_t groundEquiv = borderNode.attribute("ground_equivalent").as_uint(0);
+  for (pugi::xml_node const borderNode : node.children("border")) {
+    std::string const toName = borderNode.attribute("to").as_string();
+    uint32_t const groundEquiv = borderNode.attribute("ground_equivalent").as_uint(0);
     borders.setGroundEquivalent(groundEquiv);
 
     // Parse border items
-    for (pugi::xml_node borderItem : borderNode.children("borderitem")) {
-      std::string edgeName = borderItem.attribute("edge").as_string();
-      uint32_t itemId = borderItem.attribute("id").as_uint(0);
-      uint32_t chance = borderItem.attribute("chance").as_uint(1);
-
-      EdgeType edge = parseEdgeName(edgeName);
+    for (pugi::xml_node const borderItem : borderNode.children("borderitem")) {
+      std::string const edgeName = borderItem.attribute("edge").as_string();
+      uint32_t const itemId = borderItem.attribute("id").as_uint(0);
+      uint32_t const chance = borderItem.attribute("chance").as_uint(1);
+
+      EdgeType const edge = parseEdgeName(edgeName);
       if (edge != EdgeType::None && itemId != 0) {
         borders.addItem(edge, itemId, chance);
       }
@@ -174,9 +174,9 @@ void BrushXmlReader::parseGroundBrush(const pugi::xml_node &node,
 
   // Parse friends/enemies
   std::vector<std::string> friends;
-  std::vector<std::string> enemies;
-  for (pugi::xml_node friendNode : node.children("friend")) {
-    std::string friendName = friendNode.attribute("name").as_string();
+  std::vector<std::string> const enemies;
+  for (pugi::xml_node const friendNode : node.children("friend")) {
+    std::string const friendName = friendNode.attribute("name").as_string();
     if (!friendName.empty()) {
       friends.push_back(friendName);
     }
@@ -193,14 +193,14 @@ void BrushXmlReader::parseGroundBrush(const pugi::xml_node &node,
 void BrushXmlReader::parseWallBrush(const pugi::xml_node &node,
                                     const std::string &name, uint32_t lookId) {
   // Parse wall segments by type
-  for (pugi::xml_node wallNode : node.children("wall")) {
-    std::string typeStr = wallNode.attribute("type").as_string();
-    WallAlign align = parseWallType(typeStr);
+  for (pugi::xml_node const wallNode : node.children("wall")) {
+    std::string const typeStr = wallNode.attribute("type").as_string();
+    WallAlign const align = parseWallType(typeStr);
 
     // Parse items for this wall type
-    for (pugi::xml_node itemNode : wallNode.children("item")) {
-      uint32_t id = itemNode.attribute("id").as_uint(0);
-      uint32_t chance = itemNode.attribute("chance").as_uint(1);
+    for (pugi::xml_node const itemNode : wallNode.children("item")) {
+      uint32_t const id = itemNode.attribute("id").as_uint(0);
+      uint32_t const chance = itemNode.attribute("chance").as_uint(1);
       if (id != 0 && lookId == 0) {
         lookId = id;
       }
@@ -208,12 +208,12 @@ void BrushXmlReader::parseWallBrush(const pugi::xml_node &node,
   }
 
   // Parse doors
-  for (pugi::xml_node doorNode : node.children("door")) {
-    std::string typeStr = doorNode.attribute("type").as_string();
-    DoorType doorType = parseDoorType(typeStr);
-
-    for (pugi::xml_node itemNode : doorNode.children("item")) {
-      uint32_t id = itemNode.attribute("id").as_uint(0);
+  for (pugi::xml_node const doorNode : node.children("door")) {
+    std::string const typeStr = doorNode.attribute("type").as_string();
+    DoorType const doorType = parseDoorType(typeStr);
+
+    for (pugi::xml_node const itemNode : doorNode.children("item")) {
+      uint32_t const id = itemNode.attribute("id").as_uint(0);
       // Store door items by type
     }
   }
@@ -227,19 +227,19 @@ void BrushXmlReader::parseWallBrush(const pugi::xml_node &node,
 void BrushXmlReader::parseDoodadBrush(const pugi::xml_node &node,
                                       const std::string &name,
                                       uint32_t lookId) {
-  bool draggable = node.attribute("draggable").as_bool(true);
-  bool redoBorders = node.attribute("redo_borders").as_bool(false);
-  bool onBlocking = node.attribute("on_blocking").as_bool(false);
-  bool onDuplicate = node.attribute("on_duplicate").as_bool(false);
+  bool const draggable = node.attribute("draggable").as_bool(true);
+  bool const redoBorders = node.attribute("redo_borders").as_bool(false);
+  bool const onBlocking = node.attribute("on_blocking").as_bool(false);
+  bool const onDuplicate = node.attribute("on_duplicate").as_bool(false);
 
   // Parse alternatives
   std::vector<DoodadAlternative> alternatives;
 
-  for (pugi::xml_node altNode : node.children("alternate")) {
+  for (pugi::xml_node const altNode : node.children("alternate")) {
     DoodadAlternative alt;
 
     // Parse single items
-    for (pugi::xml_node itemNode : altNode.children("item")) {
+    for (pugi::xml_node const itemNode : altNode.children("item")) {
       SingleItem item;
       item.itemId = itemNode.attribute("id").as_uint(0);
       item.chance = itemNode.attribute("chance").as_uint(1);
@@ -252,17 +252,17 @@ void BrushXmlReader::parseDoodadBrush(const pugi::xml_node &node,
     }
 
     // Parse composites
-    for (pugi::xml_node compNode : altNode.children("composite")) {
+    for (pugi::xml_node const compNode : altNode.children("composite")) {
       CompositeItem comp;
       comp.chance = compNode.attribute("chance").as_uint(1);
 
-      for (pugi::xml_node tileNode : compNode.children("tile")) {
+      for (pugi::xml_node const tileNode : compNode.children("tile")) {
         CompositeItem::TileOffset offset;
         offset.dx = tileNode.attribute("x").as_int(0);
         offset.dy = tileNode.attribute("y").as_int(0);
         offset.dz = tileNode.attribute("z").as_int(0);
 
-        for (pugi::xml_node itemNode : tileNode.children("item")) {
+        for (pugi::xml_node const itemNode : tileNode.children("item")) {
           SingleItem item;
           item.itemId = itemNode.attribute("id").as_uint(0);
           item.chance = itemNode.attribute("chance").as_uint(1);
@@ -293,13 +293,13 @@ void BrushXmlReader::parseDoodadBrush(const pugi::xml_node &node,
 void BrushXmlReader::parseTableBrush(const pugi::xml_node &node,
                                      const std::string &name, uint32_t lookId) {
   // Parse table items by alignment
-  for (pugi::xml_node tableNode : node.children("table")) {
-    std::string alignStr = tableNode.attribute("align").as_string();
-    TableAlign align = parseTableAlign(alignStr);
-
-    for (pugi::xml_node itemNode : tableNode.children("item")) {
-      uint32_t id = itemNode.attribute("id").as_uint(0);
-      uint32_t chance = itemNode.attribute("chance").as_uint(1);
+  for (pugi::xml_node const tableNode : node.children("table")) {
+    std::string const alignStr = tableNode.attribute("align").as_string();
+    TableAlign const align = parseTableAlign(alignStr);
+
+    for (pugi::xml_node const itemNode : tableNode.children("item")) {
+      uint32_t const id = itemNode.attribute("id").as_uint(0);
+      uint32_t const chance = itemNode.attribute("chance").as_uint(1);
       if (id != 0 && lookId == 0) {
         lookId = id;
       }
@@ -316,13 +316,13 @@ void BrushXmlReader::parseCarpetBrush(const pugi::xml_node &node,
                                       const std::string &name,
                                       uint32_t lookId) {
   // Parse carpet items by edge type
-  for (pugi::xml_node carpetNode : node.children("carpet")) {
-    std::string alignStr = carpetNode.attribute("align").as_string();
-    EdgeType edge = parseEdgeName(alignStr);
-
-    for (pugi::xml_node itemNode : carpetNode.children("item")) {
-      uint32_t id = itemNode.attribute("id").as_uint(0);
-      uint32_t chance = itemNode.attribute("chance").as_uint(1);
+  for (pugi::xml_node const carpetNode : node.children("carpet")) {
+    std::string const alignStr = carpetNode.attribute("align").as_string();
+    EdgeType const edge = parseEdgeName(alignStr);
+
+    for (pugi::xml_node const itemNode : carpetNode.children("item")) {
+      uint32_t const id = itemNode.attribute("id").as_uint(0);
+      uint32_t const chance = itemNode.attribute("chance").as_uint(1);
       if (id != 0 && lookId == 0) {
         lookId = id;
       }

@@ -50,13 +50,13 @@ void MapPanel::renderInternal(MapType *map, Rendering::RenderState &state,
                               Rendering::MapRenderer *renderer,
                               const Rendering::AnimationTicks *anim_ticks) {
   // Calculate viewport
-  ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
-  ImVec2 avail_size = ImGui::GetContentRegionAvail();
-
-  float x = std::floor(cursor_pos.x);
-  float y = std::floor(cursor_pos.y);
-  float w = std::floor(avail_size.x);
-  float h = std::floor(avail_size.y);
+  ImVec2 const cursor_pos = ImGui::GetCursorScreenPos();
+  ImVec2 const avail_size = ImGui::GetContentRegionAvail();
+
+  float const x = std::floor(cursor_pos.x);
+  float const y = std::floor(cursor_pos.y);
+  float const w = std::floor(avail_size.x);
+  float const h = std::floor(avail_size.y);
 
   camera_.setViewport(glm::vec2(x, y), glm::vec2(w, h));
 
@@ -92,7 +92,7 @@ void MapPanel::renderInternal(MapType *map, Rendering::RenderState &state,
     }
 
     // Push LOD state to renderer and overlays
-    bool is_lod_active = Rendering::LODPolicy::isLodActive(camera_.getZoom());
+    bool const is_lod_active = Rendering::LODPolicy::isLodActive(camera_.getZoom());
     renderer->setLODMode(is_lod_active);
     overlay_manager_->setLODMode(is_lod_active);
 
@@ -108,7 +108,7 @@ void MapPanel::renderInternal(MapType *map, Rendering::RenderState &state,
     }
 
     // Display rendered texture
-    uint32_t tex_id = renderer->getTextureId();
+    uint32_t const tex_id = renderer->getTextureId();
     if (tex_id != 0) {
       ImGui::SetCursorScreenPos(
           ImVec2(camera_.getViewportPos().x, camera_.getViewportPos().y));
@@ -122,7 +122,7 @@ void MapPanel::renderInternal(MapType *map, Rendering::RenderState &state,
   }
 
   // Grid
-  bool grid_visible = view_settings_ ? view_settings_->show_grid : show_grid_;
+  bool const grid_visible = view_settings_ ? view_settings_->show_grid : show_grid_;
   if (grid_visible) {
     overlay_manager_->getGridOverlay().render(
         ImGui::GetWindowDrawList(), camera_.getCameraPosition(),
@@ -139,8 +139,8 @@ void MapPanel::renderInternal(MapType *map, Rendering::RenderState &state,
 
     // Draw drag selection box if shift-selecting AND time delay has been met
     if (input_.isDragSelecting() && input_.shouldShowBoxOverlay()) {
-      ImGuiIO &io = ImGui::GetIO();
-      glm::vec2 current_mouse(io.MousePos.x, io.MousePos.y);
+      ImGuiIO  const&io = ImGui::GetIO();
+      glm::vec2 const current_mouse(io.MousePos.x, io.MousePos.y);
       overlay_manager_->getSelectionOverlay().renderDragBox(
           draw_list, input_.getDragStartScreen(), current_mouse);
 
@@ -190,7 +190,7 @@ void MapPanel::renderInternal(MapType *map, Rendering::RenderState &state,
 
       // Drag preview via unified PreviewService
       // Use MapPanelInput's threshold check for proper separation of concerns
-      bool has_brush = brush_controller_ && brush_controller_->hasBrush();
+      bool const has_brush = brush_controller_ && brush_controller_->hasBrush();
       if (input_.shouldShowDragPreview() && session_ && !has_brush) {
         auto &previewService = session_->getPreviewService();
 
@@ -205,9 +205,9 @@ void MapPanel::renderInternal(MapType *map, Rendering::RenderState &state,
         }
 
         // Update cursor position for preview
-        ImGuiIO &io = ImGui::GetIO();
-        glm::vec2 current_mouse(io.MousePos.x, io.MousePos.y);
-        Domain::Position mouse_tile = camera_.screenToTile(current_mouse);
+        ImGuiIO  const&io = ImGui::GetIO();
+        glm::vec2 const current_mouse(io.MousePos.x, io.MousePos.y);
+        Domain::Position const mouse_tile = camera_.screenToTile(current_mouse);
         previewService.updateCursor(mouse_tile);
       } else {
         // Clear drag preview when drag ends or conditions not met
@@ -223,9 +223,9 @@ void MapPanel::renderInternal(MapType *map, Rendering::RenderState &state,
       // Unified brush preview (via PreviewService)
       if (session_ && session_->getPreviewService().hasPreview() &&
           is_hovered_) {
-        ImGuiIO &io = ImGui::GetIO();
-        glm::vec2 current_mouse(io.MousePos.x, io.MousePos.y);
-        Domain::Position mouse_tile = camera_.screenToTile(current_mouse);
+        ImGuiIO  const&io = ImGui::GetIO();
+        glm::vec2 const current_mouse(io.MousePos.x, io.MousePos.y);
+        Domain::Position const mouse_tile = camera_.screenToTile(current_mouse);
 
         auto &previewService = session_->getPreviewService();
         previewService.updateCursor(mouse_tile);
@@ -255,8 +255,8 @@ template void MapPanel::renderInternal<Domain::ChunkedMap>(
 
 void MapPanel::renderBackground() {
   ImDrawList *draw_list = ImGui::GetWindowDrawList();
-  glm::vec2 pos = camera_.getViewportPos();
-  glm::vec2 size = camera_.getViewportSize();
+  glm::vec2 const pos = camera_.getViewportPos();
+  glm::vec2 const size = camera_.getViewportSize();
 
   draw_list->AddRectFilled(ImVec2(pos.x, pos.y),
                            ImVec2(pos.x + size.x, pos.y + size.y),
@@ -267,7 +267,7 @@ void MapPanel::renderOverlay() {
   ImDrawList *draw_list = ImGui::GetWindowDrawList();
 
   // Status overlay (coordinates, selection count, FPS)
-  size_t selection_count =
+  size_t const selection_count =
       session_ ? session_->getSelectionService().size() : 0;
   overlay_manager_->getStatusOverlay().render(draw_list, camera_,
                                               selection_count, is_hovered_,

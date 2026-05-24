@@ -49,8 +49,8 @@ bool ImGuiBackend::initialize(IWindow& window, const char* ini_path) {
     ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
     
     // Select appropriate GLSL version based on GL version
-    int gl_major = window.getGLVersionMajor();
-    int gl_minor = window.getGLVersionMinor();
+    int const gl_major = window.getGLVersionMajor();
+    int const gl_minor = window.getGLVersionMinor();
     
     const char* glsl_version = "#version 330";
     if (gl_major >= 4 && gl_minor >= 6) {

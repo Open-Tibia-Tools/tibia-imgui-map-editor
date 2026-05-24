@@ -8,7 +8,7 @@ namespace Rendering {
 ChunkSpriteCache::CachedChunk *
 ChunkSpriteCache::getOrCreate(int32_t chunk_x, int32_t chunk_y, int8_t floor) {
 
-  uint64_t key = makeKey(chunk_x, chunk_y, floor);
+  uint64_t const key = makeKey(chunk_x, chunk_y, floor);
   auto &entry = cache_[key]; // Creates if not exists
   return &entry;
 }
@@ -16,7 +16,7 @@ ChunkSpriteCache::getOrCreate(int32_t chunk_x, int32_t chunk_y, int8_t floor) {
 const ChunkSpriteCache::CachedChunk *
 ChunkSpriteCache::get(int32_t chunk_x, int32_t chunk_y, int8_t floor) const {
 
-  uint64_t key = makeKey(chunk_x, chunk_y, floor);
+  uint64_t const key = makeKey(chunk_x, chunk_y, floor);
   auto it = cache_.find(key);
   if (it != cache_.end() && it->second.valid) {
     return &it->second;
@@ -26,7 +26,7 @@ ChunkSpriteCache::get(int32_t chunk_x, int32_t chunk_y, int8_t floor) const {
 
 void ChunkSpriteCache::invalidate(int32_t chunk_x, int32_t chunk_y,
                                   int8_t floor) {
-  uint64_t key = makeKey(chunk_x, chunk_y, floor);
+  uint64_t const key = makeKey(chunk_x, chunk_y, floor);
   auto it = cache_.find(key);
   if (it != cache_.end()) {
     it->second.valid = false;
@@ -81,7 +81,7 @@ void ChunkSpriteCache::uploadTiles(CachedChunk *chunk) {
 
   glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo.get());
 
-  size_t required_size = chunk->tiles.size() * sizeof(TileInstance);
+  size_t const required_size = chunk->tiles.size() * sizeof(TileInstance);
 
   // If buffer is too small, reallocate
   if (required_size > chunk->vbo_capacity) {

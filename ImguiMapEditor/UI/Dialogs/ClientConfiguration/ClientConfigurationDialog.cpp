@@ -76,7 +76,7 @@ void ClientConfigurationDialog::open(Services::ClientVersionRegistry &registry,
   populateVersionData();
 
 
-  int def_group = getMajorGroup(active_version_);
+  int const def_group = getMajorGroup(active_version_);
   for (size_t i = 0; i < version_groups_.size(); ++i) {
     if (version_groups_[i].major == def_group) {
       active_tab_ = static_cast<int>(i);
@@ -96,7 +96,7 @@ void ClientConfigurationDialog::open(Services::ClientVersionRegistry &registry,
 
 void ClientConfigurationDialog::close() { is_open_ = false; }
 
-int ClientConfigurationDialog::getMajorGroup(uint32_t version) const {
+int ClientConfigurationDialog::getMajorGroup(uint32_t version) {
   if (version >= 10000)
     return static_cast<int>(version) / 1000;
   if (version >= 100)
@@ -107,7 +107,7 @@ int ClientConfigurationDialog::getMajorGroup(uint32_t version) const {
 bool ClientConfigurationDialog::matchesFilter(const Domain::ClientVersion &ver) const {
   if (search_filter_.empty())
     return true;
-  std::string haystack = toLower(ver.getName()) + " " + toLower(ver.getDescription()) +
+  std::string const haystack = toLower(ver.getName()) + " " + toLower(ver.getDescription()) +
                          " " + std::to_string(ver.getVersion()) + " " +
                          std::to_string(ver.getOtbVersion());
   return haystack.find(search_filter_) != std::string::npos;
@@ -223,7 +223,7 @@ void ClientConfigurationDialog::duplicateClient() {
   if (!src)
     return;
 
-  std::string new_name = src->getName() + " (Copy)";
+  std::string const new_name = src->getName() + " (Copy)";
   uint32_t new_version = src->getVersion();
   while (registry_->getVersionsMap().count(new_version))
     ++new_version;
@@ -347,9 +347,9 @@ bool ClientConfigurationDialog::render() {
   if (!is_open_ || !registry_)
     return false;
 
-  ImGuiIO &io = ImGui::GetIO();
-  ImVec2 win_size(1180, 780);
-  ImVec2 win_pos((io.DisplaySize.x - win_size.x) * 0.5f,
+  ImGuiIO  const&io = ImGui::GetIO();
+  ImVec2 const win_size(1180, 780);
+  ImVec2 const win_pos((io.DisplaySize.x - win_size.x) * 0.5f,
                  (io.DisplaySize.y - win_size.y) * 0.5f);
   ImGui::SetNextWindowPos(win_pos, ImGuiCond_Appearing);
   ImGui::SetNextWindowSize(win_size, ImGuiCond_Appearing);
@@ -393,14 +393,14 @@ bool ClientConfigurationDialog::render() {
 }
 
 void ClientConfigurationDialog::renderTitleBar() {
-  float title_height = 32.0f;
+  float const title_height = 32.0f;
   ImGui::BeginChild("##titlebar", ImVec2(0, title_height), ImGuiChildFlags_None);
 
   ImGui::SetCursorPosY(6);
   ImGui::SetCursorPosX(10);
   ImGui::TextColored(kTextOffWhite, "Client Configuration");
 
-  float close_x = ImGui::GetWindowWidth() - 30;
+  float const close_x = ImGui::GetWindowWidth() - 30;
   ImGui::SetCursorPos(ImVec2(close_x, 4));
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
   ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.6f));
@@ -412,7 +412,7 @@ void ClientConfigurationDialog::renderTitleBar() {
 }
 
 void ClientConfigurationDialog::renderToolbar() {
-  float toolbar_h = 48.0f;
+  float const toolbar_h = 48.0f;
   ImGui::BeginChild("##toolbar", ImVec2(0, toolbar_h), ImGuiChildFlags_None);
 
   ImGui::SetCursorPosY(6);
@@ -439,7 +439,7 @@ void ClientConfigurationDialog::renderToolbar() {
 }
 
 void ClientConfigurationDialog::renderBody() {
-  float body_h = ImGui::GetContentRegionAvail().y - 48.0f;
+  float const body_h = ImGui::GetContentRegionAvail().y - 48.0f;
   ImGui::BeginChild("##body", ImVec2(0, body_h), ImGuiChildFlags_None);
 
   renderLeftSidebar();
@@ -460,12 +460,12 @@ void ClientConfigurationDialog::renderLeftSidebar() {
   ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4);
 
   if (!version_groups_.empty()) {
-    float btn_w = 72.0f;
-    int cols = 3;
+    float const btn_w = 72.0f;
+    int const cols = 3;
     for (size_t i = 0; i < version_groups_.size(); ++i) {
       if (i > 0 && i % cols != 0)
         ImGui::SameLine();
-      bool active = (static_cast<int>(i) == active_tab_);
+      bool const active = (static_cast<int>(i) == active_tab_);
       if (active) {
         ImGui::PushStyleColor(ImGuiCol_Button, kBlueAccent);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kBlueHover);
@@ -514,7 +514,7 @@ void ClientConfigurationDialog::renderVersionList() {
     if (!cv)
       continue;
 
-    bool sel = (active_version_ == ver_num);
+    bool const sel = (active_version_ == ver_num);
     if (sel) {
       ImGui::PushStyleColor(ImGuiCol_Header, kBlueAccent);
       ImGui::PushStyleColor(ImGuiCol_HeaderHovered, kBlueHover);
@@ -572,11 +572,11 @@ void ClientConfigurationDialog::renderRightPanel() {
 }
 
 void ClientConfigurationDialog::renderFooterStatus() {
-  float footer_h = 42.0f;
+  float const footer_h = 42.0f;
   ImGui::BeginChild("##footer", ImVec2(0, footer_h), ImGuiChildFlags_None);
   ImGui::SetCursorPosY(8);
 
-  float btn_x = ImGui::GetWindowWidth() - 300;
+  float const btn_x = ImGui::GetWindowWidth() - 300;
   ImGui::SameLine(btn_x);
 
   ImGui::PushStyleColor(ImGuiCol_Button, kBlueAccent);

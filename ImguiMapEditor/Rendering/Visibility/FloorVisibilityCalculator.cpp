@@ -102,12 +102,12 @@ int FloorVisibilityCalculator::calcFirstVisibleFloor(
     // Check 3x3 area around camera for blocking tiles
     for (int ix = -1; ix <= 1 && first_floor < camera_z; ++ix) {
         for (int iy = -1; iy <= 1 && first_floor < camera_z; ++iy) {
-            int pos_x = camera_x + ix;
-            int pos_y = camera_y + iy;
+            int const pos_x = camera_x + ix;
+            int const pos_y = camera_y + iy;
             
             // Center tile OR diagonal tiles where we can look through
-            bool is_center = (ix == 0 && iy == 0);
-            bool is_diagonal = (std::abs(ix) == std::abs(iy)) && !is_center;
+            bool const is_center = (ix == 0 && iy == 0);
+            bool const is_diagonal = (std::abs(ix) == std::abs(iy)) && !is_center;
             
             // For diagonal tiles, check if we can look through (window/door)
             if (!is_center && is_diagonal) {
@@ -119,18 +119,18 @@ int FloorVisibilityCalculator::calcFirstVisibleFloor(
             
             // Walk up through floors checking for blockers
             // OTClient uses coveredUp which shifts x+1, y+1, z-1
-            int check_x = pos_x;
-            int check_y = pos_y;
+            int const check_x = pos_x;
+            int const check_y = pos_y;
             
             for (int check_z = camera_z - 1; check_z >= first_floor; --check_z) {
                 // Apply covered position shift (each floor up = x+1, y+1)
-                int z_diff = camera_z - check_z;
-                int covered_x = pos_x + z_diff;
-                int covered_y = pos_y + z_diff;
+                int const z_diff = camera_z - check_z;
+                int const covered_x = pos_x + z_diff;
+                int const covered_y = pos_y + z_diff;
                 
                 // Check tile directly above (physical position)
                 const Domain::Tile* upper_tile = map.getTile(pos_x, pos_y, check_z);
-                bool can_look = isLookPossible(map.getTile(pos_x, pos_y, camera_z));
+                bool const can_look = isLookPossible(map.getTile(pos_x, pos_y, camera_z));
                 
                 if (upper_tile && tileLimitsFloorsView(upper_tile, !can_look)) {
                     first_floor = check_z + 1;
@@ -150,7 +150,7 @@ int FloorVisibilityCalculator::calcFirstVisibleFloor(
     return std::clamp(first_floor, 0, static_cast<int>(FC::MAX_Z));
 }
 
-int FloorVisibilityCalculator::calcLastVisibleFloor(int camera_z) const {
+int FloorVisibilityCalculator::calcLastVisibleFloor(int camera_z) {
     using FC = FloorConstants;
     
     int z;

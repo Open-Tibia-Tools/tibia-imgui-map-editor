@@ -17,7 +17,7 @@ AppLogic::EditorSession *SessionWiringService::wireResources(
     std::unique_ptr<Services::ClientDataService> client_data,
     std::unique_ptr<Services::SpriteManager> sprite_manager,
     const std::filesystem::path &map_path,
-    AppLogic::MapOperationHandler *map_operations) {
+    AppLogic::MapOperationHandler *map_operations) const {
 
   // Architecture trace: show what SessionWiringService receives
   spdlog::info("[SessionWiringService] wireResources() called with:");

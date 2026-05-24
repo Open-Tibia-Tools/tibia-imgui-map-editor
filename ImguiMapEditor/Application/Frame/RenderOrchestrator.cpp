@@ -66,7 +66,7 @@ void RenderOrchestrator::render(Context &ctx) {
     Rendering::AnimationTicks anim_ticks;
     if (session) {
       auto now = std::chrono::steady_clock::now();
-      int64_t frame_time =
+      int64_t const frame_time =
           std::chrono::duration_cast<std::chrono::milliseconds>(
               now.time_since_epoch())
               .count();
@@ -137,7 +137,7 @@ void RenderOrchestrator::renderDialogs(Context &ctx) {
   auto modal_result = dialogs.unsaved_changes.render();
   switch (modal_result) {
   case UI::UnsavedChangesModal::Result::Save: {
-    bool can_close = *ctx.pending_close_all
+    bool const can_close = *ctx.pending_close_all
                          ? !ctx.tab_manager->hasUnsavedChanges()
                          : (ctx.tab_manager->getActiveSession() &&
                             !ctx.tab_manager->getActiveSession()->isModified());

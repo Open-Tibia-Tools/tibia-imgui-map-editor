@@ -53,12 +53,12 @@ public:
   /**
    * Enable alpha blending (SRC_ALPHA, ONE_MINUS_SRC_ALPHA).
    */
-  void enableBlending();
+  static void enableBlending();
 
   /**
    * Disable blending.
    */
-  void disableBlending();
+  static void disableBlending();
 
   // Getters (all const-correct)
   GLuint getTextureId() const;

@@ -83,15 +83,15 @@ void MainWindow::renderEditor(Domain::ChunkedMap *current_map,
 
       // Create unique window name using SESSION ID
       auto session_id = session->getID();
-      std::string window_name = session->getDisplayName() + "###MapSession" +
+      std::string const window_name = session->getDisplayName() + "###MapSession" +
                                 std::to_string(session_id);
 
       bool is_open = true;
-      ImGuiWindowFlags window_flags = ImGuiWindowFlags_None;
+      ImGuiWindowFlags const window_flags = ImGuiWindowFlags_None;
 
       // Custom Tab Styling logic
-      bool is_modified = session->isModified();
-      bool is_active = (tab_manager_->getActiveTabIndex() == i);
+      bool const is_modified = session->isModified();
+      bool const is_active = (tab_manager_->getActiveTabIndex() == i);
       int pushed_colors = 0;
 
       if (is_modified || is_active) {
@@ -99,9 +99,9 @@ void MainWindow::renderEditor(Domain::ChunkedMap *current_map,
           if (is_modified) {
               if (is_active) {
                   // Pulsate between Green and Yellow for Active + Modified
-                  float t = (sinf((float)ImGui::GetTime() * 5.0f) * 0.5f) + 0.5f;
-                  ImVec4 color_green = ImVec4(0.0f, 0.5f, 0.0f, 0.7f);
-                  ImVec4 color_yellow = ImVec4(1.0f, 0.8f, 0.0f, 0.7f);
+                  float const t = (sinf((float)ImGui::GetTime() * 5.0f) * 0.5f) + 0.5f;
+                  ImVec4 const color_green = ImVec4(0.0f, 0.5f, 0.0f, 0.7f);
+                  ImVec4 const color_yellow = ImVec4(1.0f, 0.8f, 0.0f, 0.7f);
 
                   tab_color.x = color_green.x + (color_yellow.x - color_green.x) * t;
                   tab_color.y = color_green.y + (color_yellow.y - color_green.y) * t;

@@ -52,7 +52,7 @@ bool OtbmTileParser::parseTile(BinaryNode* tileNode,
         return false;
     }
     
-    Domain::Position pos(
+    Domain::Position const pos(
         static_cast<int32_t>(base_x + x_offset),
         static_cast<int32_t>(base_y + y_offset),
         static_cast<int16_t>(base_z)
@@ -68,7 +68,7 @@ bool OtbmTileParser::parseTile(BinaryNode* tileNode,
         tile->setHouseId(house_id);
     }
     
-    OtbmVersion otbm_ver = static_cast<OtbmVersion>(result.version.otbm_version);
+    OtbmVersion const otbm_ver = static_cast<OtbmVersion>(result.version.otbm_version);
     
     // Track if we've set ground yet - first item in OTBM is always ground
     bool ground_set = false;
@@ -164,7 +164,7 @@ bool OtbmTileParser::parseSpawns(BinaryNode* spawnsNode,
             continue;
         }
 
-        Domain::Position pos(x, y, z);
+        Domain::Position const pos(x, y, z);
         auto spawn = std::make_unique<Domain::Spawn>();
         spawn->position = pos;
         spawn->radius = radius;
@@ -184,7 +184,7 @@ bool OtbmTileParser::parseSpawns(BinaryNode* spawnsNode,
              }
              
              // Create creature at absolute position (spawn + offset)
-             Domain::Position creature_pos(pos.x + mx, pos.y + my, pos.z);
+             Domain::Position const creature_pos(pos.x + mx, pos.y + my, pos.z);
              auto creature = std::make_unique<Domain::Creature>(name, spawn_time, 2); // Default: South
              builder.setCreature(creature_pos, std::move(creature));
         }
@@ -215,7 +215,7 @@ bool OtbmTileParser::parseTowns(BinaryNode* townsNode,
             continue;
         }
         
-        Domain::Position temple_pos(x, y, z);
+        Domain::Position const temple_pos(x, y, z);
         builder.addTown(town_id, name, temple_pos);
         result.town_count++;
     }
@@ -240,7 +240,7 @@ bool OtbmTileParser::parseWaypoints(BinaryNode* waypointsNode,
             continue;
         }
         
-        Domain::Position pos(x, y, z);
+        Domain::Position const pos(x, y, z);
         builder.addWaypoint(name, pos);
         result.waypoint_count++;
     }

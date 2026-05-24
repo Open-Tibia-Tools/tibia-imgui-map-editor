@@ -26,7 +26,7 @@ size_t ClipboardService::copy(const EditorSession &session) {
   }
 
   // Find the origin (min position) for relative coordinates
-  Domain::Position origin = selectionService.getMinBound();
+  Domain::Position const origin = selectionService.getMinBound();
 
   std::vector<Domain::CopyBuffer::CopiedTile> copied_tiles;
 
@@ -38,7 +38,7 @@ size_t ClipboardService::copy(const EditorSession &session) {
       entries_by_pos;
   for (const auto &entry : entries) {
     const auto &pos = entry.getPosition();
-    uint64_t key = static_cast<uint64_t>(pos.x) |
+    uint64_t const key = static_cast<uint64_t>(pos.x) |
                    (static_cast<uint64_t>(pos.y) << 21) |
                    (static_cast<uint64_t>(pos.z + 8) << 42);
     entries_by_pos[key].push_back(entry);
@@ -64,7 +64,7 @@ size_t ClipboardService::copy(const EditorSession &session) {
       // Get position from first entry
       const auto &pos = pos_entries[0].getPosition();
 
-      Domain::Position relative_pos{pos.x - origin.x, pos.y - origin.y,
+      Domain::Position const relative_pos{pos.x - origin.x, pos.y - origin.y,
                                     static_cast<int16_t>(pos.z - origin.z)};
 
       // Create a new tile containing only selected entities
@@ -110,7 +110,7 @@ size_t ClipboardService::copy(const EditorSession &session) {
     for (const auto &pos : positions) {
       const auto *tile = map->getTile(pos);
       if (tile) {
-        Domain::Position relative_pos{pos.x - origin.x, pos.y - origin.y,
+        Domain::Position const relative_pos{pos.x - origin.x, pos.y - origin.y,
                                       static_cast<int16_t>(pos.z - origin.z)};
 
         auto tile_copy = tile->clone();
@@ -125,7 +125,7 @@ size_t ClipboardService::copy(const EditorSession &session) {
 
 size_t ClipboardService::cut(EditorSession &session) {
   // First copy
-  size_t count = copy(session);
+  size_t const count = copy(session);
   if (count == 0) {
     return 0;
   }

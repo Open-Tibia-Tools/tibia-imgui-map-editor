@@ -132,11 +132,11 @@ public:
   void render(Context &ctx);
 
 private:
-  void beginFrame(Context &ctx);
-  void renderEditorState(Context &ctx, AppLogic::EditorSession *session);
-  void renderDialogs(Context &ctx);
-  void renderNotifications();
-  void endFrame(Context &ctx);
+  static void beginFrame(Context &ctx);
+  static void renderEditorState(Context &ctx, AppLogic::EditorSession *session);
+  static void renderDialogs(Context &ctx);
+  static void renderNotifications();
+  static void endFrame(Context &ctx);
 
   // Startup background image renderer
   Rendering::BackgroundRenderer background_renderer_;

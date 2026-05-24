@@ -26,11 +26,11 @@ void IngameBoxWindow::render(Domain::ChunkedMap* map,
     bool* open_ptr = p_open ? p_open : &is_open_;
     
     // Window flags for floating, resizable window
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
+    ImGuiWindowFlags const flags = ImGuiWindowFlags_NoCollapse;
     
     // Calculate current pixel dimensions based on tile settings
-    int pixel_width = preview_width_tiles_ * Config::Rendering::TILE_SIZE_INT;
-    int pixel_height = preview_height_tiles_ * Config::Rendering::TILE_SIZE_INT;
+    int const pixel_width = preview_width_tiles_ * Config::Rendering::TILE_SIZE_INT;
+    int const pixel_height = preview_height_tiles_ * Config::Rendering::TILE_SIZE_INT;
     
     if (first_render_) {
         ImGui::SetNextWindowSize(ImVec2(static_cast<float>(pixel_width) + 16, static_cast<float>(pixel_height) + 100));
@@ -46,7 +46,7 @@ void IngameBoxWindow::render(Domain::ChunkedMap* map,
     
     // === Toggle Buttons Row ===
     // Follow Selection toggle button (crosshairs icon)
-    ImVec4 follow_color = follow_cursor_ ? ImVec4(0.2f, 0.8f, 0.2f, 1.0f) : ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+    ImVec4 const follow_color = follow_cursor_ ? ImVec4(0.2f, 0.8f, 0.2f, 1.0f) : ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
     ImGui::PushStyleColor(ImGuiCol_Text, follow_color);
     if (ImGui::Button(ICON_FA_CROSSHAIRS "##follow")) {
         follow_cursor_ = !follow_cursor_;
@@ -59,7 +59,7 @@ void IngameBoxWindow::render(Domain::ChunkedMap* map,
     ImGui::SameLine();
     
     // Enable Lighting toggle button (lightbulb icon)
-    ImVec4 light_color = settings.preview_lighting_enabled ? ImVec4(1.0f, 0.85f, 0.2f, 1.0f) : ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+    ImVec4 const light_color = settings.preview_lighting_enabled ? ImVec4(1.0f, 0.85f, 0.2f, 1.0f) : ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
     ImGui::PushStyleColor(ImGuiCol_Text, light_color);
     if (ImGui::Button(ICON_FA_LIGHTBULB "##lighting")) {
         settings.preview_lighting_enabled = !settings.preview_lighting_enabled;
@@ -151,14 +151,14 @@ void IngameBoxWindow::render(Domain::ChunkedMap* map,
         renderContent(map, renderer, locked_position_, settings);
         
         if (fbo_ && fbo_->isValid()) {
-            ImVec2 content_size = ImGui::GetContentRegionAvail();
-            float scale_x = content_size.x / static_cast<float>(pixel_width);
-            float scale_y = content_size.y / static_cast<float>(pixel_height);
-            float scale = std::min(scale_x, scale_y);
+            ImVec2 const content_size = ImGui::GetContentRegionAvail();
+            float const scale_x = content_size.x / static_cast<float>(pixel_width);
+            float const scale_y = content_size.y / static_cast<float>(pixel_height);
+            float const scale = std::min(scale_x, scale_y);
             
-            ImVec2 image_size(static_cast<float>(pixel_width) * scale, static_cast<float>(pixel_height) * scale);
+            ImVec2 const image_size(static_cast<float>(pixel_width) * scale, static_cast<float>(pixel_height) * scale);
             
-            float offset_x = (content_size.x - image_size.x) * 0.5f;
+            float const offset_x = (content_size.x - image_size.x) * 0.5f;
             if (offset_x > 0) {
                 ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset_x);
             }
@@ -210,8 +210,8 @@ void IngameBoxWindow::renderContent(Domain::ChunkedMap* map,
     }
 
     // Calculate pixel dimensions based on current tile settings
-    int pixel_width = preview_width_tiles_ * Config::Rendering::TILE_SIZE_INT;
-    int pixel_height = preview_height_tiles_ * Config::Rendering::TILE_SIZE_INT;
+    int const pixel_width = preview_width_tiles_ * Config::Rendering::TILE_SIZE_INT;
+    int const pixel_height = preview_height_tiles_ * Config::Rendering::TILE_SIZE_INT;
     
     // Resize framebuffer to match preview size
     if (!fbo_->resize(pixel_width, pixel_height)) {
@@ -231,7 +231,7 @@ void IngameBoxWindow::renderContent(Domain::ChunkedMap* map,
     fbo_->unbind();
 }
 
-void IngameBoxWindow::saveState(AppLogic::EditorSession& session) {
+void IngameBoxWindow::saveState(AppLogic::EditorSession& session) const {
     auto& state = session.getIngamePreviewState();
     state.is_open = is_open_;
     state.follow_cursor = follow_cursor_;

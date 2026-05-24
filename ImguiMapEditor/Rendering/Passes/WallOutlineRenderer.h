@@ -30,7 +30,7 @@ namespace Rendering {
 class WallOutlineRenderer : public IRenderPass {
 public:
   WallOutlineRenderer(Services::ClientDataService *client_data);
-  ~WallOutlineRenderer();
+  ~WallOutlineRenderer() override;
 
   // Non-copyable
   WallOutlineRenderer(const WallOutlineRenderer &) = delete;
@@ -65,12 +65,12 @@ private:
   /**
    * Check if an item type qualifies as "blocking ground" (orange overlay).
    */
-  bool isBlockingGround(const Domain::ItemType &type) const;
+  static bool isBlockingGround(const Domain::ItemType &type) ;
 
   /**
    * Check if an item type qualifies as "wall" (yellow lines).
    */
-  bool isWallItem(const Domain::ItemType &type) const;
+  static bool isWallItem(const Domain::ItemType &type) ;
 
   /**
    * Check if a tile at (x, y, z) contains a wall item.

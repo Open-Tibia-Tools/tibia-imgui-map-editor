@@ -42,7 +42,7 @@ MapSaveResult MapSavingService::save(
     
     // Write houses
     if (save_houses_) {
-        std::string house_file = map.getHouseFile();
+        std::string const house_file = map.getHouseFile();
         if (!house_file.empty()) {
             if (progress) progress(85, "Writing houses...");
             
@@ -56,7 +56,7 @@ MapSaveResult MapSavingService::save(
     
     // Write spawns
     if (save_spawns_) {
-        std::string spawn_file = map.getSpawnFile();
+        std::string const spawn_file = map.getSpawnFile();
         if (!spawn_file.empty()) {
             if (progress) progress(95, "Writing spawns...");
             

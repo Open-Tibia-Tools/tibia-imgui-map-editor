@@ -14,7 +14,7 @@ class GridOverlay {
 public:
   GridOverlay() = default;
 
-  void render(ImDrawList *draw_list, const glm::vec2 &camera_pos,
+  static void render(ImDrawList *draw_list, const glm::vec2 &camera_pos,
               const glm::vec2 &viewport_pos, const glm::vec2 &viewport_size,
               float zoom);
 };

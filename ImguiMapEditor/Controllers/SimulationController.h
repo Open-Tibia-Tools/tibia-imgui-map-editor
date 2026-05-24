@@ -24,7 +24,7 @@ public:
   void update(float delta_time, EditorSession *session,
               Services::ClientDataService *client_data, float zoom,
               const glm::vec2 &viewport_size, const glm::vec2 &camera_position,
-              int16_t current_floor);
+              int16_t current_floor) const;
 
   /**
    * Simplified update that extracts camera parameters from MapPanel.

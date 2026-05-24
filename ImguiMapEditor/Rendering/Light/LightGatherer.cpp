@@ -29,21 +29,21 @@ void LightGatherer::gatherForChunk(
             // but it has `getVisibleChunks` which takes pixel/tile coords.
             // Let's use tile coordinates to find the chunks.
             
-            int32_t target_cx = chunk_x + dx;
-            int32_t target_cy = chunk_y + dy;
+            int32_t const target_cx = chunk_x + dx;
+            int32_t const target_cy = chunk_y + dy;
             
             // Calculate world tile coordinates for this chunk
-            int32_t tile_start_x = target_cx * Domain::Chunk::SIZE;
-            int32_t tile_start_y = target_cy * Domain::Chunk::SIZE;
-            int32_t tile_end_x = tile_start_x + Domain::Chunk::SIZE;
-            int32_t tile_end_y = tile_start_y + Domain::Chunk::SIZE;
+            int32_t const tile_start_x = target_cx * Domain::Chunk::SIZE;
+            int32_t const tile_start_y = target_cy * Domain::Chunk::SIZE;
+            int32_t const tile_end_x = tile_start_x + Domain::Chunk::SIZE;
+            int32_t const tile_end_y = tile_start_y + Domain::Chunk::SIZE;
             
             // Efficiently get the single chunk for this region (or just iterate tiles if API limits)
             // The existing `getVisibleChunks` returns a vector. Let's use that.
             std::vector<Domain::Chunk*> chunks;
             map.getVisibleChunks(tile_start_x, tile_start_y, tile_end_x - 1, tile_end_y - 1, floor, chunks);
             
-            for (Domain::Chunk* chunk : chunks) {
+            for (Domain::Chunk const* chunk : chunks) {
                 // Ensure we are processing the correct chunk (getVisibleChunks might return overlaps if not careful, 
                 // but with exact coordinates it should be 1 chunk)
                 if (!chunk) continue;
@@ -51,8 +51,8 @@ void LightGatherer::gatherForChunk(
                 chunk->forEachTile([&](const Domain::Tile* tile) {
                     if (!tile || tile->getZ() != floor) return;
                     
-                    int32_t tile_x = tile->getX();
-                    int32_t tile_y = tile->getY();
+                    int32_t const tile_x = tile->getX();
+                    int32_t const tile_y = tile->getY();
                     
                     // Check ground item for light
                     const Domain::Item* ground = tile->getGround();
@@ -140,22 +140,22 @@ void LightGatherer::gatherLightsFromNeighborChunk(
     Services::ClientDataService* client_data,
     int16_t floor, int32_t floor_offset)
 {
-    int32_t tile_start_x = target_cx * Domain::Chunk::SIZE;
-    int32_t tile_start_y = target_cy * Domain::Chunk::SIZE;
-    int32_t tile_end_x = tile_start_x + Domain::Chunk::SIZE;
-    int32_t tile_end_y = tile_start_y + Domain::Chunk::SIZE;
+    int32_t const tile_start_x = target_cx * Domain::Chunk::SIZE;
+    int32_t const tile_start_y = target_cy * Domain::Chunk::SIZE;
+    int32_t const tile_end_x = tile_start_x + Domain::Chunk::SIZE;
+    int32_t const tile_end_y = tile_start_y + Domain::Chunk::SIZE;
     
     std::vector<Domain::Chunk*> chunks;
     map.getVisibleChunks(tile_start_x, tile_start_y, tile_end_x - 1, tile_end_y - 1, floor, chunks);
     
-    for (Domain::Chunk* chunk : chunks) {
+    for (Domain::Chunk const* chunk : chunks) {
         if (!chunk) continue;
         
         chunk->forEachTile([&](const Domain::Tile* tile) {
             if (!tile || tile->getZ() != floor) return;
             
-            int32_t tile_x = tile->getX();
-            int32_t tile_y = tile->getY();
+            int32_t const tile_x = tile->getX();
+            int32_t const tile_y = tile->getY();
             
             // Apply isometric offset (RME-style: lights from higher floors
             // are projected onto 2D with offset)

@@ -68,14 +68,14 @@ private:
   /**
    * Collect all XML files from a folder.
    */
-  std::vector<std::filesystem::path>
+  static std::vector<std::filesystem::path>
   collectXmlFiles(const std::filesystem::path &folder, bool recursive);
 
   /**
    * Extract tileset name from an XML file.
    * Returns empty string if not a valid tileset file.
    */
-  std::string getTilesetNameFromFile(const std::filesystem::path &file);
+  static std::string getTilesetNameFromFile(const std::filesystem::path &file);
 
   Domain::Tileset::TilesetRegistry &tileset_registry_;
   Domain::Palette::PaletteRegistry &palette_registry_;

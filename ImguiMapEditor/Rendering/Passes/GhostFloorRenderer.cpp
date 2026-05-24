@@ -33,7 +33,7 @@ void GhostFloorRenderer::render(const RenderContext &context) {
   // MapRenderer)
 
   // Ghost higher floor
-  int ghost_higher = FloorIterator::getGhostHigherFloor(
+  int const ghost_higher = FloorIterator::getGhostHigherFloor(
       context.current_floor, context.view_settings->ghost_higher_floors);
 
   if (ghost_higher >= 0) {
@@ -47,7 +47,7 @@ void GhostFloorRenderer::render(const RenderContext &context) {
   }
 
   // Ghost lower floor
-  int ghost_lower = FloorIterator::getGhostLowerFloor(
+  int const ghost_lower = FloorIterator::getGhostLowerFloor(
       context.current_floor, context.view_settings->ghost_lower_floors);
 
   if (ghost_lower >= 0) {
@@ -68,7 +68,7 @@ void GhostFloorRenderer::renderSingleFloor(
     const glm::mat4 &mvp, const AnimationTicks &anim_ticks,
     std::vector<uint32_t> &missing_sprites) {
   // Calculate floor offset for ghost floor (parallax effect)
-  float floor_offset =
+  float const floor_offset =
       FloorIterator::getFloorOffset(current_floor, ghost_floor);
 
   // Update chunk visibility for ghost floor
@@ -92,9 +92,9 @@ void GhostFloorRenderer::renderSingleFloor(
   sprite_batch_.setGlobalTint(1.0f, 1.0f, 1.0f, alpha);
 
   for (const VisibleChunk &vc : chunk_visibility_.getVisibleChunks()) {
-    Domain::Chunk *chunk = vc.chunk;
+    Domain::Chunk  const*chunk = vc.chunk;
 
-    ChunkRenderingStrategy::Context chunk_ctx(
+    ChunkRenderingStrategy::Context const chunk_ctx(
         state, anim_ticks, missing_sprites, tiles_rendered, ghost_floor,
         floor_offset, *chunk);
 

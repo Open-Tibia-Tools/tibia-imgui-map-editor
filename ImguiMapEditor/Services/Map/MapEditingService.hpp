@@ -74,19 +74,19 @@ private:
       std::vector<MovedItemInfo> moved_info;
   };
 
-  void collectAffectedTiles(const std::vector<Domain::Selection::SelectionEntry>& entries,
+  static void collectAffectedTiles(const std::vector<Domain::Selection::SelectionEntry>& entries,
                             int32_t dx, int32_t dy,
                             Domain::ChunkedMap* map,
                             Domain::History::HistoryManager& history_manager);
 
-  void extractMovables(const std::vector<Domain::Selection::SelectionEntry>& entries,
+  static void extractMovables(const std::vector<Domain::Selection::SelectionEntry>& entries,
                        int32_t dx, int32_t dy,
                        Domain::ChunkedMap* map,
                        MoveContext& ctx);
 
-  void insertMovables(Domain::ChunkedMap* map, MoveContext& ctx);
+  static void insertMovables(Domain::ChunkedMap* map, MoveContext& ctx);
 
-  void updateSelectionAfterMove(Services::Selection::SelectionService& selection_service,
+  static void updateSelectionAfterMove(Services::Selection::SelectionService& selection_service,
                                 const MoveContext& ctx);
 };
 

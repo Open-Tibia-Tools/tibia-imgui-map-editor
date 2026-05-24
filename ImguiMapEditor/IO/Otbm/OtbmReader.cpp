@@ -20,7 +20,7 @@ OtbmReadResult OtbmReader::read(const std::filesystem::path &path,
   read_result.map = std::make_unique<Domain::ChunkedMap>();
 
   ChunkedMapBuilder builder(*read_result.map);
-  OtbmResult result = readInternal(path, builder, client_data, progress);
+  OtbmResult const result = readInternal(path, builder, client_data, progress);
 
   // Copy result fields
   read_result.success = result.success;
@@ -311,7 +311,7 @@ bool OtbmReader::parseMapData(BinaryNode *mapDataNode, IMapBuilder &builder,
 
   // Process child nodes
   int nodes_processed = 0;
-  size_t total_size = file.size();
+  size_t const total_size = file.size();
 
   for (BinaryNode *child = mapDataNode->getChild(); child != nullptr;
        child = child->advance()) {

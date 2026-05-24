@@ -52,7 +52,8 @@ public:
      * @param camera_z Camera Z position (floor)
      * @return Last visible floor (0-15)
      */
-    int calcLastVisibleFloor(int camera_z) const;
+    int calcLastVisibleFloor(int camera_z);
+
     
     /**
      * Check if a tile limits the view of floors above it.

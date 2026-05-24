@@ -40,7 +40,7 @@ public:
                                       float floor_offset);
 
 private:
-  void drawWaypointFlame(ImDrawList *draw_list, const glm::vec2 &screen_pos,
+  static void drawWaypointFlame(ImDrawList *draw_list, const glm::vec2 &screen_pos,
                          const std::string &name, float zoom);
 
   static constexpr float TILE_SIZE = Config::Rendering::TILE_SIZE;

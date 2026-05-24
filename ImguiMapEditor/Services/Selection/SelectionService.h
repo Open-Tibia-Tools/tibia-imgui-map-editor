@@ -176,20 +176,20 @@ private:
   std::vector<ISelectionObserver *> observers_;
 
   // Helper: create SelectionEntry for ground
-  Domain::Selection::SelectionEntry
+  static Domain::Selection::SelectionEntry
   createGroundEntry(const Domain::Position &pos, const Domain::Item *ground);
 
   // Helper: create SelectionEntry for item
-  Domain::Selection::SelectionEntry createItemEntry(const Domain::Position &pos,
+  static Domain::Selection::SelectionEntry createItemEntry(const Domain::Position &pos,
                                                     const Domain::Item *item);
 
   // Helper: create SelectionEntry for creature
-  Domain::Selection::SelectionEntry
+  static Domain::Selection::SelectionEntry
   createCreatureEntry(const Domain::Position &pos,
                       const Domain::Creature *creature);
 
   // Helper: create SelectionEntry for spawn
-  Domain::Selection::SelectionEntry
+  static Domain::Selection::SelectionEntry
   createSpawnEntry(const Domain::Position &pos, const Domain::Spawn *spawn);
 
   // Helper: notify observers of changes

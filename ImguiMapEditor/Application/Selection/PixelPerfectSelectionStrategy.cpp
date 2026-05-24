@@ -39,14 +39,14 @@ PixelPerfectSelectionStrategy::selectAt(const Domain::ChunkedMap *map,
 
   for (int dy = SEARCH_RANGE; dy >= 0; --dy) {
     for (int dx = SEARCH_RANGE; dx >= 0; --dx) {
-      Domain::Position candidate_pos = {pos.x + dx, pos.y + dy, pos.z};
+      Domain::Position const candidate_pos = {pos.x + dx, pos.y + dy, pos.z};
 
       const Domain::Tile *tile = map->getTile(candidate_pos);
       if (!tile)
         continue;
 
       // Calculate pixel offset relative to this candidate tile.
-      glm::vec2 candidate_offset = pixel_offset - glm::vec2(dx * 32, dy * 32);
+      glm::vec2 const candidate_offset = pixel_offset - glm::vec2(dx * 32, dy * 32);
 
       // Check this tile for hits
       auto result = findHitOnTile(tile, candidate_pos, candidate_offset);
@@ -170,36 +170,36 @@ bool PixelPerfectSelectionStrategy::hitTestItem(
     draw_y = static_cast<float>(item_type->draw_offset_y);
   }
 
-  float local_x = pixel_offset.x - draw_x;
-  float local_y = pixel_offset.y - draw_y;
-
-  int cx = -static_cast<int>(std::floor(local_x / 32.0f));
-  int cy = -static_cast<int>(std::floor(local_y / 32.0f));
-
-  int width = std::max<int>(1, item_type->width);
-  int height = std::max<int>(1, item_type->height);
+  float const local_x = pixel_offset.x - draw_x;
+  float const local_y = pixel_offset.y - draw_y;
+
+  int const cx = -static_cast<int>(std::floor(local_x / 32.0f));
+  int const cy = -static_cast<int>(std::floor(local_y / 32.0f));
+
+  int const width = std::max<int>(1, item_type->width);
+  int const height = std::max<int>(1, item_type->height);
 
   if (cx < 0 || cx >= width || cy < 0 || cy >= height) {
     return false;
   }
 
-  int layers = std::max<int>(1, item_type->layers);
-  int pat_x = std::max<int>(1, item_type->pattern_x);
-  int pat_y = std::max<int>(1, item_type->pattern_y);
-  int pat_z = std::max<int>(1, item_type->pattern_z);
-  int frames = std::max<int>(1, item_type->frames);
+  int const layers = std::max<int>(1, item_type->layers);
+  int const pat_x = std::max<int>(1, item_type->pattern_x);
+  int const pat_y = std::max<int>(1, item_type->pattern_y);
+  int const pat_z = std::max<int>(1, item_type->pattern_z);
+  int const frames = std::max<int>(1, item_type->frames);
 
   int pattern_x = (tile_pos.x % pat_x);
   int pattern_y = (tile_pos.y % pat_y);
   int pattern_z = (tile_pos.z % pat_z);
-  int frame = 0;
+  int const frame = 0;
 
   int fluid_subtype = -1;
-  bool is_fluid = item_type->isFluidContainer() || item_type->isSplash();
+  bool const is_fluid = item_type->isFluidContainer() || item_type->isSplash();
 
   int subtype_index = -1;
   if (item_type->is_stackable) {
-    int count = item->getSubtype();
+    int const count = item->getSubtype();
     if (count <= 1)
       subtype_index = 0;
     else if (count <= 2)
@@ -236,10 +236,10 @@ bool PixelPerfectSelectionStrategy::hitTestItem(
   }
 
   // FAST PATH: Simple 1x1 stackable items
-  bool can_use_subtype = (subtype_index >= 0 && width == 1 && height == 1);
+  bool const can_use_subtype = (subtype_index >= 0 && width == 1 && height == 1);
   if (can_use_subtype &&
       subtype_index < static_cast<int>(item_type->sprite_ids.size())) {
-    uint32_t sprite_id = item_type->sprite_ids[subtype_index];
+    uint32_t const sprite_id = item_type->sprite_ids[subtype_index];
     if (sprite_id == 0)
       return false;
 
@@ -266,29 +266,29 @@ bool PixelPerfectSelectionStrategy::hitTestItem(
     if (local_px < 0 || local_px >= 32 || local_py < 0 || local_py >= 32)
       return false;
 
-    size_t pixel_index = (local_py * 32 + local_px) * 4;
+    size_t const pixel_index = (local_py * 32 + local_px) * 4;
     if (pixel_index + 3 >= sprite->rgba_data.size())
       return false;
 
-    uint8_t alpha = sprite->rgba_data[pixel_index + 3];
+    uint8_t const alpha = sprite->rgba_data[pixel_index + 3];
     return alpha > 32;
   }
 
   // SLOW PATH: Multi-tile or pattern-based items
   for (int layer = 0; layer < layers; ++layer) {
-    size_t sprite_index = static_cast<size_t>(
+    size_t const sprite_index = static_cast<size_t>(
         ((((frame % frames) * pat_z + pattern_z) * pat_y + pattern_y) * pat_x +
          pattern_x) *
             layers +
         layer);
 
-    size_t final_index = (sprite_index * height + cy) * width + cx;
+    size_t const final_index = (sprite_index * height + cy) * width + cx;
 
     if (final_index >= item_type->sprite_ids.size()) {
       continue;
     }
 
-    uint32_t sprite_id = item_type->sprite_ids[final_index];
+    uint32_t const sprite_id = item_type->sprite_ids[final_index];
 
     if (sprite_id == 0)
       continue;
@@ -308,14 +308,14 @@ bool PixelPerfectSelectionStrategy::hitTestItem(
       continue;
     }
 
-    int px = static_cast<int>(local_x) + cx * 32;
-    int py = static_cast<int>(local_y) + cy * 32;
-
-    size_t pixel_idx = (py * 32 + px) * 4;
+    int const px = static_cast<int>(local_x) + cx * 32;
+    int const py = static_cast<int>(local_y) + cy * 32;
+
+    size_t const pixel_idx = (py * 32 + px) * 4;
     if (pixel_idx + 3 >= sprite->rgba_data.size())
       continue;
 
-    uint8_t alpha = sprite->rgba_data[pixel_idx + 3];
+    uint8_t const alpha = sprite->rgba_data[pixel_idx + 3];
     if (alpha > 10) {
       return true;
     }
@@ -348,21 +348,21 @@ bool PixelPerfectSelectionStrategy::hitTestCreature(
            pixel_offset.y < 32;
   }
 
-  int width = std::max<int>(1, outfit_data->width);
-  int height = std::max<int>(1, outfit_data->height);
-  int layers = std::max<int>(1, outfit_data->layers);
-  int pat_x = std::max<int>(1, outfit_data->pattern_x);
-  int frames = std::max<int>(1, outfit_data->frames);
+  int const width = std::max<int>(1, outfit_data->width);
+  int const height = std::max<int>(1, outfit_data->height);
+  int const layers = std::max<int>(1, outfit_data->layers);
+  int const pat_x = std::max<int>(1, outfit_data->pattern_x);
+  int const frames = std::max<int>(1, outfit_data->frames);
 
   // Default direction = South (2)
-  int direction = static_cast<int>(creature->direction) % pat_x;
+  int const direction = static_cast<int>(creature->direction) % pat_x;
 
   // Account for creature displacement offset (creature is drawn at tile pos - offset)
   // CreatureRenderer.cpp uses: draw_x -= displacement_x, draw_y -= displacement_y
   // So we need to add the offset to pixel_offset to get local sprite coordinates
-  float offset_x = outfit_data->has_offset ? static_cast<float>(outfit_data->offset_x) : 0.0f;
-  float offset_y = outfit_data->has_offset ? static_cast<float>(outfit_data->offset_y) : 0.0f;
-  glm::vec2 adjusted_offset = pixel_offset + glm::vec2(offset_x, offset_y);
+  float const offset_x = outfit_data->has_offset ? static_cast<float>(outfit_data->offset_x) : 0.0f;
+  float const offset_y = outfit_data->has_offset ? static_cast<float>(outfit_data->offset_y) : 0.0f;
+  glm::vec2 const adjusted_offset = pixel_offset + glm::vec2(offset_x, offset_y);
 
   // Simple case: 1x1 creature
   if (width == 1 && height == 1) {
@@ -373,12 +373,12 @@ bool PixelPerfectSelectionStrategy::hitTestCreature(
     }
 
     // Get sprite index for direction (layer 0, frame 0)
-    size_t sprite_index = static_cast<size_t>(direction * layers);
+    size_t const sprite_index = static_cast<size_t>(direction * layers);
     if (sprite_index >= outfit_data->sprite_ids.size()) {
       return true; // Fallback to hit
     }
 
-    uint32_t sprite_id = outfit_data->sprite_ids[sprite_index];
+    uint32_t const sprite_id = outfit_data->sprite_ids[sprite_index];
     if (sprite_id == 0) {
       return false;
     }
@@ -399,39 +399,39 @@ bool PixelPerfectSelectionStrategy::hitTestCreature(
       return false;
     }
 
-    int local_px = static_cast<int>(adjusted_offset.x);
-    int local_py = static_cast<int>(adjusted_offset.y);
+    int const local_px = static_cast<int>(adjusted_offset.x);
+    int const local_py = static_cast<int>(adjusted_offset.y);
 
     if (local_px < 0 || local_px >= 32 || local_py < 0 || local_py >= 32) {
       return false;
     }
 
-    size_t pixel_index = (local_py * 32 + local_px) * 4;
+    size_t const pixel_index = (local_py * 32 + local_px) * 4;
     if (pixel_index + 3 >= sprite->rgba_data.size()) {
       return false;
     }
 
-    uint8_t alpha = sprite->rgba_data[pixel_index + 3];
+    uint8_t const alpha = sprite->rgba_data[pixel_index + 3];
     return alpha > 32;
   }
 
   // Multi-tile creature - check if within bounds and any part has alpha
   // Calculate which sub-tile was clicked
-  int cx = -static_cast<int>(std::floor(adjusted_offset.x / 32.0f));
-  int cy = -static_cast<int>(std::floor(adjusted_offset.y / 32.0f));
+  int const cx = -static_cast<int>(std::floor(adjusted_offset.x / 32.0f));
+  int const cy = -static_cast<int>(std::floor(adjusted_offset.y / 32.0f));
 
   if (cx < 0 || cx >= width || cy < 0 || cy >= height) {
     return false;
   }
 
   // Get sprite for this sub-tile
-  size_t sprite_index = static_cast<size_t>(
+  size_t const sprite_index = static_cast<size_t>(
       (direction * layers) * height * width + cy * width + cx);
   if (sprite_index >= outfit_data->sprite_ids.size()) {
     return true; // Fallback
   }
 
-  uint32_t sprite_id = outfit_data->sprite_ids[sprite_index];
+  uint32_t const sprite_id = outfit_data->sprite_ids[sprite_index];
   if (sprite_id == 0) {
     return false;
   }
@@ -463,12 +463,12 @@ bool PixelPerfectSelectionStrategy::hitTestCreature(
     return false;
   }
 
-  size_t pixel_index = (local_py * 32 + local_px) * 4;
+  size_t const pixel_index = (local_py * 32 + local_px) * 4;
   if (pixel_index + 3 >= sprite->rgba_data.size()) {
     return false;
   }
 
-  uint8_t alpha = sprite->rgba_data[pixel_index + 3];
+  uint8_t const alpha = sprite->rgba_data[pixel_index + 3];
   return alpha > 32;
 }
 

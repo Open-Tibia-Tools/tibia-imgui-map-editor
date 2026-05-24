@@ -99,8 +99,7 @@ private:
   glm::vec2 tileToScreen(const Domain::Position &pos,
                          const glm::vec2 &cameraPos,
                          const glm::vec2 &viewportPos,
-                         const glm::vec2 &viewportSize, float zoom) const;
-
+                         const glm::vec2 &viewportSize, float zoom);
   /**
    * Get tint color for preview style.
    */
@@ -110,7 +109,7 @@ private:
    * Check if tile is within viewport bounds.
    */
   bool isInViewport(const glm::vec2 &screenPos, const glm::vec2 &viewportPos,
-                    const glm::vec2 &viewportSize, float tileSizePx) const;
-};
+                    const glm::vec2 &viewportSize, float tileSizePx);
 
+};
 } // namespace MapEditor::Rendering

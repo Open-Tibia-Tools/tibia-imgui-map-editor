@@ -42,7 +42,7 @@ void CreatureSimulator::update(float delta_time,
         if (state.current_pos.z != current_floor) continue;
         
         // Skip if outside viewport (with margin)
-        int margin = 2;
+        int const margin = 2;
         if (state.current_pos.x < viewport_min.x - margin || state.current_pos.x > viewport_max.x + margin ||
             state.current_pos.y < viewport_min.y - margin || state.current_pos.y > viewport_max.y + margin) {
             continue;
@@ -61,7 +61,7 @@ void CreatureSimulator::update(float delta_time,
                 state.animation_frame = 0;
             } else {
                 // Interpolate walk offset (from 1.0 to 0.0)
-                float remaining = 1.0f - state.walk_progress;
+                float const remaining = 1.0f - state.walk_progress;
                 
                 int dx = 0, dy = 0;
                 switch (state.direction) {
@@ -97,7 +97,7 @@ void CreatureSimulator::tryMoveCreature(CreatureAnimState& state,
                                         Domain::ChunkedMap* map,
                                         ClientDataService* client_data) {
     // Pick random direction (0=N, 1=E, 2=S, 3=W) - Uses member distribution
-    int new_dir = direction_dist_(rng_);
+    int const new_dir = direction_dist_(rng_);
     
     int dx = 0, dy = 0;
     switch (new_dir) {
@@ -113,8 +113,8 @@ void CreatureSimulator::tryMoveCreature(CreatureAnimState& state,
     
     // Check radius constraint from SPAWN CENTER (not creature start)
     // spawn_center is the spawn tile position, spawn_radius is the spawn's radius
-    int dist_x = std::abs(new_pos.x - state.spawn_center.x);
-    int dist_y = std::abs(new_pos.y - state.spawn_center.y);
+    int const dist_x = std::abs(new_pos.x - state.spawn_center.x);
+    int const dist_y = std::abs(new_pos.y - state.spawn_center.y);
     if (dist_x > state.spawn_radius || dist_y > state.spawn_radius) {
         return; // Out of spawn area
     }
@@ -200,7 +200,7 @@ CreatureAnimState* CreatureSimulator::getOrCreateState(
     
     // Create key based on creature pointer (address)
     // This is O(1) and stable as long as the Tile owns the unique_ptr<Creature>
-    uint64_t key = makeKey(creature);
+    uint64_t const key = makeKey(creature);
     
     auto it = states_.find(key);
     if (it != states_.end()) {
@@ -230,8 +230,8 @@ CreatureAnimState* CreatureSimulator::getOrCreateState(
                 auto spawn = check_tile->getSpawn();
                 if (spawn) {
                     // Check if creature position is within this spawn's radius
-                    int dist_x = std::abs(position.x - check_tile->getX());
-                    int dist_y = std::abs(position.y - check_tile->getY());
+                    int const dist_x = std::abs(position.x - check_tile->getX());
+                    int const dist_y = std::abs(position.y - check_tile->getY());
                     if (dist_x <= spawn->radius && dist_y <= spawn->radius) {
                         spawn_center = check_tile->getPosition();
                         spawn_radius = spawn->radius;
@@ -270,7 +270,7 @@ CreatureAnimState* CreatureSimulator::getOrCreateState(
 
 const CreatureAnimState* CreatureSimulator::getState(
     const Domain::Position& spawn_center,
-    const std::string& creature_name) const {
+    const std::string& creature_name) {
     
     // This legacy lookup by name/pos is broken with pointer-based keys.
     // However, it's not used in hot paths (rendering uses getOrCreateState with pointer).
@@ -284,7 +284,7 @@ void CreatureSimulator::reset() {
     occupied_positions_.clear();
 }
 
-uint64_t CreatureSimulator::makeKey(const Domain::Creature* creature) const {
+uint64_t CreatureSimulator::makeKey(const Domain::Creature* creature) {
     // Use the pointer address as the key.
     // Domain::Creature objects are stable in memory (owned by Tile via unique_ptr).
     // This eliminates string hashing and position hashing every frame.

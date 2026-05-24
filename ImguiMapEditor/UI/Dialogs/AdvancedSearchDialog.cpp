@@ -220,7 +220,7 @@ void AdvancedSearchDialog::renderResultsColumn() {
         
         for (size_t i = 0; i < preview_results_.size(); ++i) {
             const auto& result = preview_results_[i];
-            bool is_selected = (static_cast<int>(i) == selected_preview_index_);
+            bool const is_selected = (static_cast<int>(i) == selected_preview_index_);
             
             ImGui::PushID(static_cast<int>(i));
             
@@ -323,14 +323,14 @@ void AdvancedSearchDialog::renderResultsColumn() {
 void AdvancedSearchDialog::renderBottomBar() {
     ImGui::Spacing();
     
-    float button_width = 120.0f;
-    float total_buttons_width = button_width * 3 + ImGui::GetStyle().ItemSpacing.x * 2;
-    float start_x = (ImGui::GetContentRegionAvail().x - total_buttons_width) * 0.5f;
+    float const button_width = 120.0f;
+    float const total_buttons_width = button_width * 3 + ImGui::GetStyle().ItemSpacing.x * 2;
+    float const start_x = (ImGui::GetContentRegionAvail().x - total_buttons_width) * 0.5f;
     
     ImGui::SetCursorPosX(start_x);
     
     // Search Map button
-    bool can_search = search_service_ && selected_preview_index_ >= 0;
+    bool const can_search = search_service_ && selected_preview_index_ >= 0;
     ImGui::BeginDisabled(!can_search);
     if (ImGui::Button(ICON_FA_MAP " Search Map", ImVec2(button_width, 0))) {
         onSearchMap();
@@ -367,9 +367,9 @@ void AdvancedSearchDialog::updatePreviewResults() {
     selected_preview_index_ = -1;
     
     // Only search if we have query or filters
-    bool has_query = strlen(search_buffer_) > 0;
-    bool has_type_filter = type_filter_.hasAnySelected();
-    bool has_property_filter = property_filter_.hasAnySelected();
+    bool const has_query = strlen(search_buffer_) > 0;
+    bool const has_type_filter = type_filter_.hasAnySelected();
+    bool const has_property_filter = property_filter_.hasAnySelected();
     
     if (!has_query && !has_type_filter && !has_property_filter) {
         return;  // No filters, no results
@@ -380,7 +380,7 @@ void AdvancedSearchDialog::updatePreviewResults() {
                    [](unsigned char c) { return std::tolower(c); });
     
     // Search items (only if not creature-only filter)
-    bool search_items = !type_filter_.creature || type_filter_.hasAnySelected();
+    bool const search_items = !type_filter_.creature || type_filter_.hasAnySelected();
     if (search_items && search_service_ && !property_filter_.hasAnySelected() || !type_filter_.creature) {
         // If only creature is selected, skip item search
         if (!(type_filter_.creature && !type_filter_.depot && !type_filter_.mailbox && 
@@ -405,7 +405,7 @@ void AdvancedSearchDialog::updatePreviewResults() {
     }
     
     // Search creatures (if creature type selected OR query and no type filter)
-    bool search_creatures = type_filter_.creature || (!has_type_filter && has_query);
+    bool const search_creatures = type_filter_.creature || (!has_type_filter && has_query);
     if (search_creatures && client_data_ && !property_filter_.hasAnySelected()) {
         const auto& creatures = client_data_->getCreatures();
         

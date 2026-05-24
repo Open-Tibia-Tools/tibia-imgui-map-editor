@@ -20,7 +20,7 @@ void PropertyPanelRenderer::setContext(
     uint32_t otbm_version, Services::SpriteManager* sprite_manager,
     uint16_t map_width, uint16_t map_height, Domain::ChunkedMap* map) 
 {
-    bool context_changed = (item_ != item || spawn_ != spawn || creature_ != creature);
+    bool const context_changed = (item_ != item || spawn_ != spawn || creature_ != creature);
     
     item_ = item;
     spawn_ = spawn;
@@ -132,7 +132,7 @@ void PropertyPanelRenderer::loadValuesFromContext() {
         }
         
         // Text
-        std::string text = item_->getText();
+        std::string const text = item_->getText();
         if (!text.empty()) {
             std::strncpy(edit_.text, text.c_str(), sizeof(edit_.text) - 1);
         }
@@ -169,7 +169,7 @@ void PropertyPanelRenderer::applyChangesToContext() {
         
         // Teleport
         if (item_type_ && item_type_->isTeleport()) {
-            Domain::Position dest{edit_.tele_x, edit_.tele_y, static_cast<int16_t>(edit_.tele_z)};
+            Domain::Position const dest{edit_.tele_x, edit_.tele_y, static_cast<int16_t>(edit_.tele_z)};
             item_->setTeleportDestination(dest);
         }
         
@@ -197,7 +197,7 @@ void PropertyPanelRenderer::render() {
         return;
     }
     
-    bool was_dirty = dirty_;
+    bool const was_dirty = dirty_;
     
     switch (panel_type_) {
         case PanelType::Container: renderContainerSection(); break;
@@ -225,11 +225,11 @@ void PropertyPanelRenderer::render() {
 void PropertyPanelRenderer::renderApplyIndicator() {
     if (apply_flash_frames_ > 0) {
         // Green border flash effect
-        float alpha = static_cast<float>(apply_flash_frames_) / 15.0f;
-        ImU32 color = IM_COL32(100, 255, 100, static_cast<int>(200 * alpha));
-        
-        ImVec2 min = ImGui::GetWindowPos();
-        ImVec2 max = ImVec2(min.x + ImGui::GetWindowWidth(), min.y + ImGui::GetWindowHeight());
+        float const alpha = static_cast<float>(apply_flash_frames_) / 15.0f;
+        ImU32 const color = IM_COL32(100, 255, 100, static_cast<int>(200 * alpha));
+        
+        ImVec2 const min = ImGui::GetWindowPos();
+        ImVec2 const max = ImVec2(min.x + ImGui::GetWindowWidth(), min.y + ImGui::GetWindowHeight());
         ImGui::GetWindowDrawList()->AddRect(min, max, color, 0, 0, 2.0f);
         
         apply_flash_frames_--;
@@ -280,7 +280,7 @@ void PropertyPanelRenderer::renderContainerSection() {
     
     // Get container info from ItemType.volume
     const auto& items = item_->getContainerItems();
-    size_t used = items.size();
+    size_t const used = items.size();
     uint16_t volume = item_type_ ? item_type_->volume : 20;
     if (volume == 0) volume = 20;  // Fallback
     
@@ -294,7 +294,7 @@ void PropertyPanelRenderer::renderContainerSection() {
     const float PADDING = 2.0f;
     
     // Fixed height for 4 rows, scroll if more
-    float child_height = VISIBLE_ROWS * (SLOT_SIZE + PADDING) + PADDING + 8.0f;
+    float const child_height = VISIBLE_ROWS * (SLOT_SIZE + PADDING) + PADDING + 8.0f;
     
     ImGui::BeginChild("ContainerItems", ImVec2(0, child_height), true);
     
@@ -302,11 +302,11 @@ void PropertyPanelRenderer::renderContainerSection() {
     for (size_t i = 0; i < volume; ++i) {
         if (i % COLS != 0) ImGui::SameLine(0, PADDING);
         
-        Domain::Item* slot_item = (i < items.size()) ? items[i].get() : nullptr;
+        Domain::Item const* slot_item = (i < items.size()) ? items[i].get() : nullptr;
         
         ImGui::PushID(static_cast<int>(i));
         
-        ImVec2 pos = ImGui::GetCursorScreenPos();
+        ImVec2 const pos = ImGui::GetCursorScreenPos();
         ImDrawList* dl = ImGui::GetWindowDrawList();
         
         // Slot background (dark)
@@ -324,7 +324,7 @@ void PropertyPanelRenderer::renderContainerSection() {
                     
                     // Tooltip on hover
                     if (ImGui::IsItemHovered()) {
-                        std::string name = slot_type->name.empty() 
+                        std::string const name = slot_type->name.empty() 
                             ? "Item " + std::to_string(slot_item->getServerId())
                             : slot_type->name + " (" + std::to_string(slot_item->getServerId()) + ")";
                         ImGui::SetTooltip("%s", name.c_str());
@@ -395,7 +395,7 @@ void PropertyPanelRenderer::renderDepotSection() {
         ImGui::Text("Depot Town:");
         if (ImGui::BeginCombo("##DepotTown", preview.c_str())) {
             // "No Town" option
-            bool is_none = (edit_.depot_id == 0);
+            bool const is_none = (edit_.depot_id == 0);
             if (ImGui::Selectable("No Town", is_none)) {
                 edit_.depot_id = 0;
                 dirty_ = true;
@@ -406,7 +406,7 @@ void PropertyPanelRenderer::renderDepotSection() {
             
             // Town options
             for (const auto& town : towns) {
-                bool is_selected = (static_cast<int>(town.id) == edit_.depot_id);
+                bool const is_selected = (static_cast<int>(town.id) == edit_.depot_id);
                 if (ImGui::Selectable(town.name.c_str(), is_selected)) {
                     edit_.depot_id = static_cast<int>(town.id);
                     dirty_ = true;

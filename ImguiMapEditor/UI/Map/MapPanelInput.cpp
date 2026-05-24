@@ -41,14 +41,14 @@ bool MapPanelInput::handleInput(
 
 void MapPanelInput::handlePasteMode(MapViewCamera &camera,
                                     AppLogic::EditorSession *session) {
-  ImGuiIO &io = ImGui::GetIO();
+  ImGuiIO  const&io = ImGui::GetIO();
 
   // Confirm paste on left click
   // Replace mode is set by Ctrl+Shift+V OR holding Shift during click
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-    glm::vec2 mouse_pos(io.MousePos.x, io.MousePos.y);
-    Domain::Position target_pos = camera.screenToTile(mouse_pos);
-    bool replace_mode = session->isPasteReplaceMode() || io.KeyShift;
+    glm::vec2 const mouse_pos(io.MousePos.x, io.MousePos.y);
+    Domain::Position const target_pos = camera.screenToTile(mouse_pos);
+    bool const replace_mode = session->isPasteReplaceMode() || io.KeyShift;
     session->confirmPaste(target_pos, replace_mode);
     return;
   }
@@ -61,7 +61,7 @@ void MapPanelInput::handlePasteMode(MapViewCamera &camera,
 }
 
 void MapPanelInput::handleMousePan(MapViewCamera &camera, bool is_focused) {
-  ImGuiIO &io = ImGui::GetIO();
+  ImGuiIO  const&io = ImGui::GetIO();
 
   // Middle mouse button for panning
   if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle)) {
@@ -71,11 +71,11 @@ void MapPanelInput::handleMousePan(MapViewCamera &camera, bool is_focused) {
 
   if (is_panning_) {
     if (ImGui::IsMouseDown(ImGuiMouseButton_Middle)) {
-      glm::vec2 current(io.MousePos.x, io.MousePos.y);
-      glm::vec2 delta = (pan_start_ - current) /
+      glm::vec2 const current(io.MousePos.x, io.MousePos.y);
+      glm::vec2 const delta = (pan_start_ - current) /
                         (Config::Rendering::TILE_SIZE * camera.getZoom());
 
-      glm::vec2 cam_pos = camera.getCameraPosition();
+      glm::vec2 const cam_pos = camera.getCameraPosition();
       camera.setCameraPosition(cam_pos.x + delta.x, cam_pos.y + delta.y);
 
       pan_start_ = current;
@@ -86,8 +86,8 @@ void MapPanelInput::handleMousePan(MapViewCamera &camera, bool is_focused) {
 
   // Arrow keys for panning
   if (is_focused) {
-    float move_speed = 5.0f;
-    glm::vec2 cam_pos = camera.getCameraPosition();
+    float const move_speed = 5.0f;
+    glm::vec2 const cam_pos = camera.getCameraPosition();
     if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
       camera.setCameraPosition(cam_pos.x - move_speed, cam_pos.y);
     if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
@@ -100,16 +100,16 @@ void MapPanelInput::handleMousePan(MapViewCamera &camera, bool is_focused) {
 }
 
 void MapPanelInput::handleMouseZoom(MapViewCamera &camera) {
-  ImGuiIO &io = ImGui::GetIO();
+  ImGuiIO  const&io = ImGui::GetIO();
 
   if (io.MouseWheel != 0 && !io.KeyCtrl) {
-    glm::vec2 mouse_pos(io.MousePos.x, io.MousePos.y);
+    glm::vec2 const mouse_pos(io.MousePos.x, io.MousePos.y);
     camera.adjustZoom(io.MouseWheel, mouse_pos);
   }
 }
 
 void MapPanelInput::handleFloorChange(MapViewCamera &camera, bool is_focused) {
-  ImGuiIO &io = ImGui::GetIO();
+  ImGuiIO  const&io = ImGui::GetIO();
 
   // Ctrl + Scroll for floor change (inverted: scroll down = floor up, scroll up
   // = floor down)
@@ -135,15 +135,15 @@ bool MapPanelInput::shouldShowBoxOverlay() const {
     return false;
 
   // Get current mouse position
-  ImGuiIO &io = ImGui::GetIO();
-  float dx = io.MousePos.x - drag_start_screen_.x;
-  float dy = io.MousePos.y - drag_start_screen_.y;
-  float dist_sq = dx * dx + dy * dy;
+  ImGuiIO  const&io = ImGui::GetIO();
+  float const dx = io.MousePos.x - drag_start_screen_.x;
+  float const dy = io.MousePos.y - drag_start_screen_.y;
+  float const dist_sq = dx * dx + dy * dy;
 
   // STRICT: Requires BOTH time AND distance
-  double elapsed = ImGui::GetTime() - drag_start_time_;
-  bool time_met = elapsed > Config::Input::DRAG_DELAY_SECONDS;
-  bool distance_met = dist_sq > Config::Input::DRAG_THRESHOLD_SQ;
+  double const elapsed = ImGui::GetTime() - drag_start_time_;
+  bool const time_met = elapsed > Config::Input::DRAG_DELAY_SECONDS;
+  bool const distance_met = dist_sq > Config::Input::DRAG_THRESHOLD_SQ;
 
   return time_met && distance_met;
 }
@@ -156,15 +156,15 @@ bool MapPanelInput::shouldShowDragPreview() const {
     return false;
 
   // Get current mouse position
-  ImGuiIO &io = ImGui::GetIO();
-  float dx = io.MousePos.x - drag_start_screen_.x;
-  float dy = io.MousePos.y - drag_start_screen_.y;
-  float dist_sq = dx * dx + dy * dy;
+  ImGuiIO  const&io = ImGui::GetIO();
+  float const dx = io.MousePos.x - drag_start_screen_.x;
+  float const dy = io.MousePos.y - drag_start_screen_.y;
+  float const dist_sq = dx * dx + dy * dy;
 
   // STRICT: Requires BOTH time AND distance
-  double elapsed = ImGui::GetTime() - drag_start_time_;
-  bool time_met = elapsed > Config::Input::DRAG_DELAY_SECONDS;
-  bool distance_met = dist_sq > Config::Input::DRAG_THRESHOLD_SQ;
+  double const elapsed = ImGui::GetTime() - drag_start_time_;
+  bool const time_met = elapsed > Config::Input::DRAG_DELAY_SECONDS;
+  bool const distance_met = dist_sq > Config::Input::DRAG_THRESHOLD_SQ;
 
   return time_met && distance_met;
 }
@@ -183,8 +183,8 @@ void MapPanelInput::handleTileSelection(
     AppLogic::MapInputController *input_controller,
     const Domain::SelectionSettings *selection_settings, bool is_hovered,
     bool is_focused) {
-  ImGuiIO &io = ImGui::GetIO();
-  glm::vec2 mouse_pos(io.MousePos.x, io.MousePos.y);
+  ImGuiIO  const&io = ImGui::GetIO();
+  glm::vec2 const mouse_pos(io.MousePos.x, io.MousePos.y);
 
   // Right-click for context menu
   if (is_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
@@ -224,7 +224,7 @@ void MapPanelInput::handleTileSelection(
   }
 
   // Handle Normal Selection Input
-  Domain::Position tile_pos = camera.screenToTile(mouse_pos);
+  Domain::Position const tile_pos = camera.screenToTile(mouse_pos);
   handleNormalSelectionInput(camera, session, input_controller,
                              selection_settings, is_hovered, is_focused,
                              mouse_pos, tile_pos, mods);
@@ -234,7 +234,7 @@ void MapPanelInput::handleRightClickInput(
     const MapViewCamera &camera, AppLogic::EditorSession *session,
     AppLogic::MapInputController *input_controller,
     const glm::vec2 &mouse_pos) {
-  Domain::Position pos = camera.screenToTile(mouse_pos);
+  Domain::Position const pos = camera.screenToTile(mouse_pos);
 
   if (input_controller && session) {
     input_controller->onRightClick(pos, session);
@@ -286,8 +286,8 @@ void MapPanelInput::handleLassoClick(const glm::vec2 &mouse_pos,
                                      AppLogic::EditorSession *session,
                                      const MapViewCamera &camera,
                                      const Domain::SelectionSettings *selection_settings) {
-  double now = ImGui::GetTime();
-  bool is_double_click =
+  double const now = ImGui::GetTime();
+  bool const is_double_click =
       (now - last_lasso_click_time_) < 0.15; // 150ms for fast double-click
   last_lasso_click_time_ = now;
 
@@ -302,17 +302,17 @@ void MapPanelInput::handleLassoClick(const glm::vec2 &mouse_pos,
 }
 
 void MapPanelInput::handleLassoDrag(const glm::vec2 &mouse_pos) {
-  float dx = mouse_pos.x - lasso_drag_start_.x;
-  float dy = mouse_pos.y - lasso_drag_start_.y;
-  float dist_sq = dx * dx + dy * dy;
+  float const dx = mouse_pos.x - lasso_drag_start_.x;
+  float const dy = mouse_pos.y - lasso_drag_start_.y;
+  float const dist_sq = dx * dx + dy * dy;
 
   if (dist_sq > Config::Input::DRAG_THRESHOLD_SQ) {
     lasso_mode_ = LassoMode::Dragging;
     // Add point if distance from last point > threshold
     if (!lasso_points_.empty()) {
-      float last_dx = mouse_pos.x - lasso_points_.back().x;
-      float last_dy = mouse_pos.y - lasso_points_.back().y;
-      float last_dist_sq = last_dx * last_dx + last_dy * last_dy;
+      float const last_dx = mouse_pos.x - lasso_points_.back().x;
+      float const last_dy = mouse_pos.y - lasso_points_.back().y;
+      float const last_dist_sq = last_dx * last_dx + last_dy * last_dy;
 
       if (last_dist_sq > Config::Input::LASSO_DRAG_POINT_DISTANCE_SQ) {
         lasso_points_.push_back(mouse_pos);
@@ -327,13 +327,13 @@ void MapPanelInput::handleNormalSelectionInput(
     const Domain::SelectionSettings *selection_settings, bool is_hovered,
     bool is_focused, const glm::vec2 &mouse_pos,
     const Domain::Position &tile_pos, int mods) {
-  ImGuiIO &io = ImGui::GetIO();
+  ImGuiIO  const&io = ImGui::GetIO();
 
   // Double click handling (non-lasso) - after ALT check
   if (is_hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
     if (input_controller && session) {
-      glm::vec2 click_tile_screen = camera.tileToScreen(tile_pos);
-      glm::vec2 click_pixel_offset =
+      glm::vec2 const click_tile_screen = camera.tileToScreen(tile_pos);
+      glm::vec2 const click_pixel_offset =
           (mouse_pos - click_tile_screen) / camera.getZoom();
       input_controller->onDoubleClick(tile_pos, click_pixel_offset, session);
     }
@@ -378,16 +378,16 @@ void MapPanelInput::handleSelectionMouseDown(const MapViewCamera &camera,
     // Immediate selection on mouse down (if not box selection)
     // IMPORTANT: For brush mode, do NOT paint here - let the drag stroke handle
     // it so the entire stroke is one atomic undo entry
-    bool has_brush = input_controller && input_controller->hasBrush();
+    bool const has_brush = input_controller && input_controller->hasBrush();
     if (!started_with_shift_ && input_controller && session && !has_brush) {
-      glm::vec2 click_tile_screen = camera.tileToScreen(drag_start_tile_);
-      glm::vec2 click_pixel_offset =
+      glm::vec2 const click_tile_screen = camera.tileToScreen(drag_start_tile_);
+      glm::vec2 const click_pixel_offset =
           (drag_start_screen_ - click_tile_screen) / camera.getZoom();
 
       // Check if we are clicking on an ALREADY selected item
       // If so, do NOT select immediately (Wait for Drag or Up)
       // This allows "Drag Selection" to work without clearing selection on Down
-      bool is_selected = input_controller->isSomethingSelectedAt(
+      bool const is_selected = input_controller->isSomethingSelectedAt(
           drag_start_tile_, click_pixel_offset, session);
 
       if (!is_selected) {
@@ -413,20 +413,20 @@ void MapPanelInput::handleDragState(
     const Domain::SelectionSettings *selection_settings,
     const glm::vec2 &mouse_pos) {
   if (is_drag_selecting_) {
-    float dx = mouse_pos.x - drag_start_screen_.x;
-    float dy = mouse_pos.y - drag_start_screen_.y;
-    float dist_sq = dx * dx + dy * dy;
-
-    double elapsed = ImGui::GetTime() - drag_start_time_;
-    bool time_met = elapsed > Config::Input::DRAG_DELAY_SECONDS;
+    float const dx = mouse_pos.x - drag_start_screen_.x;
+    float const dy = mouse_pos.y - drag_start_screen_.y;
+    float const dist_sq = dx * dx + dy * dy;
+
+    double const elapsed = ImGui::GetTime() - drag_start_time_;
+    bool const time_met = elapsed > Config::Input::DRAG_DELAY_SECONDS;
 
     // Skip time delay for brush mode - brushes should paint immediately
-    bool has_brush = input_controller && input_controller->hasBrush();
+    bool const has_brush = input_controller && input_controller->hasBrush();
 
     // STRICT: Drag requires BOTH time (0.1s) AND distance (10px) - no
     // exceptions
-    bool distance_met = dist_sq > Config::Input::DRAG_THRESHOLD_SQ;
-    bool should_trigger_drag =
+    bool const distance_met = dist_sq > Config::Input::DRAG_THRESHOLD_SQ;
+    bool const should_trigger_drag =
         has_brush ? distance_met : (distance_met && time_met);
 
     // Item drag/brush (not box selection)
@@ -440,7 +440,7 @@ void MapPanelInput::handleDragState(
         drag_notified_ = true;
       }
       // Update mouse position for continuous brush painting
-      Domain::Position current_tile = camera.screenToTile(mouse_pos);
+      Domain::Position const current_tile = camera.screenToTile(mouse_pos);
       input_controller->onMouseMove(current_tile, session);
     }
   }
@@ -461,20 +461,20 @@ void MapPanelInput::handleDragRelease(
 
     Domain::Position end_tile = camera.screenToTile(mouse_pos);
 
-    float dx = mouse_pos.x - drag_start_screen_.x;
-    float dy = mouse_pos.y - drag_start_screen_.y;
-    float dist_sq = dx * dx + dy * dy;
-
-    double elapsed = ImGui::GetTime() - drag_start_time_;
-    bool time_met = elapsed > Config::Input::DRAG_DELAY_SECONDS;
+    float const dx = mouse_pos.x - drag_start_screen_.x;
+    float const dy = mouse_pos.y - drag_start_screen_.y;
+    float const dist_sq = dx * dx + dy * dy;
+
+    double const elapsed = ImGui::GetTime() - drag_start_time_;
+    bool const time_met = elapsed > Config::Input::DRAG_DELAY_SECONDS;
 
     // IMPORTANT: Match drag start logic - include has_brush check
     // This ensures brush strokes properly call endStroke() via onLeftDragEnd()
-    bool has_brush = input_controller && input_controller->hasBrush();
+    bool const has_brush = input_controller && input_controller->hasBrush();
     // STRICT: Drag requires BOTH time (0.1s) AND distance (10px)
     // The drag_notified_ flag tells us if we already started a drag,
     // but we still need to complete the drag properly on release
-    bool distance_met = dist_sq > Config::Input::DRAG_THRESHOLD_SQ;
+    bool const distance_met = dist_sq > Config::Input::DRAG_THRESHOLD_SQ;
     bool is_drag = has_brush ? distance_met : (distance_met && time_met);
 
     // If we already notified the drag started, we must end it properly
@@ -491,14 +491,14 @@ void MapPanelInput::handleDragRelease(
           session->getSelectionService().clear();
         }
 
-        int32_t min_x = std::min(drag_start_tile_.x, end_tile.x);
-        int32_t max_x = std::max(drag_start_tile_.x, end_tile.x);
-        int32_t min_y = std::min(drag_start_tile_.y, end_tile.y);
-        int32_t max_y = std::max(drag_start_tile_.y, end_tile.y);
+        int32_t const min_x = std::min(drag_start_tile_.x, end_tile.x);
+        int32_t const max_x = std::max(drag_start_tile_.x, end_tile.x);
+        int32_t const min_y = std::min(drag_start_tile_.y, end_tile.y);
+        int32_t const max_y = std::max(drag_start_tile_.y, end_tile.y);
 
         // Use FloorScopeHelper to determine floor range (RME-style)
-        int16_t current_floor = camera.getCurrentFloor();
-        Domain::SelectionFloorScope scope =
+        int16_t const current_floor = camera.getCurrentFloor();
+        Domain::SelectionFloorScope const scope =
             selection_settings ? selection_settings->floor_scope
                                : Domain::SelectionFloorScope::CurrentFloor;
         auto floor_range = AppLogic::getFloorRange(scope, current_floor);
@@ -523,14 +523,14 @@ void MapPanelInput::handleDragRelease(
       // Single click - handle shift+click selection or brush single-click
       // painting
       if (input_controller && session) {
-        bool has_brush = input_controller->hasBrush();
+        bool const has_brush = input_controller->hasBrush();
         if (has_brush) {
           // Brush single-click: treat as minimal stroke
           input_controller->onLeftDragStart(drag_start_tile_, session);
           input_controller->onLeftDragEnd(drag_start_tile_, session);
         } else if (started_with_shift_ || skipped_selection_on_down_) {
-          glm::vec2 click_tile_screen = camera.tileToScreen(drag_start_tile_);
-          glm::vec2 click_pixel_offset =
+          glm::vec2 const click_tile_screen = camera.tileToScreen(drag_start_tile_);
+          glm::vec2 const click_pixel_offset =
               (drag_start_screen_ - click_tile_screen) / camera.getZoom();
           // FIX #2: Use saved mods from mouse-down (not current mods at
           // release)

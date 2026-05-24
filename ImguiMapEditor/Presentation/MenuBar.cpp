@@ -47,7 +47,7 @@ void MenuBar::renderFileMenu() {
         on_open_sec_map_();
     }
 
-    bool has_session = tab_manager_ && tab_manager_->getActiveSession();
+    bool const has_session = tab_manager_ && tab_manager_->getActiveSession();
     if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save", "Ctrl+S", false,
                         has_session)) {
       if (on_save_map_)
@@ -63,7 +63,7 @@ void MenuBar::renderFileMenu() {
         on_close_map_();
     }
 
-    bool has_any_tabs = tab_manager_ && tab_manager_->getTabCount() > 0;
+    bool const has_any_tabs = tab_manager_ && tab_manager_->getTabCount() > 0;
     if (ImGui::MenuItem(ICON_FA_FOLDER_CLOSED " Close All", nullptr, false,
                         has_any_tabs)) {
       if (on_close_all_)
@@ -108,7 +108,7 @@ void MenuBar::renderFileMenu() {
 }
 
 void MenuBar::renderRecentFilesSubmenu() {
-  bool has_recent =
+  bool const has_recent =
       recent_service_ && !recent_service_->getRecentMaps().empty();
 
   if (ImGui::BeginMenu(ICON_FA_CLOCK_ROTATE_LEFT " Recent Files", has_recent)) {
@@ -121,8 +121,8 @@ void MenuBar::renderRecentFilesSubmenu() {
 
     int i = 0;
     for (const auto &entry : recent_maps | std::views::take(10)) {
-      std::string filename = entry.path.filename().string();
-      std::string full_path = entry.path.string();
+      std::string const filename = entry.path.filename().string();
+      std::string const full_path = entry.path.string();
 
       // Show filename with full path as tooltip
       ImGui::PushID(i++);
@@ -150,13 +150,13 @@ void MenuBar::renderRecentFilesSubmenu() {
 void MenuBar::renderEditMenu() {
   if (ImGui::BeginMenu("Edit")) {
     // Check if we have an active session with selection
-    bool has_session = tab_manager_ && tab_manager_->getActiveSession();
-    bool has_selection =
+    bool const has_session = tab_manager_ && tab_manager_->getActiveSession();
+    bool const has_selection =
         has_session &&
         !tab_manager_->getActiveSession()->getSelectionService().isEmpty();
-    bool can_paste = tab_manager_ && tab_manager_->getClipboard().canPaste();
-    bool can_undo = has_session && tab_manager_->getActiveSession()->canUndo();
-    bool can_redo = has_session && tab_manager_->getActiveSession()->canRedo();
+    bool const can_paste = tab_manager_ && tab_manager_->getClipboard().canPaste();
+    bool const can_undo = has_session && tab_manager_->getActiveSession()->canUndo();
+    bool const can_redo = has_session && tab_manager_->getActiveSession()->canRedo();
 
     if (ImGui::MenuItem(ICON_FA_ROTATE_LEFT " Undo", "Ctrl+Z", false,
                         can_undo)) {
@@ -189,7 +189,7 @@ void MenuBar::renderEditMenu() {
         auto *session = tab_manager_->getActiveSession();
         if (session) {
           auto &view = session->getViewState();
-          Domain::Position target_pos{static_cast<int>(view.camera_x / 32.0f),
+          Domain::Position const target_pos{static_cast<int>(view.camera_x / 32.0f),
                                       static_cast<int>(view.camera_y / 32.0f),
                                       static_cast<int16_t>(view.current_floor)};
           tab_manager_->getClipboard().paste(*session, target_pos);
@@ -303,7 +303,7 @@ void MenuBar::renderViewMenu() {
     // Floor selection
     if (ImGui::BeginMenu("Floor")) {
       for (int floor : std::views::iota(0, 16)) {
-        std::string label = std::format("Floor {}", floor);
+        std::string const label = std::format("Floor {}", floor);
         if (ImGui::RadioButton(label.c_str(),
                                view_settings_.current_floor == floor)) {
           view_settings_.current_floor = static_cast<int16_t>(floor);
@@ -322,7 +322,7 @@ void MenuBar::renderViewMenu() {
 void MenuBar::renderThemeMenu() {
   if (ImGui::BeginMenu("Theme")) {
     for (const auto &theme : AVAILABLE_THEMES) {
-      bool is_current = current_theme_ && (*current_theme_ == theme.type);
+      bool const is_current = current_theme_ && (*current_theme_ == theme.type);
       if (ImGui::MenuItem(theme.name, nullptr, is_current, true)) {
         ApplyTheme(theme.type);
         // Update persistent theme setting
@@ -347,7 +347,7 @@ void MenuBar::renderSelectionMenu() {
 }
 
 void MenuBar::renderMapMenu() {
-  bool has_session = tab_manager_ && tab_manager_->getActiveSession();
+  bool const has_session = tab_manager_ && tab_manager_->getActiveSession();
 
   if (ImGui::BeginMenu("Map")) {
     // Edit Towns

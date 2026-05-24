@@ -25,7 +25,7 @@ void HistoryEntry::compress(bool enable) {
     // Compress BEFORE snapshots
     beforeOriginalSizes_.reserve(beforeSnapshots_.size());
     for (auto& snapshot : beforeSnapshots_) {
-        size_t original_size = snapshot.data().size();
+        size_t const original_size = snapshot.data().size();
         beforeOriginalSizes_.push_back(original_size);
         
         if (original_size > 64) {  // Only compress if worth it
@@ -37,7 +37,7 @@ void HistoryEntry::compress(bool enable) {
     // Compress AFTER snapshots
     afterOriginalSizes_.reserve(afterSnapshots_.size());
     for (auto& snapshot : afterSnapshots_) {
-        size_t original_size = snapshot.data().size();
+        size_t const original_size = snapshot.data().size();
         afterOriginalSizes_.push_back(original_size);
         
         if (original_size > 64) {
@@ -52,7 +52,7 @@ void HistoryEntry::compress(bool enable) {
 void HistoryEntry::applySnapshots(ChunkedMap* map, 
                                    const std::vector<TileSnapshot>& snapshots,
                                    const std::vector<size_t>& originalSizes,
-                                   Services::ClientDataService* clientData) {
+                                   Services::ClientDataService* clientData) const {
     for (size_t i = 0; i < snapshots.size(); ++i) {
         TileSnapshot snapshot = snapshots[i];  // Copy for decompression
         

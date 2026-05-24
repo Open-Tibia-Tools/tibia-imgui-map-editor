@@ -308,7 +308,7 @@ public:
   /**
    * Remove tile at world coordinates.
    */
-  std::unique_ptr<Tile> removeTile(int32_t x, int32_t y);
+  std::unique_ptr<Tile> removeTile(int32_t x, int32_t y) const;
 
   /**
    * Get chunk at chunk coordinates (not world coordinates).

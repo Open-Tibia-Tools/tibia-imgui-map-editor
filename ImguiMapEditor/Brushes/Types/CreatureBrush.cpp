@@ -33,8 +33,8 @@ void CreatureBrush::draw(Domain::ChunkedMap &map, Domain::Tile *tile,
     bool withinExistingSpawn = false;
 
     // Search nearby tiles for spawns that cover this position
-    Domain::Position pos = tile->getPosition();
-    int maxRadius = 10; // Max possible spawn radius
+    Domain::Position const pos = tile->getPosition();
+    int const maxRadius = 10; // Max possible spawn radius
 
     for (int dy = -maxRadius; dy <= maxRadius && !withinExistingSpawn; ++dy) {
       for (int dx = -maxRadius; dx <= maxRadius && !withinExistingSpawn; ++dx) {
@@ -43,7 +43,7 @@ void CreatureBrush::draw(Domain::ChunkedMap &map, Domain::Tile *tile,
           const Domain::Spawn *spawn = nearbyTile->getSpawn();
           if (spawn) {
             // Check if current tile is within this spawn's radius
-            int spawnRadius = spawn->radius;
+            int const spawnRadius = spawn->radius;
             if (std::abs(dx) <= spawnRadius && std::abs(dy) <= spawnRadius) {
               withinExistingSpawn = true;
             }

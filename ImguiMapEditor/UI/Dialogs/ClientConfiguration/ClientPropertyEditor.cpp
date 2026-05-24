@@ -154,7 +154,7 @@ void ClientPropertyEditor::syncFromClient(const Domain::ClientVersion &cv) {
 }
 
 void ClientPropertyEditor::syncToClient(Domain::ClientVersion &cv) {
-  uint32_t new_version = static_cast<uint32_t>(std::max(0, version_int_));
+  uint32_t const new_version = static_cast<uint32_t>(std::max(0, version_int_));
 
   cv.setName(name_buf_);
   cv.setDescription(desc_buf_);
@@ -165,12 +165,12 @@ void ClientPropertyEditor::syncToClient(Domain::ClientVersion &cv) {
   cv.setOtbMajor(static_cast<uint32_t>(std::max(0, otb_major_int_)));
 
   std::vector<uint32_t> otbm;
-  std::string str(otbm_versions_buf_);
+  std::string const str(otbm_versions_buf_);
   std::istringstream iss(str);
   std::string tok;
   while (std::getline(iss, tok, ',')) {
     try {
-      uint32_t v = static_cast<uint32_t>(std::stoul(tok));
+      uint32_t const v = static_cast<uint32_t>(std::stoul(tok));
       if (v >= 1 && v <= 4)
         otbm.push_back(v);
     } catch (...) {
@@ -275,8 +275,8 @@ void ClientPropertyEditor::renderStatusBar() {
   ImGui::SetCursorPosX(12);
   ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 3);
 
-  bool dirty = cv->isDirty();
-  ImU32 dot_color = dirty ? IM_COL32(231, 209, 46, 255) : IM_COL32(110, 209, 110, 255);
+  bool const dirty = cv->isDirty();
+  ImU32 const dot_color = dirty ? IM_COL32(231, 209, 46, 255) : IM_COL32(110, 209, 110, 255);
   ImGui::GetWindowDrawList()->AddCircleFilled(
       ImVec2(ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y + 7), 5,
       dot_color);
@@ -284,7 +284,7 @@ void ClientPropertyEditor::renderStatusBar() {
   ImGui::SetCursorPosX(24);
   ImGui::TextColored(kTextMuted, "Status: ");
   ImGui::SameLine(0, 0);
-  ImVec4 status_col = dirty ? ImVec4(0.9f, 0.7f, 0.2f, 1.0f) : kGreenStatus;
+  ImVec4 const status_col = dirty ? ImVec4(0.9f, 0.7f, 0.2f, 1.0f) : kGreenStatus;
   ImGui::TextColored(status_col, "%s", cv->getName().c_str());
   ImGui::SameLine(0, 0);
   ImGui::TextColored(kTextMuted, "  |  ");
@@ -356,10 +356,10 @@ void ClientPropertyEditor::renderFilesSection() {
     ImGui::SetTooltip("Folder containing Tibia.dat and Tibia.spr");
   ImGui::PopItemWidth();
   ImGui::SameLine();
-  bool path_empty = (client_path_buf_[0] == '\0');
+  bool const path_empty = (client_path_buf_[0] == '\0');
   if (path_empty) {
-    float pulse = (std::sin(static_cast<float>(ImGui::GetTime()) * 3.0f) + 1.0f) * 0.5f;
-    ImVec4 yellow = ImVec4(1.0f, 0.8f, 0.2f, 0.5f + pulse * 0.5f);
+    float const pulse = (std::sin(static_cast<float>(ImGui::GetTime()) * 3.0f) + 1.0f) * 0.5f;
+    ImVec4 const yellow = ImVec4(1.0f, 0.8f, 0.2f, 0.5f + pulse * 0.5f);
     ImGui::PushStyleColor(ImGuiCol_Button, yellow);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.9f, 0.3f, 1.0f));
   }
@@ -406,7 +406,7 @@ void ClientPropertyEditor::renderAutoDetectedFileInputs() {
     ImGui::Text("%s:", label);
     ImGui::SameLine(labelColumn());
     ImGui::PushItemWidth(-1);
-    ScopedPropertyColor sc(prop, &states);
+    ScopedPropertyColor const sc(prop, &states);
     if (ImGui::InputText(id, buf, bufsz)) {
       auto *cv = registry_->getVersion(active_version_);
       if (cv) {
@@ -429,11 +429,11 @@ void ClientPropertyEditor::renderAutoDetectedFileInputs() {
   ImGui::Text("items.otb:");
   ImGui::SameLine(labelColumn());
   std::string otb_display;
-  std::string cl_path(client_path_buf_);
+  std::string const cl_path(client_path_buf_);
   bool otb_found = false;
   if (!cl_path.empty()) {
-    std::filesystem::path otb_target = std::filesystem::path(cl_path) / "items.otb";
-    std::filesystem::path srv_target = std::filesystem::path(cl_path) / "items.srv";
+    std::filesystem::path const otb_target = std::filesystem::path(cl_path) / "items.otb";
+    std::filesystem::path const srv_target = std::filesystem::path(cl_path) / "items.srv";
     if (std::filesystem::exists(otb_target)) {
       otb_display = std::format("{} Found", ICON_FA_CHECK);
       otb_found = true;
@@ -446,7 +446,7 @@ void ClientPropertyEditor::renderAutoDetectedFileInputs() {
   } else {
     otb_display = std::format("{} Set client path first", ICON_FA_CIRCLE_QUESTION);
   }
-  ImVec4 otb_col = otb_found ? kGreenStatus : ImVec4(0.9f, 0.4f, 0.3f, 1.0f);
+  ImVec4 const otb_col = otb_found ? kGreenStatus : ImVec4(0.9f, 0.4f, 0.3f, 1.0f);
   ImGui::TextColored(otb_col, "%s", otb_display.c_str());
   if (ImGui::IsItemHovered())
     ImGui::SetTooltip("items.otb is required to load maps. Place it in the client folder or the editor's data directory.");
@@ -494,7 +494,7 @@ void ClientPropertyEditor::renderCompatibilitySection() {
       std::string tok;
       while (std::getline(iss, tok, ',')) {
         try {
-          uint32_t v = static_cast<uint32_t>(std::stoul(tok));
+          uint32_t const v = static_cast<uint32_t>(std::stoul(tok));
           if (v >= kOtbmVersionMin && v <= kOtbmVersionMax)
             otbm.push_back(v);
         } catch (...) {}
@@ -517,7 +517,7 @@ void ClientPropertyEditor::renderSignaturesSection() {
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(-1);
   {
-    ScopedPropertyColor sc("datSignature", &states);
+    ScopedPropertyColor const sc("datSignature", &states);
     if (ImGui::InputText("##datsig", dat_sig_buf_, sizeof(dat_sig_buf_),
                          ImGuiInputTextFlags_CharsHexadecimal)) {
       auto *cv = registry_->getVersion(active_version_);
@@ -538,7 +538,7 @@ void ClientPropertyEditor::renderSignaturesSection() {
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(-1);
   {
-    ScopedPropertyColor sc("sprSignature", &states);
+    ScopedPropertyColor const sc("sprSignature", &states);
     if (ImGui::InputText("##sprsig", spr_sig_buf_, sizeof(spr_sig_buf_),
                          ImGuiInputTextFlags_CharsHexadecimal)) {
       auto *cv = registry_->getVersion(active_version_);
@@ -564,10 +564,10 @@ void ClientPropertyEditor::renderFeaturesSection() {
 
   const auto &states = property_states_[active_version_];
 
-  float half = ImGui::GetContentRegionAvail().x * 0.48f;
+  float const half = ImGui::GetContentRegionAvail().x * 0.48f;
 
   auto boolBox = [&](const char *label, const char *prop, bool &val, auto setter) {
-    ScopedPropertyColor sc(prop, &states);
+    ScopedPropertyColor const sc(prop, &states);
     if (ImGui::Checkbox(label, &val)) {
       auto *cv = registry_->getVersion(active_version_);
       if (cv) {
@@ -593,7 +593,7 @@ void ClientPropertyEditor::renderFeaturesSection() {
   boolBox("Frame Groups", "frameGroups", frame_groups_bool_,
           [](Domain::ClientVersion *c, bool v) { c->setFrameGroups(v); });
 
-  ScopedPropertyColor sc("default", &states);
+  ScopedPropertyColor const sc("default", &states);
   if (ImGui::Checkbox("Set as Default", &is_default_bool_)) {
     auto *cv = registry_->getVersion(active_version_);
     if (cv) {

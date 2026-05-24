@@ -50,7 +50,7 @@ void SelectionService::selectAt(Domain::ChunkedMap *map,
     clear();
   }
 
-  Domain::Tile *tile = map->getTile(pos);
+  Domain::Tile  const*tile = map->getTile(pos);
   if (!tile) {
     return;
   }
@@ -69,7 +69,7 @@ void SelectionService::selectRegion(Domain::ChunkedMap *map, int32_t min_x,
 
   for (int32_t y = min_y; y <= max_y; ++y) {
     for (int32_t x = min_x; x <= max_x; ++x) {
-      Domain::Position pos{x, y, z};
+      Domain::Position const pos{x, y, z};
       Domain::Tile *tile = map->getTile(pos);
       if (!tile) {
         continue;
@@ -78,7 +78,7 @@ void SelectionService::selectRegion(Domain::ChunkedMap *map, int32_t min_x,
       // Collect entries to add
       if (filter.include_ground) {
         if (const Domain::Item *ground = tile->getGround()) {
-          SelectionEntry entry = createGroundEntry(pos, ground);
+          SelectionEntry const entry = createGroundEntry(pos, ground);
           if (!bucket_.contains(entry.id)) {
             bucket_.add(entry);
             added.push_back(entry);
@@ -88,7 +88,7 @@ void SelectionService::selectRegion(Domain::ChunkedMap *map, int32_t min_x,
 
       if (filter.include_items) {
         for (const auto &item : tile->getItems()) {
-          SelectionEntry entry = createItemEntry(pos, item.get());
+          SelectionEntry const entry = createItemEntry(pos, item.get());
           if (!bucket_.contains(entry.id)) {
             bucket_.add(entry);
             added.push_back(entry);
@@ -98,7 +98,7 @@ void SelectionService::selectRegion(Domain::ChunkedMap *map, int32_t min_x,
 
       if (filter.include_creatures) {
         if (const Domain::Creature *creature = tile->getCreature()) {
-          SelectionEntry entry = createCreatureEntry(pos, creature);
+          SelectionEntry const entry = createCreatureEntry(pos, creature);
           if (!bucket_.contains(entry.id)) {
             bucket_.add(entry);
             added.push_back(entry);
@@ -108,7 +108,7 @@ void SelectionService::selectRegion(Domain::ChunkedMap *map, int32_t min_x,
 
       if (filter.include_spawns) {
         if (const Domain::Spawn *spawn = tile->getSpawn()) {
-          SelectionEntry entry = createSpawnEntry(pos, spawn);
+          SelectionEntry const entry = createSpawnEntry(pos, spawn);
           if (!bucket_.contains(entry.id)) {
             bucket_.add(entry);
             added.push_back(entry);
@@ -365,7 +365,7 @@ void SelectionService::addTileEntities(const Domain::Tile *tile,
     // Ground
     if (target.type == EntityType::Ground) {
       if (const Domain::Item *ground = tile->getGround()) {
-        SelectionEntry entry = createGroundEntry(pos, ground);
+        SelectionEntry const entry = createGroundEntry(pos, ground);
         if (entry.id == target && !bucket_.contains(entry.id)) {
           bucket_.add(entry);
           added.push_back(entry);
@@ -376,7 +376,7 @@ void SelectionService::addTileEntities(const Domain::Tile *tile,
     // Items
     if (target.type == EntityType::Item) {
       for (const auto &item : tile->getItems()) {
-        SelectionEntry entry = createItemEntry(pos, item.get());
+        SelectionEntry const entry = createItemEntry(pos, item.get());
         if (entry.id == target && !bucket_.contains(entry.id)) {
           bucket_.add(entry);
           added.push_back(entry);
@@ -388,7 +388,7 @@ void SelectionService::addTileEntities(const Domain::Tile *tile,
     // Creature
     if (target.type == EntityType::Creature) {
       if (const Domain::Creature *creature = tile->getCreature()) {
-        SelectionEntry entry = createCreatureEntry(pos, creature);
+        SelectionEntry const entry = createCreatureEntry(pos, creature);
         if (entry.id == target && !bucket_.contains(entry.id)) {
           bucket_.add(entry);
           added.push_back(entry);
@@ -399,7 +399,7 @@ void SelectionService::addTileEntities(const Domain::Tile *tile,
     // Spawn
     if (target.type == EntityType::Spawn) {
       if (const Domain::Spawn *spawn = tile->getSpawn()) {
-        SelectionEntry entry = createSpawnEntry(pos, spawn);
+        SelectionEntry const entry = createSpawnEntry(pos, spawn);
         if (entry.id == target && !bucket_.contains(entry.id)) {
           bucket_.add(entry);
           added.push_back(entry);
@@ -416,7 +416,7 @@ void SelectionService::addTileEntities(const Domain::Tile *tile,
   // Non-specific filter: add based on type flags
   if (filter.include_ground) {
     if (const Domain::Item *ground = tile->getGround()) {
-      SelectionEntry entry = createGroundEntry(pos, ground);
+      SelectionEntry const entry = createGroundEntry(pos, ground);
       if (!bucket_.contains(entry.id)) {
         bucket_.add(entry);
         added.push_back(entry);
@@ -426,7 +426,7 @@ void SelectionService::addTileEntities(const Domain::Tile *tile,
 
   if (filter.include_items) {
     for (const auto &item : tile->getItems()) {
-      SelectionEntry entry = createItemEntry(pos, item.get());
+      SelectionEntry const entry = createItemEntry(pos, item.get());
       if (!bucket_.contains(entry.id)) {
         bucket_.add(entry);
         added.push_back(entry);
@@ -436,7 +436,7 @@ void SelectionService::addTileEntities(const Domain::Tile *tile,
 
   if (filter.include_creatures) {
     if (const Domain::Creature *creature = tile->getCreature()) {
-      SelectionEntry entry = createCreatureEntry(pos, creature);
+      SelectionEntry const entry = createCreatureEntry(pos, creature);
       if (!bucket_.contains(entry.id)) {
         bucket_.add(entry);
         added.push_back(entry);
@@ -446,7 +446,7 @@ void SelectionService::addTileEntities(const Domain::Tile *tile,
 
   if (filter.include_spawns) {
     if (const Domain::Spawn *spawn = tile->getSpawn()) {
-      SelectionEntry entry = createSpawnEntry(pos, spawn);
+      SelectionEntry const entry = createSpawnEntry(pos, spawn);
       if (!bucket_.contains(entry.id)) {
         bucket_.add(entry);
         added.push_back(entry);

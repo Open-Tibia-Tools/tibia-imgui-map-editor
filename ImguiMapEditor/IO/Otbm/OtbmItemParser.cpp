@@ -104,7 +104,7 @@ bool OtbmItemParser::parseItemAttributes(BinaryNode* node, Domain::Item& item) {
                 uint16_t x, y;
                 uint8_t z;
                 if (node->getU16(x) && node->getU16(y) && node->getU8(z)) {
-                    Domain::Position dest(x, y, z);
+                    Domain::Position const dest(x, y, z);
                     item.setTeleportDestination(dest);
                 }
                 break;

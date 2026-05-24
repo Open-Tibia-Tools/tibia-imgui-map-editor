@@ -72,10 +72,10 @@ void WaypointOverlay::renderFromCollector(
     // keep inline math but ensure it compiles. I'll add the include just in
     // case I use it later or for consistency.
 
-    glm::vec2 map_pos_unzoomed = entry.screen_pos;
-    glm::vec2 cam_offset = camera_pos * Config::Rendering::TILE_SIZE;
-    glm::vec2 offset = (map_pos_unzoomed - cam_offset) * zoom;
-    glm::vec2 final_screen_pos = viewport_pos + viewport_size * 0.5f + offset;
+    glm::vec2 const map_pos_unzoomed = entry.screen_pos;
+    glm::vec2 const cam_offset = camera_pos * Config::Rendering::TILE_SIZE;
+    glm::vec2 const offset = (map_pos_unzoomed - cam_offset) * zoom;
+    glm::vec2 const final_screen_pos = viewport_pos + viewport_size * 0.5f + offset;
 
     drawWaypointFlame(draw_list, final_screen_pos, *entry.waypoint_name, zoom);
   }
@@ -106,13 +106,13 @@ void WaypointOverlay::collectVisibleWaypoints(
     if (settings.show_tooltips) {
       // Note: passing nullptr for tile is safe for Waypoint-only entries
       // handled by TooltipRenderer
-      OverlayEntry entry{nullptr, {screen_x, screen_y}, &wp.name};
+      OverlayEntry const entry{nullptr, {screen_x, screen_y}, &wp.name};
       collector.tooltips.push_back(entry);
     }
 
     // Waypoint markers:
     if (settings.show_waypoints) {
-      OverlayEntry entry{nullptr, {screen_x, screen_y}, &wp.name};
+      OverlayEntry const entry{nullptr, {screen_x, screen_y}, &wp.name};
       collector.waypoints.push_back(entry);
     }
   }
@@ -121,45 +121,45 @@ void WaypointOverlay::collectVisibleWaypoints(
 void WaypointOverlay::drawWaypointFlame(ImDrawList *draw_list,
                                         const glm::vec2 &screen_pos,
                                         const std::string &name, float zoom) {
-  float size = Config::Rendering::TILE_SIZE * zoom;
-  float center_x = screen_pos.x + size / 2.0f;
-  float base_y = screen_pos.y + size;
+  float const size = Config::Rendering::TILE_SIZE * zoom;
+  float const center_x = screen_pos.x + size / 2.0f;
+  float const base_y = screen_pos.y + size;
 
   // Blue color palette (RME uses RGB 64,64,255)
 
-  ImU32 flame_inner = Config::Colors::WAYPOINT_FLAME_INNER;
-  ImU32 flame_outer = Config::Colors::WAYPOINT_FLAME_OUTER;
-  ImU32 flame_tip = Config::Colors::WAYPOINT_FLAME_TIP;
+  ImU32 const flame_inner = Config::Colors::WAYPOINT_FLAME_INNER;
+  ImU32 const flame_outer = Config::Colors::WAYPOINT_FLAME_OUTER;
+  ImU32 const flame_tip = Config::Colors::WAYPOINT_FLAME_TIP;
 
-  float flame_height = size * 0.6f;
-  float flame_width = size * 0.3f;
+  float const flame_height = size * 0.6f;
+  float const flame_width = size * 0.3f;
 
   // Draw flame body (triangle pointing up)
-  ImVec2 tip(center_x, base_y - flame_height);
-  ImVec2 left(center_x - flame_width / 2, base_y);
-  ImVec2 right(center_x + flame_width / 2, base_y);
+  ImVec2 const tip(center_x, base_y - flame_height);
+  ImVec2 const left(center_x - flame_width / 2, base_y);
+  ImVec2 const right(center_x + flame_width / 2, base_y);
 
   draw_list->AddTriangleFilled(tip, left, right, flame_outer);
 
   // Inner flame
-  ImVec2 inner_tip(center_x, base_y - flame_height * 0.8f);
-  ImVec2 inner_left(center_x - flame_width * 0.3f,
+  ImVec2 const inner_tip(center_x, base_y - flame_height * 0.8f);
+  ImVec2 const inner_left(center_x - flame_width * 0.3f,
                     base_y - flame_height * 0.1f);
-  ImVec2 inner_right(center_x + flame_width * 0.3f,
+  ImVec2 const inner_right(center_x + flame_width * 0.3f,
                      base_y - flame_height * 0.1f);
   draw_list->AddTriangleFilled(inner_tip, inner_left, inner_right, flame_inner);
 
   // White core
-  ImVec2 core_tip(center_x, base_y - flame_height * 0.5f);
-  ImVec2 core_left(center_x - flame_width * 0.1f,
+  ImVec2 const core_tip(center_x, base_y - flame_height * 0.5f);
+  ImVec2 const core_left(center_x - flame_width * 0.1f,
                    base_y - flame_height * 0.15f);
-  ImVec2 core_right(center_x + flame_width * 0.1f,
+  ImVec2 const core_right(center_x + flame_width * 0.1f,
                     base_y - flame_height * 0.15f);
   draw_list->AddTriangleFilled(core_tip, core_left, core_right, flame_tip);
 
   // Label
   if (!name.empty() && zoom > 0.5f) {
-    ImVec2 text_size = ImGui::CalcTextSize(name.c_str());
+    ImVec2 const text_size = ImGui::CalcTextSize(name.c_str());
     draw_list->AddText(ImVec2(center_x - text_size.x / 2,
                               base_y - flame_height - text_size.y - 2),
                        Config::Colors::WAYPOINT_FLAME_INNER, name.c_str());

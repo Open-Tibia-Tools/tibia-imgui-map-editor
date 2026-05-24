@@ -32,7 +32,7 @@ public:
     
     // Bind texture to a texture slot
     void bind(uint32_t slot = 0) const;
-    void unbind() const;
+    static void unbind() ;
     
     // Accessors
     GLuint id() const { return id_; }
@@ -41,7 +41,7 @@ public:
     bool isValid() const { return id_ != 0; }
     
     // Update texture data (must be same size)
-    void update(const uint8_t* rgba_data);
+    void update(const uint8_t* rgba_data) const;
     
     // Create from existing OpenGL texture ID (takes ownership)
     static Texture fromId(GLuint id, uint32_t width, uint32_t height);

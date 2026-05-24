@@ -22,8 +22,8 @@ bool BackgroundRenderer::tryLoad() {
   load_attempted_ = true;
 
   // Look for background.jpg in data/ folder next to executable
-  std::filesystem::path exe_path = std::filesystem::current_path();
-  std::filesystem::path bg_path = exe_path / "data" / "background.jpg";
+  std::filesystem::path const exe_path = std::filesystem::current_path();
+  std::filesystem::path const bg_path = exe_path / "data" / "background.jpg";
 
   if (!std::filesystem::exists(bg_path)) {
     spdlog::debug("Background image not found: {}", bg_path.string());
@@ -56,16 +56,16 @@ void BackgroundRenderer::render() {
   }
 
   // Get viewport size
-  ImGuiIO &io = ImGui::GetIO();
-  ImVec2 viewport_size = io.DisplaySize;
+  ImGuiIO  const&io = ImGui::GetIO();
+  ImVec2 const viewport_size = io.DisplaySize;
 
   // Get background draw list (renders behind everything)
   ImDrawList *draw_list = ImGui::GetBackgroundDrawList();
 
   // Stretch image to fill entire viewport
-  ImTextureID tex_id = (ImTextureID)(intptr_t)texture_.id();
-  ImVec2 p_min(0.0f, 0.0f);
-  ImVec2 p_max(viewport_size.x, viewport_size.y);
+  ImTextureID const tex_id = (ImTextureID)(intptr_t)texture_.id();
+  ImVec2 const p_min(0.0f, 0.0f);
+  ImVec2 const p_max(viewport_size.x, viewport_size.y);
   draw_list->AddImage(tex_id, p_min, p_max);
 }
 

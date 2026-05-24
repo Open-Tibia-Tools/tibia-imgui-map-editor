@@ -77,7 +77,7 @@ public:
    * Upload TileInstance data to the chunk's VBO (new ID-based format).
    * Creates VBO if needed.
    */
-  void uploadTiles(CachedChunk *chunk);
+  static void uploadTiles(CachedChunk *chunk);
 
   /**
    * Get current global generation counter.

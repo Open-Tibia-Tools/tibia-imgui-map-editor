@@ -52,7 +52,7 @@ public:
     void invalidateAll();
 
 private:
-    void computeChunkLight(CachedLightGrid& grid, 
+    static void computeChunkLight(CachedLightGrid& grid, 
                            const std::vector<MapEditor::Domain::LightSource>& lights,
                            const MapEditor::Domain::LightConfig& config,
                            int32_t chunk_x, int32_t chunk_y);

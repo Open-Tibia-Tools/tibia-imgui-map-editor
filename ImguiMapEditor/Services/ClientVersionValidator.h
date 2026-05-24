@@ -47,12 +47,12 @@ public:
     /**
      * Read OTBM map header to get version info.
      */
-    IO::OtbmVersionInfo readMapHeader(const std::filesystem::path& map_path) const;
+    static IO::OtbmVersionInfo readMapHeader(const std::filesystem::path& map_path) ;
     
     /**
      * Check if map header read was successful.
      */
-    bool isMapHeaderValid(const std::filesystem::path& map_path) const;
+    static bool isMapHeaderValid(const std::filesystem::path& map_path) ;
 
 private:
     ClientVersionRegistry& registry_;

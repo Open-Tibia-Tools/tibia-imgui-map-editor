@@ -32,7 +32,7 @@ public:
    * @param settings Brush settings for size/shape
    * @return Provider, or nullptr if brush has no preview support
    */
-  std::unique_ptr<IPreviewProvider>
+  static std::unique_ptr<IPreviewProvider>
   createProvider(const Brushes::IBrush *brush, BrushSettingsService *settings);
 };
 

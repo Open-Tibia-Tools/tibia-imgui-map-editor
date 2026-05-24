@@ -37,7 +37,7 @@ public:
     
 private:
     void renderContentsTab();
-    bool renderSlotButton(Domain::Item* item, float size, bool selected);
+    static bool renderSlotButton(Domain::Item* item, float size, bool selected);
     
     Domain::Item* current_item_ = nullptr;
     Services::SpriteManager* sprite_manager_ = nullptr;

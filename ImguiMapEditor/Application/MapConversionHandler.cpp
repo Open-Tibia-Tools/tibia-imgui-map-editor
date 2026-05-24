@@ -50,7 +50,7 @@ void MapConversionHandler::executeConversion(
     }
     
     auto* map = session->getMap();
-    std::filesystem::path input_path = map->getFilename();
+    std::filesystem::path const input_path = map->getFilename();
     
     if (input_path.empty()) {
         notify_(ConversionNotificationType::Error, "Map must be saved before converting");
@@ -61,15 +61,15 @@ void MapConversionHandler::executeConversion(
     NFD::UniquePath outPath;
     nfdfilteritem_t filters[1] = {{"OTBM Maps", "otbm"}};
     
-    std::string default_name = input_path.stem().string() + suffix + ".otbm";
+    std::string const default_name = input_path.stem().string() + suffix + ".otbm";
     
-    nfdresult_t nfd_result = NFD::SaveDialog(outPath, filters, 1, nullptr, default_name.c_str());
+    nfdresult_t const nfd_result = NFD::SaveDialog(outPath, filters, 1, nullptr, default_name.c_str());
     if (nfd_result != NFD_OKAY) {
         notify_(ConversionNotificationType::Info, "Conversion cancelled");
         return;
     }
     
-    std::filesystem::path output_path = outPath.get();
+    std::filesystem::path const output_path = outPath.get();
     
     // Binary-level conversion: read OTBM, swap IDs, write back
     // No domain objects, no complex writer - just byte-level ID swap

@@ -30,7 +30,7 @@ public:
    * @param sprite_manager Manages sprite loading and caching
    * @return Unique pointer to initialized MapRenderer
    */
-  std::unique_ptr<MapRenderer>
+  static std::unique_ptr<MapRenderer>
   createRenderer(Services::ClientDataService *client_data,
                  Services::SpriteManager *sprite_manager);
 

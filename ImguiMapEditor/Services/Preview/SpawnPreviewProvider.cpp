@@ -24,7 +24,7 @@ Domain::Position SpawnPreviewProvider::getAnchorPosition() const {
 const std::vector<PreviewTileData> &SpawnPreviewProvider::getTiles() const {
   // Check if radius changed
   if (brushSettings_) {
-    int currentRadius = brushSettings_->getDefaultSpawnRadius();
+    int const currentRadius = brushSettings_->getDefaultSpawnRadius();
     if (currentRadius != cachedRadius_) {
       cachedRadius_ = currentRadius;
       needsRegen_ = true;

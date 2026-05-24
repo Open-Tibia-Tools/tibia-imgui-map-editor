@@ -41,21 +41,21 @@ public:
   /**
    * Render drag selection box.
    */
-  void renderDragBox(ImDrawList *draw_list, const glm::vec2 &start_screen,
+  static void renderDragBox(ImDrawList *draw_list, const glm::vec2 &start_screen,
                      const glm::vec2 &current_screen);
 
   /**
    * Render lasso selection polygon outline.
    * @param current_mouse Current mouse position for preview line to next click
    */
-  void renderLassoOverlay(ImDrawList *draw_list,
+  static void renderLassoOverlay(ImDrawList *draw_list,
                           const std::vector<glm::vec2> &points,
                           const glm::vec2 &current_mouse);
 
   /**
    * Render drag selection dimensions text.
    */
-  void renderDragDimensions(ImDrawList *draw_list,
+  static void renderDragDimensions(ImDrawList *draw_list,
                             const glm::vec2 &start_screen,
                             const glm::vec2 &current_screen,
                             const Domain::ICoordinateTransformer &camera, bool shif_pressed,
@@ -90,7 +90,7 @@ private:
    * Renders selection by iterating through selected entries.
    * Efficient for small selections.
    */
-  void renderSelectionIterative(ImDrawList *draw_list,
+  static void renderSelectionIterative(ImDrawList *draw_list,
                                 const Domain::ICoordinateTransformer &camera,
                                 const ISelectionDataProvider *provider,
                                 int floor, float tile_screen_size);
@@ -99,7 +99,7 @@ private:
    * Renders selection by iterating through visible viewport tiles.
    * Efficient for large selections (avoids O(N) iteration of selection set).
    */
-  void renderSelectionViewport(ImDrawList *draw_list,
+  static void renderSelectionViewport(ImDrawList *draw_list,
                                const Domain::ICoordinateTransformer &camera,
                                const ISelectionDataProvider *provider,
                                int floor, float tile_screen_size);

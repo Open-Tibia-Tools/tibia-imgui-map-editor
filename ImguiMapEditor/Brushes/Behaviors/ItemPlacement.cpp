@@ -24,7 +24,7 @@ Domain::Item* ItemPlacement::placeItem(
         subtype > 0 ? subtype : static_cast<uint16_t>(1)
     );
     
-    Domain::Item* result = item.get();
+    Domain::Item * result = item.get();
     
     // Add to tile (sorting is handled by Tile::addItem)
     tile->addItem(std::move(item));

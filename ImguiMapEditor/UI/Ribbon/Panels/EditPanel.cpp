@@ -24,12 +24,12 @@ EditPanel::EditPanel(AppLogic::MapTabManager *tab_manager)
     : tab_manager_(tab_manager) {}
 
 void EditPanel::Render() {
-  bool has_session = tab_manager_ && tab_manager_->getActiveSession();
-  bool has_selection =
+  bool const has_session = tab_manager_ && tab_manager_->getActiveSession();
+  bool const has_selection =
       has_session && !tab_manager_->getActiveSession()->getSelectionService().isEmpty();
-  bool can_paste = tab_manager_ && tab_manager_->getClipboard().canPaste();
-  bool can_undo = has_session && tab_manager_->getActiveSession()->canUndo();
-  bool can_redo = has_session && tab_manager_->getActiveSession()->canRedo();
+  bool const can_paste = tab_manager_ && tab_manager_->getClipboard().canPaste();
+  bool const can_undo = has_session && tab_manager_->getActiveSession()->canUndo();
+  bool const can_redo = has_session && tab_manager_->getActiveSession()->canRedo();
 
   // Undo/Redo
   std::string undo_tooltip = "Undo (Ctrl+Z)";
@@ -68,7 +68,7 @@ void EditPanel::Render() {
   }
 
   // Cut/Copy/Paste
-  std::string cut_tooltip = MakeSelectionTooltip("Cut", "Ctrl+X", selection_count);
+  std::string const cut_tooltip = MakeSelectionTooltip("Cut", "Ctrl+X", selection_count);
 
   Utils::RenderButton(ICON_FA_SCISSORS, nullptr, has_selection, cut_tooltip.c_str(),
                       "Select items first", [this]() {
@@ -79,7 +79,7 @@ void EditPanel::Render() {
 
   ImGui::SameLine();
 
-  std::string copy_tooltip = MakeSelectionTooltip("Copy", "Ctrl+C", selection_count);
+  std::string const copy_tooltip = MakeSelectionTooltip("Copy", "Ctrl+C", selection_count);
 
   Utils::RenderButton(ICON_FA_COPY, nullptr, has_selection, copy_tooltip.c_str(),
                       "Select items first", [this]() {
@@ -107,7 +107,7 @@ void EditPanel::Render() {
                           auto *session = tab_manager_->getActiveSession();
                           if (session) {
                             auto &view = session->getViewState();
-                            Domain::Position target_pos{
+                            Domain::Position const target_pos{
                                 static_cast<int>(view.camera_x / 32.0f),
                                 static_cast<int>(view.camera_y / 32.0f),
                                 static_cast<int16_t>(view.current_floor)};
@@ -122,7 +122,7 @@ void EditPanel::Render() {
   ImGui::SameLine();
 
   // Delete
-  std::string delete_tooltip = MakeSelectionTooltip("Delete", "Del", selection_count);
+  std::string const delete_tooltip = MakeSelectionTooltip("Delete", "Del", selection_count);
 
   Utils::RenderButton(ICON_FA_TRASH, nullptr, has_selection, delete_tooltip.c_str(),
                       "Select items first", [this]() {

@@ -52,9 +52,9 @@ public:
 private:
     void renderSecFolderSelector(State& state);
     void renderClientSelector(State& state);
-    void renderMapInfo(const State& state);
+    static void renderMapInfo(const State& state);
     void scanSecFolder(State& state);
-    void validateClientForSec(State& state);
+    static void validateClientForSec(State& state);
     
     Services::ClientVersionRegistry* registry_ = nullptr;
     Services::ClientVersionValidator* validator_ = nullptr;

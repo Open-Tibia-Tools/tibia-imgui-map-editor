@@ -35,19 +35,19 @@ void BrushSizePanel::render(bool *p_visible) {
   ImGui::SetNextWindowSize(ImVec2(200, 320), ImGuiCond_FirstUseEver);
 
   if (ImGui::Begin(ICON_FA_PAINTBRUSH " Brush Settings", p_visible)) {
-    bool isCustomMode =
+    const bool isCustomMode =
         (service_->getBrushType() == Services::BrushType::Custom);
 
     // Calculate layout
-    float topRowHeight = 30.0f;
-    float controlsHeight = isCustomMode ? 55.0f : 50.0f;
-    float bottomButtonsHeight = isCustomMode ? 30.0f : 0.0f;
-    float headerHeight = 24.0f;
-    float separatorHeight = 8.0f * (isCustomMode ? 4 : 3);
+    const float topRowHeight = 30.0f;
+    const float controlsHeight = isCustomMode ? 55.0f : 50.0f;
+    const float bottomButtonsHeight = isCustomMode ? 30.0f : 0.0f;
+    const float headerHeight = 24.0f;
+    const float separatorHeight = 8.0f * (isCustomMode ? 4 : 3);
 
-    float totalFixed = topRowHeight + controlsHeight + bottomButtonsHeight +
+    const float totalFixed = topRowHeight + controlsHeight + bottomButtonsHeight +
                        headerHeight + separatorHeight;
-    float availableForPreview = ImGui::GetContentRegionAvail().y - totalFixed;
+    const float availableForPreview = ImGui::GetContentRegionAvail().y - totalFixed;
 
     // Top row: Shape buttons + separator + symmetric toggle
     renderTopRow();
@@ -78,7 +78,7 @@ void BrushSizePanel::renderTopRow() {
 
   auto renderShapeBtn = [&](const char *icon, Services::BrushType type,
                             const char *tooltip) {
-    bool isSelected = (currentType == type);
+    const bool isSelected = (currentType == type);
     if (isSelected) {
       ImGui::PushStyleColor(ImGuiCol_Button, ACTIVE_TOGGLE_COLOR);
     }
@@ -111,7 +111,7 @@ void BrushSizePanel::renderTopRow() {
   if (ImGui::Button(symmetricSize_ ? ICON_FA_LINK : ICON_FA_LINK_SLASH)) {
     symmetricSize_ = !symmetricSize_;
     if (symmetricSize_) {
-      int w = service_->getCustomWidth();
+      const int w = service_->getCustomWidth();
       service_->setCustomDimensions(w, w);
     }
   }
@@ -192,7 +192,7 @@ void BrushSizePanel::renderCustomBrushControls() {
   ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
   if (ImGui::BeginCombo("##BrushSelect", currentName)) {
     // Default option (single center tile)
-    bool isDefault = (selected == nullptr);
+    const bool isDefault = (selected == nullptr);
     if (ImGui::Selectable("Default", isDefault)) {
       service_->selectCustomBrush(""); // Empty = default
       // Reset grid to single center
@@ -208,9 +208,9 @@ void BrushSizePanel::renderCustomBrushControls() {
     // Saved brushes
     int brushIndex = 0;
     for (const auto &brush : brushes) {
-      bool isSelected = (selected && selected->name == brush.name);
+      const bool isSelected = (selected && selected->name == brush.name);
       // Use index suffix for unique ID in case of duplicate names
-      std::string label = brush.name + "##brush" + std::to_string(brushIndex++);
+      const std::string label = brush.name + "##brush" + std::to_string(brushIndex++);
       if (ImGui::Selectable(label.c_str(), isSelected)) {
         service_->selectCustomBrush(brush.name);
         loadSelectedBrushToGrid();
@@ -228,8 +228,8 @@ void BrushSizePanel::renderCustomBrushControls() {
 
   // Pulsing green border when in "new" mode
   if (isNewBrushMode_) {
-    float pulse = 0.5f + 0.5f * std::sin(ImGui::GetTime() * 4.0f);
-    ImVec4 pulseColor = ImVec4(0.2f, 0.7f * pulse + 0.3f, 0.3f, 1.0f);
+    const float pulse = 0.5f + 0.5f * std::sin(ImGui::GetTime() * 4.0f);
+    const ImVec4 pulseColor = ImVec4(0.2f, 0.7f * pulse + 0.3f, 0.3f, 1.0f);
     ImGui::PushStyleColor(ImGuiCol_FrameBg, pulseColor);
   }
 
@@ -247,7 +247,7 @@ void BrushSizePanel::renderPreviewSection(float availableHeight,
                                           bool isInteractive) {
   if (ImGui::CollapsingHeader(ICON_FA_EYE " Preview",
                               ImGuiTreeNodeFlags_DefaultOpen)) {
-    float maxSize =
+    const float maxSize =
         std::min(ImGui::GetContentRegionAvail().x, availableHeight - 20.0f);
 
     if (isInteractive) {
@@ -259,7 +259,7 @@ void BrushSizePanel::renderPreviewSection(float availableHeight,
 }
 
 void BrushSizePanel::renderBottomButtons() {
-  float buttonWidth = (ImGui::GetContentRegionAvail().x - 12) / 4;
+  const float buttonWidth = (ImGui::GetContentRegionAvail().x - 12) / 4;
   const auto *selected = service_->getSelectedCustomBrush();
 
   // New button
@@ -317,28 +317,28 @@ void BrushSizePanel::drawInteractiveGrid(float maxSize) {
   cellSize = std::min(cellSize, 18.0f);
 
   ImDrawList *drawList = ImGui::GetWindowDrawList();
-  ImVec2 cursor = ImGui::GetCursorScreenPos();
+  const ImVec2 cursor = ImGui::GetCursorScreenPos();
 
-  float totalWidth = GRID_SIZE * cellSize;
-  float totalHeight = GRID_SIZE * cellSize;
-  float offsetX = (avail.x - totalWidth) / 2.0f;
+  const float totalWidth = GRID_SIZE * cellSize;
+  const float totalHeight = GRID_SIZE * cellSize;
+  const float offsetX = (avail.x - totalWidth) / 2.0f;
 
-  ImVec2 gridMin(cursor.x + offsetX, cursor.y);
+  const ImVec2 gridMin(cursor.x + offsetX, cursor.y);
   drawList->AddRectFilled(
       gridMin, ImVec2(gridMin.x + totalWidth, gridMin.y + totalHeight),
       IM_COL32(40, 40, 40, 255));
 
-  bool mouseDown = ImGui::IsMouseDown(0);
-  ImVec2 mousePos = ImGui::GetMousePos();
+  const bool mouseDown = ImGui::IsMouseDown(0);
+  const ImVec2 mousePos = ImGui::GetMousePos();
   bool gridChanged = false;
-  int center = GRID_SIZE / 2;
+  const int center = GRID_SIZE / 2;
 
   for (int y = 0; y < GRID_SIZE; ++y) {
     for (int x = 0; x < GRID_SIZE; ++x) {
-      ImVec2 cellMin(gridMin.x + x * cellSize, gridMin.y + y * cellSize);
-      ImVec2 cellMax(cellMin.x + cellSize - 1, cellMin.y + cellSize - 1);
+      const ImVec2 cellMin(gridMin.x + x * cellSize, gridMin.y + y * cellSize);
+      const ImVec2 cellMax(cellMin.x + cellSize - 1, cellMin.y + cellSize - 1);
 
-      bool hovered = (mousePos.x >= cellMin.x && mousePos.x < cellMax.x &&
+      const bool hovered = (mousePos.x >= cellMin.x && mousePos.x < cellMax.x &&
                       mousePos.y >= cellMin.y && mousePos.y < cellMax.y);
 
       // Handle click
@@ -382,33 +382,32 @@ void BrushSizePanel::drawInteractiveGrid(float maxSize) {
 
 void BrushSizePanel::drawReadOnlyGrid(float maxSize) {
   auto offsets = service_->getBrushOffsets();
-
-  ImVec2 avail = ImGui::GetContentRegionAvail();
+  const ImVec2 avail = ImGui::GetContentRegionAvail();
   float cellSize = std::max(8.0f, maxSize / GRID_SIZE);
   cellSize = std::min(cellSize, 18.0f);
 
   ImDrawList *drawList = ImGui::GetWindowDrawList();
-  ImVec2 cursor = ImGui::GetCursorScreenPos();
+  const ImVec2 cursor = ImGui::GetCursorScreenPos();
 
-  float totalWidth = GRID_SIZE * cellSize;
-  float totalHeight = GRID_SIZE * cellSize;
-  float offsetX = (avail.x - totalWidth) / 2.0f;
+  const float totalWidth = GRID_SIZE * cellSize;
+  const float totalHeight = GRID_SIZE * cellSize;
+  const float offsetX = (avail.x - totalWidth) / 2.0f;
 
-  ImVec2 gridMin(cursor.x + offsetX, cursor.y);
+  const ImVec2 gridMin(cursor.x + offsetX, cursor.y);
   drawList->AddRectFilled(
       gridMin, ImVec2(gridMin.x + totalWidth, gridMin.y + totalHeight),
       IM_COL32(40, 40, 40, 255));
 
-  std::set<std::pair<int, int>> offsetSet(offsets.begin(), offsets.end());
-  int center = GRID_SIZE / 2;
+  const std::set<std::pair<int, int>> offsetSet(offsets.begin(), offsets.end());
+  const int center = GRID_SIZE / 2;
 
   for (int y = 0; y < GRID_SIZE; ++y) {
     for (int x = 0; x < GRID_SIZE; ++x) {
-      int dx = x - center;
-      int dy = y - center;
+      const int dx = x - center;
+      const int dy = y - center;
 
-      ImVec2 cellMin(gridMin.x + x * cellSize, gridMin.y + y * cellSize);
-      ImVec2 cellMax(cellMin.x + cellSize - 1, cellMin.y + cellSize - 1);
+      const ImVec2 cellMin(gridMin.x + x * cellSize, gridMin.y + y * cellSize);
+      const ImVec2 cellMax(cellMin.x + cellSize - 1, cellMin.y + cellSize - 1);
 
       if (offsetSet.count({dx, dy})) {
         drawList->AddRectFilled(cellMin, cellMax, IM_COL32(100, 180, 255, 255));
@@ -427,7 +426,7 @@ void BrushSizePanel::drawReadOnlyGrid(float maxSize) {
 }
 
 void BrushSizePanel::renderPresetButtons() {
-  float buttonWidth = (ImGui::GetContentRegionAvail().x - 12) / 4;
+  const float buttonWidth = (ImGui::GetContentRegionAvail().x - 12) / 4;
 
   if (ImGui::Button("Clear", ImVec2(buttonWidth, 0))) {
     applyPreset("clear");
@@ -457,10 +456,10 @@ void BrushSizePanel::loadSelectedBrushToGrid() {
 
   if (brush) {
     // Load offsets to grid
-    int center = GRID_SIZE / 2;
+    const int center = GRID_SIZE / 2;
     for (const auto &[dx, dy] : brush->offsets) {
-      int gx = center + dx;
-      int gy = center + dy;
+      const int gx = center + dx;
+      const int gy = center + dy;
       if (gx >= 0 && gx < GRID_SIZE && gy >= 0 && gy < GRID_SIZE) {
         customGrid_[gy][gx] = true;
       }
@@ -509,7 +508,7 @@ void BrushSizePanel::deleteCurrentBrush() {
     return;
   }
 
-  std::string nameToDelete = current->name;
+  const std::string nameToDelete = current->name;
   service_->removeCustomBrush(nameToDelete);
   loadSelectedBrushToGrid(); // Reset to default
   autoSaveBrushes();
@@ -521,7 +520,7 @@ void BrushSizePanel::applyPreset(const char *preset) {
     std::fill(row.begin(), row.end(), false);
   }
 
-  int center = GRID_SIZE / 2;
+  const int center = GRID_SIZE / 2;
 
   if (strcmp(preset, "clear") == 0) {
     customGrid_[center][center] = true; // Always at least one

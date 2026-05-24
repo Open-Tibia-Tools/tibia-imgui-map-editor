@@ -107,7 +107,7 @@ void TilesetWidget::renderTilesetDropdown() {
   ImGui::SetNextItemWidth(-FLT_MIN);
   if (ImGui::BeginCombo("##Tileset", previewValue)) {
     for (size_t i = 0; i < tilesetNames.size(); ++i) {
-      bool isSelected = (static_cast<int>(i) == currentIdx);
+      bool const isSelected = (static_cast<int>(i) == currentIdx);
       if (ImGui::Selectable(tilesetNames[i].c_str(), isSelected)) {
         currentTilesetName_ = tilesetNames[i];
         selectedTilesetIdx_ = static_cast<int>(i);
@@ -167,7 +167,7 @@ void TilesetWidget::renderItemGrid() {
     filterDirty_ = false;
   }
 
-  int itemCount = static_cast<int>(filteredBrushes_.size());
+  int const itemCount = static_cast<int>(filteredBrushes_.size());
 
   // Filter input row
   float availableWidth = ImGui::GetContentRegionAvail().x;
@@ -195,13 +195,13 @@ void TilesetWidget::renderItemGrid() {
 
   // Calculate grid layout
   availableWidth = ImGui::GetContentRegionAvail().x;
-  float itemSpacingX = ImGui::GetStyle().ItemSpacing.x;
-  float actualItemWidth = iconSize_ + itemSpacingX;
-
-  int columns =
+  float const itemSpacingX = ImGui::GetStyle().ItemSpacing.x;
+  float const actualItemWidth = iconSize_ + itemSpacingX;
+
+  int const columns =
       std::max(1, static_cast<int>(std::floor((availableWidth + itemSpacingX) /
                                               actualItemWidth)));
-  int rows = (itemCount + columns - 1) / columns;
+  int const rows = (itemCount + columns - 1) / columns;
 
   ImGuiListClipper clipper;
   clipper.Begin(rows);
@@ -209,7 +209,7 @@ void TilesetWidget::renderItemGrid() {
   while (clipper.Step()) {
     for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++) {
       for (int col = 0; col < columns; col++) {
-        int index = row * columns + col;
+        int const index = row * columns + col;
         if (index >= itemCount)
           break;
 
@@ -224,12 +224,12 @@ void TilesetWidget::renderItemGrid() {
           brushName = "Unnamed";
         }
 
-        bool isSelected = (selectedBrushName_ == brushName);
+        bool const isSelected = (selectedBrushName_ == brushName);
         bool clicked = false;
 
         // Render preview based on brush type
         uint32_t lookId = brush->getLookId();
-        Brushes::BrushType brushType = brush->getType();
+        Brushes::BrushType const brushType = brush->getType();
 
         if (brushType == Brushes::BrushType::Creature) {
           // Render creature brush with sprite

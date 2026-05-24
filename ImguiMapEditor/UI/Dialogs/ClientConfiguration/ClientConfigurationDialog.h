@@ -29,7 +29,7 @@ public:
   bool isOpen() const { return is_open_; }
 
 private:
-  int getMajorGroup(uint32_t version) const;
+  static int getMajorGroup(uint32_t version) ;
   bool matchesFilter(const Domain::ClientVersion &version) const;
   void populateVersionData();
   void selectClient(uint32_t version);

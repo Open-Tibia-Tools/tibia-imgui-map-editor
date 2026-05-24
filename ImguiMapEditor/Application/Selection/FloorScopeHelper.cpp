@@ -63,7 +63,7 @@ void selectTileStackAcrossFloors(
 
   // Iterate over all floors in range
   for (int16_t z = floor_range.start_z; z >= floor_range.end_z; --z) {
-    Domain::Position tile_pos{pos.x, pos.y, z};
+    Domain::Position const tile_pos{pos.x, pos.y, z};
     if (Domain::Tile *tile = map->getTile(tile_pos)) {
       // Add ground if present
       if (const Domain::Item *ground = tile->getGround()) {

@@ -21,7 +21,6 @@ public:
 protected:
     uint8_t transformFlag(uint8_t raw) override;
     
-    bool shouldReadPatternZ() const override { return true; }
 };
 
 } // namespace IO

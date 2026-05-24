@@ -86,7 +86,7 @@ private:
    * @param recursive Whether to scan subfolders
    * @return List of XML file paths
    */
-  std::vector<std::filesystem::path>
+  static std::vector<std::filesystem::path>
   collectXmlFiles(const std::filesystem::path &folder, bool recursive);
 
   Brushes::BrushRegistry &brushRegistry_;
