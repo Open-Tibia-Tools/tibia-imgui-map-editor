@@ -5,6 +5,7 @@
 #include "Controllers/HotkeyController.h"
 #include "Controllers/MapInputController.h"
 #include "Controllers/SearchController.h"
+#include "Core/Config.h"
 #include "MapOperationHandler.h"
 #include "MapTabManager.h"
 #include "Platform/GlfwWindow.h"
@@ -52,7 +53,7 @@ void CallbackMediator::wireAll(Context &ctx) {
     });
     ctx.edit_towns->setTileToScreenFunc([ctx](const Domain::Position &pos) -> glm::vec2 {
       glm::vec2 screen = ctx.map_panel->tileToScreen(pos);
-      float half_tile = 16.0f * ctx.map_panel->getZoom();
+      float half_tile = Config::Rendering::TILE_SIZE * 0.5f * ctx.map_panel->getZoom();
       return glm::vec2(screen.x + half_tile, screen.y + half_tile);
     });
   }

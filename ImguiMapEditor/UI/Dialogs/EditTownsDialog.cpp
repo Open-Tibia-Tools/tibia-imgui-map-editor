@@ -18,6 +18,25 @@ static constexpr ImVec4 kGoToBlue{0.18f, 0.40f, 0.65f, 1.0f};
 static constexpr ImVec4 kGoToBlueHover{0.22f, 0.48f, 0.75f, 1.0f};
 static constexpr ImVec4 kGoToBlueActive{0.14f, 0.35f, 0.58f, 1.0f};
 
+static float bounceOffset() {
+    return std::sin(static_cast<float>(ImGui::GetTime()) * 3.0f) * 3.0f;
+}
+
+static void drawOutlinedIcon(ImDrawList* dl, ImVec2 center, float fontSize,
+                             ImU32 fillColor, const char* icon) {
+    const ImU32 kOutline = IM_COL32(0, 0, 0, 220);
+    float o = 1.5f;
+    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x - o, center.y), kOutline, icon);
+    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x + o, center.y), kOutline, icon);
+    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x, center.y - o), kOutline, icon);
+    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x, center.y + o), kOutline, icon);
+    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x + o, center.y + o), kOutline, icon);
+    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x - o, center.y - o), kOutline, icon);
+    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x + o, center.y - o), kOutline, icon);
+    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x - o, center.y + o), kOutline, icon);
+    dl->AddText(ImGui::GetFont(), fontSize, center, fillColor, icon);
+}
+
 void EditTownsDialog::show() {
     is_open_ = true;
     is_picking_position_ = false;
@@ -56,7 +75,7 @@ EditTownsDialog::Result EditTownsDialog::render() {
         const float panel_w = 220.0f;
         const float spacing = ImGui::GetStyle().ItemSpacing.x;
         const float avail_w = ImGui::GetContentRegionAvail().x;
-        const float center_w = avail_w - panel_w * 2.0f - spacing * 2.0f;
+        const float center_w = std::max(0.0f, avail_w - panel_w * 2.0f - spacing * 2.0f);
         const float footer_h = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y * 2.0f;
         const float content_h = ImGui::GetContentRegionAvail().y - footer_h;
 
@@ -71,7 +90,7 @@ EditTownsDialog::Result EditTownsDialog::render() {
             const auto& town = towns_[i];
             ImGui::PushID(static_cast<int>(town.id));
 
-            bool is_modified = modified_indices_.contains(i);
+            bool is_modified = modified_town_ids_.contains(town.id);
 
             char label[256];
             snprintf(label, sizeof(label), "%u. %s%s", town.id, town.name.c_str(),
@@ -110,10 +129,9 @@ EditTownsDialog::Result EditTownsDialog::render() {
             new_town.temple_position = Domain::Position(0, 0, 7);
             new_town.is_new = true;
 
-            size_t new_idx = towns_.size();
             towns_.push_back(new_town);
-            modified_indices_.insert(new_idx);
-            selected_index_ = static_cast<int>(new_idx);
+            modified_town_ids_.insert(new_town.id);
+            selected_index_ = static_cast<int>(towns_.size()) - 1;
             syncEditBuffers();
         }
 
@@ -147,15 +165,9 @@ EditTownsDialog::Result EditTownsDialog::render() {
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
 
                 if (ImGui::Button(ICON_FA_TRASH " Yes, Remove", ImVec2(120, 0))) {
-                    size_t erased_idx = static_cast<size_t>(selected_index_);
+                    uint32_t removed_id = towns_[selected_index_].id;
                     towns_.erase(towns_.begin() + selected_index_);
-                    modified_indices_.erase(erased_idx);
-                    // Remap indices for entries that shifted down
-                    std::unordered_set<size_t> remapped;
-                    for (size_t idx : modified_indices_) {
-                        remapped.insert(idx > erased_idx ? idx - 1 : idx);
-                    }
-                    modified_indices_ = std::move(remapped);
+                    modified_town_ids_.erase(removed_id);
 
                     if (selected_index_ >= static_cast<int>(towns_.size())) {
                         selected_index_ = static_cast<int>(towns_.size()) - 1;
@@ -214,27 +226,14 @@ EditTownsDialog::Result EditTownsDialog::render() {
                     int pin_x = 0, pin_y = 0;
                     minimap_renderer_.worldToScreen(tpos.x, tpos.y, pin_x, pin_y);
 
-                    float bounce = std::sin(static_cast<float>(ImGui::GetTime()) * 3.0f) * 3.0f;
                     float screen_x = img_cursor.x + static_cast<float>(pin_x);
-                    float screen_y = img_cursor.y + static_cast<float>(pin_y) + bounce;
+                    float screen_y = img_cursor.y + static_cast<float>(pin_y) + bounceOffset();
 
                     float fontSize = ImGui::GetFontSize() * 2.5f;
                     ImVec2 pin_center(screen_x - fontSize * 0.33f, screen_y - fontSize * 0.75f);
 
-                    ImDrawList* dl = ImGui::GetWindowDrawList();
-                    const ImU32 kOutline = IM_COL32(0, 0, 0, 220);
-                    const ImU32 kFill = IM_COL32(255, 210, 20, 255);
-
-                    float o = 1.5f;
-                    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(pin_center.x - o, pin_center.y), kOutline, ICON_FA_LOCATION_DOT);
-                    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(pin_center.x + o, pin_center.y), kOutline, ICON_FA_LOCATION_DOT);
-                    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(pin_center.x, pin_center.y - o), kOutline, ICON_FA_LOCATION_DOT);
-                    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(pin_center.x, pin_center.y + o), kOutline, ICON_FA_LOCATION_DOT);
-                    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(pin_center.x + o, pin_center.y + o), kOutline, ICON_FA_LOCATION_DOT);
-                    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(pin_center.x - o, pin_center.y - o), kOutline, ICON_FA_LOCATION_DOT);
-                    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(pin_center.x + o, pin_center.y - o), kOutline, ICON_FA_LOCATION_DOT);
-                    dl->AddText(ImGui::GetFont(), fontSize, ImVec2(pin_center.x - o, pin_center.y + o), kOutline, ICON_FA_LOCATION_DOT);
-                    dl->AddText(ImGui::GetFont(), fontSize, pin_center, kFill, ICON_FA_LOCATION_DOT);
+                    drawOutlinedIcon(ImGui::GetWindowDrawList(), pin_center, fontSize,
+                                     IM_COL32(255, 210, 20, 255), ICON_FA_LOCATION_DOT);
                 }
             } else {
                 ImGui::TextDisabled("Loading...");
@@ -250,7 +249,7 @@ EditTownsDialog::Result EditTownsDialog::render() {
         ImGui::BeginChild("##properties_panel", ImVec2(panel_w, content_h), ImGuiChildFlags_Borders);
         ImGui::TextUnformatted("Town Properties");
 
-        bool selected_modified = has_selection && modified_indices_.contains(static_cast<size_t>(selected_index_));
+        bool selected_modified = has_selection && modified_town_ids_.contains(towns_[selected_index_].id);
 
         ImGui::BeginDisabled(!has_selection);
 
@@ -264,7 +263,7 @@ EditTownsDialog::Result EditTownsDialog::render() {
         if (ImGui::InputText("##TownName", name_buffer_, sizeof(name_buffer_))) {
             if (has_selection) {
                 towns_[selected_index_].name = name_buffer_;
-                markModified(static_cast<size_t>(selected_index_));
+                markModified(towns_[selected_index_].id);
             }
         }
         if (selected_modified) {
@@ -293,7 +292,7 @@ EditTownsDialog::Result EditTownsDialog::render() {
         if (ImGui::InputInt("##TempleX", &temple_x_, 0, 0)) {
             if (has_selection) {
                 towns_[selected_index_].temple_position.x = temple_x_;
-                markModified(static_cast<size_t>(selected_index_));
+                markModified(towns_[selected_index_].id);
             }
         }
         if (selected_modified) {
@@ -308,7 +307,7 @@ EditTownsDialog::Result EditTownsDialog::render() {
         if (ImGui::InputInt("##TempleY", &temple_y_, 0, 0)) {
             if (has_selection) {
                 towns_[selected_index_].temple_position.y = temple_y_;
-                markModified(static_cast<size_t>(selected_index_));
+                markModified(towns_[selected_index_].id);
             }
         }
         if (selected_modified) {
@@ -324,7 +323,7 @@ EditTownsDialog::Result EditTownsDialog::render() {
             temple_z_ = std::clamp(temple_z_, 0, 15);
             if (has_selection) {
                 towns_[selected_index_].temple_position.z = static_cast<int16_t>(temple_z_);
-                markModified(static_cast<size_t>(selected_index_));
+                markModified(towns_[selected_index_].id);
             }
         }
         if (selected_modified) {
@@ -380,8 +379,6 @@ EditTownsDialog::Result EditTownsDialog::render() {
             is_open_ = false;
             is_picking_position_ = false;
         }
-
-        ImGui::SameLine();
 
         ImGui::SameLine();
 
@@ -442,24 +439,11 @@ EditTownsDialog::Result EditTownsDialog::render() {
         const auto& tpos = towns_[selected_index_].temple_position;
         glm::vec2 screen_pos = tile_to_screen_(tpos);
         if (screen_pos.x >= 0 && screen_pos.y >= 0) {
-            float bounce = std::sin(static_cast<float>(ImGui::GetTime()) * 3.0f) * 3.0f;
             float fontSize = ImGui::GetFontSize() * 2.5f;
-            ImVec2 center(screen_pos.x - fontSize * 0.4f, screen_pos.y - fontSize * 0.75f + bounce);
+            ImVec2 center(screen_pos.x - fontSize * 0.4f, screen_pos.y - fontSize * 0.75f + bounceOffset());
 
-            ImDrawList* dl = ImGui::GetForegroundDrawList();
-            const ImU32 kOutline = IM_COL32(0, 0, 0, 220);
-            const ImU32 kFill = IM_COL32(255, 210, 20, 255);
-
-            float o = 1.5f;
-            dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x - o, center.y), kOutline, ICON_FA_LOCATION_DOT);
-            dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x + o, center.y), kOutline, ICON_FA_LOCATION_DOT);
-            dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x, center.y - o), kOutline, ICON_FA_LOCATION_DOT);
-            dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x, center.y + o), kOutline, ICON_FA_LOCATION_DOT);
-            dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x + o, center.y + o), kOutline, ICON_FA_LOCATION_DOT);
-            dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x - o, center.y - o), kOutline, ICON_FA_LOCATION_DOT);
-            dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x + o, center.y - o), kOutline, ICON_FA_LOCATION_DOT);
-            dl->AddText(ImGui::GetFont(), fontSize, ImVec2(center.x - o, center.y + o), kOutline, ICON_FA_LOCATION_DOT);
-            dl->AddText(ImGui::GetFont(), fontSize, center, kFill, ICON_FA_LOCATION_DOT);
+            drawOutlinedIcon(ImGui::GetForegroundDrawList(), center, fontSize,
+                             IM_COL32(255, 210, 20, 255), ICON_FA_LOCATION_DOT);
         }
     }
 
@@ -483,7 +467,7 @@ void EditTownsDialog::setPickedPosition(const Domain::Position& pos) {
     temple_x_ = pos.x;
     temple_y_ = pos.y;
     temple_z_ = pos.z;
-    markModified(static_cast<size_t>(selected_index_));
+    markModified(towns_[selected_index_].id);
     is_picking_position_ = false;
 }
 
@@ -501,6 +485,9 @@ void EditTownsDialog::refreshFromActiveMap() {
             minimap_renderer_.setDataSource(minimap_source_.get());
             minimap_renderer_.setZoomLevel(-1);
             last_minimap_pos_ = Domain::Position{-1, -1, -1};
+        } else {
+            minimap_source_.reset();
+            minimap_renderer_.setDataSource(nullptr);
         }
         loadTownsFromMap();
     } else {
@@ -513,7 +500,7 @@ void EditTownsDialog::refreshFromActiveMap() {
 
 void EditTownsDialog::loadTownsFromMap() {
     towns_.clear();
-    modified_indices_.clear();
+    modified_town_ids_.clear();
     selected_index_ = -1;
 
     if (!map_) return;
@@ -556,7 +543,7 @@ void EditTownsDialog::applyChangesToMap() {
         }
     }
 
-    modified_indices_.clear();
+    modified_town_ids_.clear();
 }
 
 void EditTownsDialog::syncEditBuffers() {
@@ -575,8 +562,8 @@ void EditTownsDialog::syncEditBuffers() {
     }
 }
 
-void EditTownsDialog::markModified(size_t index) {
-    modified_indices_.insert(index);
+void EditTownsDialog::markModified(uint32_t town_id) {
+    modified_town_ids_.insert(town_id);
 }
 
 bool EditTownsDialog::canRemoveSelectedTown() const {

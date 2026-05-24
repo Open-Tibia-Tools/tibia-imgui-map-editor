@@ -310,15 +310,14 @@ void MinimapRenderer::screenToWorld(int screen_x, int screen_y,
 
 void MinimapRenderer::worldToScreen(int32_t world_x, int32_t world_y,
                                     int &screen_x, int &screen_y) const {
-  float world_width = static_cast<float>(view_bounds_.max_x - view_bounds_.min_x);
-  float world_height = static_cast<float>(view_bounds_.max_y - view_bounds_.min_y);
-  if (world_width <= 0 || world_height <= 0) {
+  float tiles_per_pixel = getTilesPerPixel();
+  if (tiles_per_pixel <= 0.0f) {
     screen_x = 0;
     screen_y = 0;
     return;
   }
-  screen_x = static_cast<int>((world_x - view_bounds_.min_x) / world_width * view_width_);
-  screen_y = static_cast<int>((world_y - view_bounds_.min_y) / world_height * view_height_);
+  screen_x = static_cast<int>((world_x - view_bounds_.min_x - tiles_per_pixel * 0.5f) / tiles_per_pixel);
+  screen_y = static_cast<int>((world_y - view_bounds_.min_y - tiles_per_pixel * 0.5f) / tiles_per_pixel);
 }
 
 } // namespace Rendering

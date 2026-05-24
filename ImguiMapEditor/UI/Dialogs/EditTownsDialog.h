@@ -54,7 +54,7 @@ private:
     void loadTownsFromMap();
     void applyChangesToMap();
     void syncEditBuffers();
-    void markModified(size_t index);
+    void markModified(uint32_t town_id);
     bool canRemoveSelectedTown() const;
     uint32_t getNextTownId() const;
     void updateMinimapView(const Domain::Position& pos);
@@ -69,7 +69,7 @@ private:
     Domain::ChunkedMap* last_map_ = nullptr;
 
     std::vector<TownEntry> towns_;
-    std::unordered_set<size_t> modified_indices_;
+    std::unordered_set<uint32_t> modified_town_ids_;
     int selected_index_ = -1;
 
     char name_buffer_[256] = {};
@@ -87,7 +87,7 @@ private:
     PickPositionCallback on_pick_position_;
     TileToScreenFunc tile_to_screen_;
 
-    float apply_flash_time_ = 0.0f;
+    float apply_flash_time_ = -1.0f;
 };
 
 } // namespace UI
