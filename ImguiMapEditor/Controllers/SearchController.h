@@ -80,6 +80,9 @@ public:
     /** Process completed async search results. Must be called each frame from the main thread. */
     void processAsyncSearch();
 
+    /** Cancel any in-flight async search. Blocks until the background task finishes. */
+    void cancelAsyncSearch();
+
     // Accessors for UI components (needed for rendering and callbacks)
     UI::QuickSearchPopup* getQuickSearchPopup() const;
     UI::AdvancedSearchDialog* getAdvancedSearchDialog() const;

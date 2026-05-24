@@ -52,6 +52,8 @@ void SearchController::onMapLoaded(
     Services::SpriteManager* sprite_manager,
     Services::ViewSettings* view_settings
 ) {
+    cancelAsyncSearch();
+
     if (!client_data) return;
 
     if (!item_picker_service_ || current_client_data_ != client_data) {
@@ -129,6 +131,13 @@ void SearchController::searchTextAsync(const std::string& query, bool search_ite
 
         return results;
     });
+}
+
+void SearchController::cancelAsyncSearch() {
+    if (async_search_active_ && async_search_future_.valid()) {
+        async_search_future_.wait();
+        async_search_active_ = false;
+    }
 }
 
 void SearchController::processAsyncSearch() {

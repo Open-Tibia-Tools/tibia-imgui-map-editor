@@ -51,14 +51,15 @@ void SearchResultsWidget::rebuildFilter() {
         return std::tolower(a) == std::tolower(b);
     };
 
+    size_t filter_len = strlen(filter_buffer_);
     for (size_t i = 0; i < results_.size(); ++i) {
         const auto& r = results_[i];
         if (!search_items_ && r.isItem()) continue;
         if (!search_creatures_ && r.isCreature()) continue;
-        if (filter_buffer_[0]) {
+        if (filter_len) {
             auto& dn = r.display_name;
             auto it = std::search(dn.begin(), dn.end(),
-                filter_buffer_, filter_buffer_ + strlen(filter_buffer_), ci_eq);
+                filter_buffer_, filter_buffer_ + filter_len, ci_eq);
             if (it == dn.end()) continue;
         }
         filtered_indices_.push_back(i);

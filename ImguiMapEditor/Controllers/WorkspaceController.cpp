@@ -96,7 +96,8 @@ void WorkspaceController::unbindSession() {
 
   input_controller_.setClientDataService(nullptr);
 
-  // Reset SearchController
+  // Cancel any in-flight async search before resetting (prevents use-after-free)
+  search_controller_.cancelAsyncSearch();
   search_controller_.onMapLoaded(nullptr, nullptr, nullptr, nullptr);
 
   minimap_window_.setMap(nullptr, nullptr);
