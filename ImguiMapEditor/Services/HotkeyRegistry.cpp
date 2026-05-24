@@ -138,7 +138,7 @@ HotkeyRegistry HotkeyRegistry::createDefaults() {
     registry.registerBinding({FLOOR_DOWN, GLFW_KEY_PAGE_DOWN, 0, "navigation"});
 
     // Selection
-    registry.registerBinding({SELECT_ALL, GLFW_KEY_A, GLFW_MOD_CONTROL, "selection"});
+    // SELECT_ALL intentionally removed per user feedback
     registry.registerBinding({DESELECT, GLFW_KEY_ESCAPE, 0, "selection"});
 
     // Search
