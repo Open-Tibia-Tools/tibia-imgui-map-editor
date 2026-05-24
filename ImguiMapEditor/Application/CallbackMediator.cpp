@@ -173,7 +173,7 @@ void CallbackMediator::wireTabCallbacks(Context &ctx) {
   // Dependencies were injected once in wireAll(); dialog auto-discovers the
   // active map via MapTabManager, so show() needs no parameters.
   ctx.hotkey->setEditTownsCallback([ctx]() {
-    ctx.edit_towns->show();
+    if (ctx.edit_towns) ctx.edit_towns->show();
   });
   ctx.hotkey->setMapPropertiesCallback([ctx]() {
     auto *session = ctx.tab_manager->getActiveSession();
@@ -323,7 +323,7 @@ void CallbackMediator::wireMenuCallbacks(Context &ctx) {
   // Map menu
   // Same as hotkey: deps injected once, show() needs no parameters.
   ctx.menu_bar->setEditTownsCallback([ctx]() {
-    ctx.edit_towns->show();
+    if (ctx.edit_towns) ctx.edit_towns->show();
   });
 
   ctx.menu_bar->setMapPropertiesCallback([ctx]() {
