@@ -2,10 +2,12 @@
 #include "Domain/ChunkedMap.h"
 #include "Domain/Tile.h"
 #include "Domain/Item.h"
+#include "Domain/ItemType.h"
 #include "Domain/Creature.h"
 #include "Services/ClientDataService.h"
 #include <algorithm>
 #include <cctype>
+#include <format>
 
 namespace MapEditor::Services {
 
@@ -73,6 +75,7 @@ std::vector<Domain::Search::MapSearchResult> MapSearchService::search(
                     result.item_id = 0;
                     result.creature_name = creature->name;
                     result.display_name = creature->name;
+                    result.info_line = "Creature";
                     results.push_back(result);
                 }
             }
@@ -85,29 +88,19 @@ std::vector<Domain::Search::MapSearchResult> MapSearchService::search(
 bool MapSearchService::matchesItem(const Domain::Item* item, MapSearchMode mode,
                                     const std::string& query_lower, uint16_t search_id) const {
     if (!item) return false;
+
+    const Domain::ItemType* type = item->getType();
     
     switch (mode) {
         case MapSearchMode::ByServerId:
             return item->getServerId() == search_id;
             
         case MapSearchMode::ByClientId:
-            // Need ClientDataService to lookup client ID
-            if (client_data_) {
-                auto* item_type = client_data_->getItemTypeByServerId(item->getServerId());
-                return item_type && item_type->client_id == search_id;
-            }
-            return false;
+            return type && type->client_id == search_id;
             
         case MapSearchMode::ByName:
         default:
-            // Lookup item name from ClientDataService
-            if (client_data_) {
-                auto* item_type = client_data_->getItemTypeByServerId(item->getServerId());
-                if (item_type && !item_type->name.empty()) {
-                    return matchesFuzzy(item_type->name, query_lower);
-                }
-            }
-            return false;
+            return type && !type->name.empty() && matchesFuzzy(type->name, query_lower);
     }
 }
 
@@ -117,15 +110,11 @@ Domain::Search::MapSearchResult MapSearchService::createResult(
     Domain::Search::MapSearchResult result;
     result.position = tile->getPosition();
     result.item_id = item->getServerId();
-    
-    // Get display name from ClientDataService
-    if (client_data_) {
-        auto* item_type = client_data_->getItemTypeByServerId(item->getServerId());
-        if (item_type && !item_type->name.empty()) {
-            result.display_name = item_type->name;
-        } else {
-            result.display_name = "Item " + std::to_string(item->getServerId());
-        }
+    result.info_line = std::format("ID: {}", item->getServerId());
+
+    const Domain::ItemType* type = item->getType();
+    if (type && !type->name.empty()) {
+        result.display_name = type->name;
     } else {
         result.display_name = "Item " + std::to_string(item->getServerId());
     }
@@ -337,6 +326,165 @@ std::vector<const Domain::ItemType*> MapSearchService::searchItemDatabase(
     }
     
     return results;
+}
+
+std::vector<Domain::Search::MapSearchResult> MapSearchService::searchByUnique(size_t limit) const {
+    return searchByCondition(SearchCondition::Unique, limit);
+}
+
+std::vector<Domain::Search::MapSearchResult> MapSearchService::searchByAction(size_t limit) const {
+    return searchByCondition(SearchCondition::Action, limit);
+}
+
+std::vector<Domain::Search::MapSearchResult> MapSearchService::searchByContainer(size_t limit) const {
+    return searchByCondition(SearchCondition::Container, limit);
+}
+
+std::vector<Domain::Search::MapSearchResult> MapSearchService::searchByWriteable(size_t limit) const {
+    return searchByCondition(SearchCondition::Writeable, limit);
+}
+
+std::vector<Domain::Search::MapSearchResult> MapSearchService::searchByCondition(SearchCondition cond, size_t limit) const {
+    std::vector<Domain::Search::MapSearchResult> results;
+    if (!map_) return results;
+
+    map_->forEachTile([&](const Domain::Tile* tile) {
+        if (!tile || results.size() >= limit) return;
+
+        auto processItem = [&](const Domain::Item* item, bool in_container) {
+            if (!item || results.size() >= limit) return;
+
+            const Domain::ItemType* type = item->getType();
+            std::string type_name = type ? type->name : "Unknown";
+            bool matches = false;
+            std::string display_name;
+
+            std::string info;
+            switch (cond) {
+                case SearchCondition::Unique:
+                    if (item->getUniqueId() > 0) {
+                        matches = true;
+                        display_name = type_name;
+                        info = std::format("UID: {}", item->getUniqueId());
+                    }
+                    break;
+                case SearchCondition::Action:
+                    if (item->getActionId() > 0) {
+                        matches = true;
+                        display_name = type_name;
+                        info = std::format("AID: {}", item->getActionId());
+                    }
+                    break;
+                case SearchCondition::Container:
+                    if (item->isContainer()) {
+                        matches = true;
+                        display_name = type_name;
+                        size_t count = item->getContainerItems().size();
+                        info = std::format("Container ({} item{})", count, count == 1 ? "" : "s");
+                    }
+                    break;
+                case SearchCondition::Writeable:
+                    if (!item->getText().empty()) {
+                        matches = true;
+                        display_name = type_name;
+                        const auto& text = item->getText();
+                        std::string truncated = text.length() > 60 ? text.substr(0, 60) + "..." : text;
+                        info = std::format("Text: {}", truncated);
+                    }
+                    break;
+            }
+
+            if (matches) {
+                Domain::Search::MapSearchResult result;
+                result.position = tile->getPosition();
+                result.item_id = item->getServerId();
+                result.display_name = std::move(display_name);
+                result.info_line = std::move(info);
+                result.is_in_container = in_container;
+                results.push_back(std::move(result));
+            }
+
+            if (!item->getContainerItems().empty() && results.size() < limit) {
+                processContainerItems(item, tile, cond, results, limit);
+            }
+        };
+
+        if (auto* ground = tile->getGround()) {
+            processItem(ground, false);
+        }
+        for (const auto& item_ptr : tile->getItems()) {
+            if (results.size() >= limit) return;
+            processItem(item_ptr.get(), false);
+        }
+    });
+
+    return results;
+}
+
+void MapSearchService::processContainerItems(
+    const Domain::Item* container, const Domain::Tile* tile,
+    SearchCondition cond, std::vector<Domain::Search::MapSearchResult>& results,
+    size_t limit) const {
+
+    for (const auto& child : container->getContainerItems()) {
+        if (results.size() >= limit) return;
+        const Domain::Item* item = child.get();
+        if (!item) continue;
+
+        const Domain::ItemType* type = item->getType();
+        std::string type_name = type ? type->name : "Unknown";
+        bool matches = false;
+        std::string display_name;
+
+        std::string info;
+        switch (cond) {
+            case SearchCondition::Unique:
+                if (item->getUniqueId() > 0) {
+                    matches = true;
+                    display_name = type_name;
+                    info = std::format("UID: {}", item->getUniqueId());
+                }
+                break;
+            case SearchCondition::Action:
+                if (item->getActionId() > 0) {
+                    matches = true;
+                    display_name = type_name;
+                    info = std::format("AID: {}", item->getActionId());
+                }
+                break;
+            case SearchCondition::Container:
+                if (item->isContainer()) {
+                    matches = true;
+                    display_name = type_name;
+                    size_t count = item->getContainerItems().size();
+                    info = std::format("Container ({} item{})", count, count == 1 ? "" : "s");
+                }
+                break;
+            case SearchCondition::Writeable:
+                if (!item->getText().empty()) {
+                    matches = true;
+                    display_name = type_name;
+                    const auto& text = item->getText();
+                    std::string truncated = text.length() > 60 ? text.substr(0, 60) + "..." : text;
+                    info = std::format("Text: {}", truncated);
+                }
+                break;
+        }
+
+        if (matches) {
+            Domain::Search::MapSearchResult result;
+            result.position = tile->getPosition();
+            result.item_id = item->getServerId();
+            result.display_name = std::move(display_name);
+            result.info_line = std::move(info);
+            result.is_in_container = true;
+            results.push_back(std::move(result));
+        }
+
+        if (item->isContainer() && results.size() < limit) {
+            processContainerItems(item, tile, cond, results, limit);
+        }
+    }
 }
 
 } // namespace MapEditor::Services

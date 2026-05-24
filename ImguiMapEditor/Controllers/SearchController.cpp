@@ -5,6 +5,8 @@
 #include "UI/Dialogs/AdvancedSearchDialog.h"
 #include "UI/Widgets/SearchResultsWidget.h"
 #include "Domain/ChunkedMap.h"
+#include "Domain/Search/MapSearchResult.h"
+#include <ranges>
 namespace MapEditor {
 namespace AppLogic {
 
@@ -75,7 +77,93 @@ void SearchController::onMapLoaded(
         advanced_search_dialog_->setShowSearchResultsToggle(&view_settings->show_search_results);
     }
 
+    // Wire async text search
+    search_results_widget_->setSearchAsyncCallback(
+        [this](const std::string& query, bool search_items, bool search_creatures) {
+            searchTextAsync(query, search_items, search_creatures);
+        });
+
     current_client_data_ = client_data;
+}
+
+void SearchController::searchUniqueAsync() {
+    if (!map_search_service_) return;
+    async_search_future_ = std::async(std::launch::async,
+        [service = map_search_service_.get()]() {
+            return service->searchByUnique();
+        });
+    async_search_active_ = true;
+}
+
+void SearchController::searchActionAsync() {
+    if (!map_search_service_) return;
+    async_search_future_ = std::async(std::launch::async,
+        [service = map_search_service_.get()]() {
+            return service->searchByAction();
+        });
+    async_search_active_ = true;
+}
+
+void SearchController::searchContainerAsync() {
+    if (!map_search_service_) return;
+    async_search_future_ = std::async(std::launch::async,
+        [service = map_search_service_.get()]() {
+            return service->searchByContainer();
+        });
+    async_search_active_ = true;
+}
+
+void SearchController::searchWriteableAsync() {
+    if (!map_search_service_) return;
+    async_search_future_ = std::async(std::launch::async,
+        [service = map_search_service_.get()]() {
+            return service->searchByWriteable();
+        });
+    async_search_active_ = true;
+}
+
+void SearchController::searchTextAsync(const std::string& query, bool search_items, bool search_creatures) {
+    if (!map_search_service_ || query.empty()) return;
+
+    bool is_number = !query.empty() && std::all_of(query.begin(), query.end(), ::isdigit);
+
+    async_search_future_ = std::async(std::launch::async,
+        [service = map_search_service_.get(), query, search_items, search_creatures, is_number]()
+            -> std::vector<Domain::Search::MapSearchResult> {
+            
+            std::vector<Domain::Search::MapSearchResult> results;
+            static constexpr size_t limit = 100000;
+
+            auto append = [&](const auto& source) {
+                if (results.size() >= limit) return;
+                auto needed = limit - results.size();
+                std::ranges::copy(source | std::views::take(needed), std::back_inserter(results));
+            };
+
+            if (is_number) {
+                append(service->search(query, Services::MapSearchMode::ByServerId, search_items, false, limit));
+                append(service->search(query, Services::MapSearchMode::ByClientId, search_items, false, limit));
+            }
+
+            append(service->search(query, Services::MapSearchMode::ByName, search_items, search_creatures, limit));
+
+            return results;
+        });
+    async_search_active_ = true;
+}
+
+void SearchController::processAsyncSearch() {
+    if (!async_search_active_ || !async_search_future_.valid()) return;
+
+    auto status = async_search_future_.wait_for(std::chrono::seconds(0));
+    if (status != std::future_status::ready) return;
+
+    auto results = async_search_future_.get();
+    async_search_active_ = false;
+
+    if (search_results_widget_) {
+        search_results_widget_->setResults(results);
+    }
 }
 
 } // namespace AppLogic

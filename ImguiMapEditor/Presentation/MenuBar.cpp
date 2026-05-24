@@ -26,6 +26,7 @@ MenuBar::MenuBar(Services::ViewSettings &view_settings,
 void MenuBar::render() {
   renderFileMenu();
   renderEditMenu();
+  renderSearchMenu();
   renderViewMenu();
   renderMapMenu();
   renderThemeMenu();
@@ -212,6 +213,60 @@ void MenuBar::renderEditMenu() {
         tab_manager_->getActiveSession()->deleteSelection();
       }
     }
+
+    ImGui::EndMenu();
+  }
+}
+
+void MenuBar::renderSearchMenu() {
+  using namespace Input::Hotkeys;
+
+  if (ImGui::BeginMenu("Search")) {
+    bool has_session = tab_manager_ && tab_manager_->getActiveSession();
+
+    if (ImGui::MenuItem(ICON_FA_MAGNIFYING_GLASS " Quick Find", formatShortcut(QUICK_SEARCH).c_str())) {
+      if (on_quick_find_)
+        on_quick_find_();
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Quick catalog search for items and creatures");
+
+    if (ImGui::MenuItem(ICON_FA_MAGNIFYING_GLASS_PLUS " Find Items...", formatShortcut(ADVANCED_SEARCH).c_str())) {
+      if (on_find_items_)
+        on_find_items_();
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Advanced search with type and property filters");
+
+    ImGui::Separator();
+
+    if (ImGui::MenuItem(ICON_FA_FINGERPRINT " Find Unique", nullptr, false, has_session)) {
+      if (on_find_unique_)
+        on_find_unique_();
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Find all items with unique ID assigned");
+
+    if (ImGui::MenuItem(ICON_FA_BOLT " Find Action", nullptr, false, has_session)) {
+      if (on_find_action_)
+        on_find_action_();
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Find all items with action ID assigned");
+
+    if (ImGui::MenuItem(ICON_FA_BOX " Find Container", nullptr, false, has_session)) {
+      if (on_find_container_)
+        on_find_container_();
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Find all containers and items with contents");
+
+    if (ImGui::MenuItem(ICON_FA_PEN_TO_SQUARE " Find Writeable", nullptr, false, has_session)) {
+      if (on_find_writeable_)
+        on_find_writeable_();
+    }
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Find all items with text (signs, books, letters)");
 
     ImGui::EndMenu();
   }

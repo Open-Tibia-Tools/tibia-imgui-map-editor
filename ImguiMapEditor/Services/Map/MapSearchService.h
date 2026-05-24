@@ -81,8 +81,34 @@ public:
         const Domain::Search::PropertyFilter& properties,
         size_t limit = 100
     ) const;
+
+    /**
+     * Find all items on the map with a unique ID assigned.
+     */
+    std::vector<Domain::Search::MapSearchResult> searchByUnique(size_t limit = 100000) const;
+
+    /**
+     * Find all items on the map with an action ID assigned.
+     */
+    std::vector<Domain::Search::MapSearchResult> searchByAction(size_t limit = 100000) const;
+
+    /**
+     * Find all container items on the map (type=container OR has container items).
+     */
+    std::vector<Domain::Search::MapSearchResult> searchByContainer(size_t limit = 100000) const;
+
+    /**
+     * Find all writeable items on the map (non-empty text).
+     */
+    std::vector<Domain::Search::MapSearchResult> searchByWriteable(size_t limit = 100000) const;
     
 private:
+    enum class SearchCondition { Unique, Action, Container, Writeable };
+
+    std::vector<Domain::Search::MapSearchResult> searchByCondition(SearchCondition cond, size_t limit) const;
+    void processContainerItems(const Domain::Item* container, const Domain::Tile* tile,
+                               SearchCondition cond, std::vector<Domain::Search::MapSearchResult>& results,
+                               size_t limit) const;
     bool matchesFuzzy(const std::string& text, const std::string& query) const;
     bool matchesItem(const Domain::Item* item, MapSearchMode mode,
                      const std::string& query_lower, uint16_t search_id) const;

@@ -2,9 +2,15 @@
 #include "Services/ItemPickerService.h"
 #include "Services/Map/MapSearchService.h"
 #include "Services/ViewSettings.h"
+#include <future>
 #include <memory>
+#include <vector>
 
 namespace MapEditor {
+
+namespace Domain {
+namespace Search { struct MapSearchResult; }
+}
 
 namespace UI {
 class QuickSearchPopup;
@@ -42,6 +48,24 @@ public:
         Services::ViewSettings* view_settings
     );
 
+    /** Launch async map-wide search for items with unique ID. */
+    void searchUniqueAsync();
+
+    /** Launch async map-wide search for items with action ID. */
+    void searchActionAsync();
+
+    /** Launch async map-wide search for container items. */
+    void searchContainerAsync();
+
+    /** Launch async map-wide search for writeable items. */
+    void searchWriteableAsync();
+
+    /** Launch async text-based search (name or ID) with smart mode detection. */
+    void searchTextAsync(const std::string& query, bool search_items, bool search_creatures);
+
+    /** Process completed async search results. Must be called each frame from the main thread. */
+    void processAsyncSearch();
+
     // Accessors for UI components (needed for rendering and callbacks)
     UI::QuickSearchPopup* getQuickSearchPopup() const;
     UI::AdvancedSearchDialog* getAdvancedSearchDialog() const;
@@ -59,6 +83,10 @@ private:
 
     // State tracking
     Services::ClientDataService* current_client_data_ = nullptr;
+
+    // Async search
+    std::future<std::vector<Domain::Search::MapSearchResult>> async_search_future_;
+    bool async_search_active_ = false;
 };
 
 } // namespace AppLogic

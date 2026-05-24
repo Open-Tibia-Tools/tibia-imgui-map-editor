@@ -22,6 +22,7 @@ class SearchResultsWidget {
 public:
     using NavigateCallback = std::function<void(const Domain::Position&)>;
     using OpenAdvancedSearchCallback = std::function<void()>;
+    using SearchAsyncCallback = std::function<void(const std::string& query, bool search_items, bool search_creatures)>;
     
     SearchResultsWidget();
     ~SearchResultsWidget() = default;
@@ -35,10 +36,14 @@ public:
     void setMapSearchService(Services::MapSearchService* service) { search_service_ = service; }
     void setNavigateCallback(NavigateCallback cb) { on_navigate_ = std::move(cb); }
     void setOpenAdvancedSearchCallback(OpenAdvancedSearchCallback cb) { on_open_advanced_search_ = std::move(cb); }
+    void setSearchAsyncCallback(SearchAsyncCallback cb) { on_search_async_ = std::move(cb); }
     
     void setResults(const std::vector<Domain::Search::MapSearchResult>& results);
     void clear();
-    size_t getResultCount() const { return results_.size(); }
+    size_t getResultCount() const { return total_results_; }
+
+    static constexpr size_t PAGE_SIZE = 10000;
+    static constexpr size_t MAX_RESULTS = 100000;
     
     void render(bool* p_open);
     
@@ -51,15 +56,19 @@ private:
     Services::MapSearchService* search_service_ = nullptr;
     NavigateCallback on_navigate_;
     OpenAdvancedSearchCallback on_open_advanced_search_;
+    SearchAsyncCallback on_search_async_;
     
     char search_buffer_[256] = {};
+    char filter_buffer_[256] = {};
     bool search_items_ = true;
     bool search_creatures_ = true;
     
     std::vector<Domain::Search::MapSearchResult> results_;
     int selected_index_ = -1;
-    
-    static constexpr size_t MAX_RESULTS = 1000;
+    int current_page_ = 0;
+    size_t total_results_ = 0;
+
+    void renderResultRow(size_t result_idx, const Domain::Search::MapSearchResult& result, bool is_selected, float row_height);
 };
 
 } // namespace UI
