@@ -324,7 +324,7 @@ MapLoadingResult MapLoadingService::createNewMap(const NewMapConfig &config,
   // Set full version info from ClientVersion registry
   // This ensures items_major_version and items_minor_version are properly set
   // for saving
-  auto *version_info = version_registry_.getVersion(current_version);
+  auto *version_info = version_registry_.getFirstByVersion(current_version);
   if (version_info) {
     Domain::ChunkedMap::MapVersion map_version;
     map_version.otbm_version = version_info->getOtbmVersion();
@@ -360,7 +360,7 @@ bool MapLoadingService::loadClientData(
     uint32_t client_version, const std::filesystem::path &pending_path,
     std::optional<Domain::ItemDataSource> source_override) {
   // Get client version info
-  auto *version_info = version_registry_.getVersion(client_version);
+  auto *version_info = version_registry_.getFirstByVersion(client_version);
   if (!version_info) {
     spdlog::error("Unknown client version: {}", client_version);
     return false;
@@ -376,13 +376,15 @@ bool MapLoadingService::loadClientData(
 
   // Check if client path is configured
   auto version_client_path = version_info->getClientPath();
-  spdlog::info("Configured client path: '{}'", version_client_path.string());
+  auto effective_source = source_override.value_or(version_info->getDataSource());
 
   // If not configured, try to find client files in common locations
   if (version_client_path.empty() ||
       !std::filesystem::exists(version_client_path)) {
     if (!pending_path.empty()) {
-      auto map_dir = pending_path.parent_path();
+      auto map_dir = (effective_source == Domain::ItemDataSource::SRV)
+                         ? pending_path
+                         : pending_path.parent_path();
       spdlog::info("Trying client files in map directory: {}",
                    map_dir.string());
 
@@ -394,14 +396,15 @@ bool MapLoadingService::loadClientData(
     }
   }
 
-  auto effective_source = source_override.value_or(version_info->getDataSource());
   auto client_path = version_info->getClientPath();
-  auto metadata_filename = (effective_source == Domain::ItemDataSource::SRV) ? "items.srv" : "items.otb";
 
-  // Debug: check what files exist
+  // Use the configured metadata path (honors custom_items_db_path_ override)
+  auto metadata_path = version_info->getItemMetadataPath();
+  auto metadata_filename = metadata_path.filename().string();
+  auto metadata_fallback_path = std::filesystem::current_path() / "data" / metadata_filename;
+
   auto dat_path = version_info->getDatPath();
   auto spr_path = version_info->getSprPath();
-  auto metadata_path = client_path / metadata_filename;
 
   spdlog::info("Checking client files (source mode: {}):",
                (effective_source == Domain::ItemDataSource::SRV) ? "SRV" :
@@ -422,7 +425,7 @@ bool MapLoadingService::loadClientData(
       valid = false;
   } else if (effective_source != Domain::ItemDataSource::DAT) {
       if (!std::filesystem::exists(metadata_path) &&
-          !std::filesystem::exists(std::filesystem::current_path() / "data" / metadata_filename)) {
+          !std::filesystem::exists(metadata_fallback_path)) {
           valid = false;
       }
   }
@@ -432,7 +435,10 @@ bool MapLoadingService::loadClientData(
     if (!std::filesystem::exists(dat_path)) missing_list += " Tibia.dat";
     if (!std::filesystem::exists(spr_path)) missing_list += " Tibia.spr";
     if (effective_source != Domain::ItemDataSource::DAT) {
-        if (!std::filesystem::exists(metadata_path)) missing_list += " " + std::string(metadata_filename);
+        if (!std::filesystem::exists(metadata_path) &&
+            !std::filesystem::exists(metadata_fallback_path)) {
+            missing_list += " " + std::string(metadata_filename);
+        }
     }
     spdlog::error(
         "Client files not found for version {} in path '{}'. Missing:{}",
@@ -450,7 +456,7 @@ bool MapLoadingService::loadClientData(
   if (effective_source != Domain::ItemDataSource::DAT) {
       final_metadata_path = metadata_path;
       if (!std::filesystem::exists(final_metadata_path)) {
-          final_metadata_path = std::filesystem::path("data") / metadata_filename;
+          final_metadata_path = metadata_fallback_path;
           spdlog::info("Using metadata from editor data directory: {}", final_metadata_path.string());
       }
   }
@@ -468,8 +474,11 @@ bool MapLoadingService::loadClientData(
     return false;
   }
 
-  auto map_dir = pending_path.empty() ? std::filesystem::path()
-                                      : pending_path.parent_path();
+  auto map_dir = pending_path.empty()
+                     ? std::filesystem::path()
+                     : (effective_source == Domain::ItemDataSource::SRV)
+                           ? pending_path
+                           : pending_path.parent_path();
 
   if (!tryLoadCreatures(map_dir, version_client_path)) {
     spdlog::warn("No creature data loaded. Spawns may look incorrect.");

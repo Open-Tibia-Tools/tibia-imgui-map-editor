@@ -75,6 +75,20 @@ ClientVersionRegistry::getVersion(uint32_t version_number) const {
 }
 
 Domain::ClientVersion *
+ClientVersionRegistry::getFirstByVersion(uint32_t version) {
+  for (auto &[id, cv] : versions_)
+    if (cv.getVersion() == version) return &cv;
+  return nullptr;
+}
+
+const Domain::ClientVersion *
+ClientVersionRegistry::getFirstByVersion(uint32_t version) const {
+  for (const auto &[id, cv] : versions_)
+    if (cv.getVersion() == version) return &cv;
+  return nullptr;
+}
+
+Domain::ClientVersion *
 ClientVersionRegistry::getVersionByOtbVersion(uint32_t otb_version) {
   auto it = otb_to_version_.find(otb_version);
   if (it != otb_to_version_.end()) {

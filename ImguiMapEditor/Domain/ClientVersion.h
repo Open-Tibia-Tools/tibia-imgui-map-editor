@@ -16,8 +16,12 @@ namespace Domain {
 class ClientVersion {
 public:
   ClientVersion() = default;
-  ClientVersion(uint32_t version, const std::string &name,
+  ClientVersion(uint32_t id, uint32_t version, const std::string &name,
                 uint32_t otb_version);
+
+  // Unique identifier (auto-assigned, immutable after construction)
+  uint32_t getId() const { return id_; }
+  void setId(uint32_t id) { id_ = id; }
 
   // Version identifiers
   uint32_t getVersion() const { return version_; }
@@ -64,6 +68,18 @@ public:
 
   ItemDataSource getDataSource() const { return data_source_; }
   void setDataSource(ItemDataSource source) { data_source_ = source; }
+
+  // DatFormat (auto-derived from version)
+  DatFormat getDatFormat() const { return dat_format_; }
+  void setDatFormat(DatFormat fmt) { dat_format_ = fmt; }
+
+  // Custom items database path (overrides auto-detection)
+  const std::filesystem::path &getCustomItemsDbPath() const {
+    return custom_items_db_path_;
+  }
+  void setCustomItemsDbPath(const std::filesystem::path &path) {
+    custom_items_db_path_ = path;
+  }
 
   // Feature flags
   bool isTransparent() const { return transparency_; }
@@ -113,6 +129,7 @@ public:
   void restore();
 
 private:
+  uint32_t id_ = 0;
   uint32_t version_ = 0;
   std::string name_;
   uint32_t otb_version_ = 0;
@@ -128,13 +145,16 @@ private:
   ItemDataSource data_source_ = ItemDataSource::OTB;
   bool visible_ = true;
   bool is_default_ = false;
+  DatFormat dat_format_ = DatFormat::Unknown;
   bool transparency_ = false;
   bool extended_ = false;
   bool frame_durations_ = false;
   bool frame_groups_ = false;
   bool is_dirty_ = false;
+  std::filesystem::path custom_items_db_path_;
 
   struct BackupData {
+    uint32_t id;
     uint32_t version;
     std::string name;
     uint32_t otb_version;
@@ -154,6 +174,8 @@ private:
     bool extended;
     bool frame_durations;
     bool frame_groups;
+    DatFormat dat_format;
+    std::filesystem::path custom_items_db_path;
   } backup_data_;
 };
 

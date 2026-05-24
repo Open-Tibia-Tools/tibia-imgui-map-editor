@@ -43,6 +43,7 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
       continue;
     }
 
+    uint32_t id = client.value("id", client["version"].get<uint32_t>());
     uint32_t version_number = client["version"].get<uint32_t>();
     std::string name = client["name"].get<std::string>();
     std::string description = client.value("description", "Client " + name);
@@ -94,7 +95,8 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
       continue;
     }
 
-    Domain::ClientVersion version(version_number, name, otb_id);
+    Domain::ClientVersion version(id, version_number, name, otb_id);
+    version.setId(id);
     version.setDatSignature(dat_sig);
     version.setSprSignature(spr_sig);
     version.setOtbMajor(otb_major);
@@ -135,11 +137,11 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
     version.setFrameGroups(client.value("frameGroups", false));
 
     if (is_default) {
-      result.default_version = version_number;
+      result.default_version = id;
     }
 
-    if (result.versions.find(version_number) == result.versions.end()) {
-      result.versions[version_number] = version;
+    if (result.versions.find(id) == result.versions.end()) {
+      result.versions[id] = version;
       if (otb_id > 0) {
         result.otb_to_version[otb_id] = version_number;
         spdlog::debug("Mapped otbId {} -> version {}", otb_id, version_number);
@@ -147,8 +149,8 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
     }
   }
 
-  spdlog::info("Loaded {} client versions from clients.json",
-               result.versions.size());
+  spdlog::info("Loaded {} client versions from {}",
+                result.versions.size(), path.string());
   return result;
 }
 
@@ -158,9 +160,10 @@ bool ClientVersionPersistence::saveToJson(const std::filesystem::path &path,
   root["$schema"] = "./clients.schema.json";
   root["clients"] = nlohmann::json::array();
 
-  for (const auto &[ver_num, client] : data.versions) {
+  for (const auto &[id, client] : data.versions) {
     nlohmann::json entry;
-    entry["version"] = ver_num;
+    entry["id"] = id;
+    entry["version"] = client.getVersion();
     entry["name"] = client.getName();
     entry["description"] = client.getDescription();
     entry["otbId"] = client.getOtbVersion();
@@ -218,6 +221,48 @@ bool ClientVersionPersistence::saveToJson(const std::filesystem::path &path,
   file << root.dump(2);
   spdlog::info("Saved {} clients to {}", data.versions.size(), path.string());
   return true;
+}
+
+std::vector<Domain::ClientTemplate> ClientVersionPersistence::loadTemplatesFromJson(
+    const std::filesystem::path &path) {
+  std::vector<Domain::ClientTemplate> templates;
+  std::ifstream file(path);
+  if (!file.is_open()) return templates;
+
+  nlohmann::json json;
+  try { file >> json; } catch (...) { return templates; }
+  if (!json.contains("clients") || !json["clients"].is_array()) return templates;
+
+  for (const auto &client : json["clients"]) {
+    if (!client.contains("version")) continue;
+    Domain::ClientTemplate tpl;
+    tpl.version = client["version"].get<uint32_t>();
+    tpl.name = client.value("name", "");
+    tpl.description = client.value("description", "");
+    tpl.otb_id = client.value("otbId", 0);
+    tpl.otb_major = client.value("otbMajor", 0);
+
+    std::string source = client.value("itemDataSource", "OTB");
+    if (source == "SRV") tpl.data_source = Domain::ItemDataSource::SRV;
+    else if (source == "DAT") tpl.data_source = Domain::ItemDataSource::DAT;
+
+    if (client.contains("otbmVersions") && client["otbmVersions"].is_array())
+      for (const auto &v : client["otbmVersions"]) tpl.otbm_versions.push_back(v.get<uint32_t>());
+
+    std::string ds = client.value("datSignature", "0");
+    std::string ss = client.value("sprSignature", "0");
+    try { tpl.dat_signature = static_cast<uint32_t>(std::stoul(ds, nullptr, 16)); } catch (...) {}
+    try { tpl.spr_signature = static_cast<uint32_t>(std::stoul(ss, nullptr, 16)); } catch (...) {}
+
+    tpl.transparency = client.value("transparency", false);
+    tpl.extended = client.value("extended", false);
+    tpl.frame_durations = client.value("frameDurations", false);
+    tpl.frame_groups = client.value("frameGroups", false);
+    tpl.data_directory = client.value("dataDirectory", "");
+
+    templates.push_back(std::move(tpl));
+  }
+  return templates;
 }
 
 } // namespace Services

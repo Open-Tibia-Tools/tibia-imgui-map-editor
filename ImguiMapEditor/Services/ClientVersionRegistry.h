@@ -54,6 +54,9 @@ public:
   Domain::ClientVersion *getVersion(uint32_t version_number);
   const Domain::ClientVersion *getVersion(uint32_t version_number) const;
 
+  Domain::ClientVersion *getFirstByVersion(uint32_t version);
+  const Domain::ClientVersion *getFirstByVersion(uint32_t version) const;
+
   Domain::ClientVersion *getVersionByOtbVersion(uint32_t otb_version);
   const Domain::ClientVersion *
   getVersionByOtbVersion(uint32_t otb_version) const;
@@ -103,6 +106,14 @@ public:
    * Get path to clients.json (for external save operations).
    */
   const std::filesystem::path &getJsonPath() const { return clients_json_path_; }
+  const std::filesystem::path &getConfigPath() const { return config_json_path_; }
+  void setConfigPath(const std::filesystem::path &p) { config_json_path_ = p; }
+
+  uint32_t nextId() { return ++next_id_; }
+  void setNextId(uint32_t id) { if (id >= next_id_) next_id_ = id; }
+
+  void loadTemplates(const std::vector<Domain::ClientTemplate> &templates) { templates_ = templates; }
+  const std::vector<Domain::ClientTemplate> &getTemplates() const { return templates_; }
 
   /**
    * Get all versions data (for external save operations).
@@ -124,10 +135,13 @@ public:
 
 private:
   std::map<uint32_t, Domain::ClientVersion>
-      versions_;                                // version_number -> version
+      versions_;                                // id -> version
   std::map<uint32_t, uint32_t> otb_to_version_; // otb_version -> version_number
   uint32_t default_version_ = 0;
-  std::filesystem::path clients_json_path_; // Path to clients.json for saving
+  uint32_t next_id_ = 0;
+  std::filesystem::path clients_json_path_;
+  std::filesystem::path config_json_path_;
+  std::vector<Domain::ClientTemplate> templates_;
 };
 
 } // namespace Services

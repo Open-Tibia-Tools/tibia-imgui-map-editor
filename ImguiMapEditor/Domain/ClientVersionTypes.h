@@ -46,5 +46,22 @@ enum class ItemDataSource : uint8_t {
   DAT
 };
 
+struct ClientTemplate {
+  uint32_t version = 0;
+  std::string name;
+  std::string description;
+  ItemDataSource data_source = ItemDataSource::OTB;
+  uint32_t otb_id = 0;
+  uint32_t otb_major = 0;
+  std::vector<uint32_t> otbm_versions;
+  uint32_t dat_signature = 0;
+  uint32_t spr_signature = 0;
+  bool transparency = false;
+  bool extended = false;
+  bool frame_durations = false;
+  bool frame_groups = false;
+  std::string data_directory;
+};
+
 } // namespace Domain
 } // namespace MapEditor

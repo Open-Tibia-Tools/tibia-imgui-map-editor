@@ -7,9 +7,11 @@
 #include "Application/MapOperationHandler.h"
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <vector>
 
 namespace MapEditor {
+namespace Presentation { class ClientConfigurationController; }
 namespace AppLogic {
 
 /**
@@ -28,7 +30,7 @@ public:
                     Services::RecentLocationsService &recent_locations,
                     AppStateManager &state_manager);
 
-  ~StartupController() = default;
+  ~StartupController();
 
   /**
    * Called each frame when in WelcomeScreen state.
@@ -89,6 +91,9 @@ private:
 
   // === Callbacks ===
   std::function<void()> on_open_preferences_;
+
+  // === Client configuration controller ===
+  std::unique_ptr<Presentation::ClientConfigurationController> client_config_ctrl_;
 };
 
 } // namespace AppLogic

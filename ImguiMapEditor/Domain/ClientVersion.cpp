@@ -2,28 +2,34 @@
 namespace MapEditor {
 namespace Domain {
 
-ClientVersion::ClientVersion(uint32_t version, const std::string& name, uint32_t otb_version)
-    : version_(version)
+ClientVersion::ClientVersion(uint32_t id, uint32_t version, const std::string& name, uint32_t otb_version)
+    : id_(id)
+    , version_(version)
     , name_(name)
     , otb_version_(otb_version)
 {
 }
 
 std::filesystem::path ClientVersion::getDatPath() const {
-    if (client_path_.empty()) {
-        return {};
-    }
-    return client_path_ / (metadata_file_.empty() ? "Tibia.dat" : metadata_file_);
+    if (metadata_file_.empty()) return {};
+    std::filesystem::path p(metadata_file_);
+    if (p.is_absolute()) return p;
+    if (client_path_.empty()) return {};
+    return client_path_ / p;
 }
 
 std::filesystem::path ClientVersion::getSprPath() const {
-    if (client_path_.empty()) {
-        return {};
-    }
-    return client_path_ / (sprites_file_.empty() ? "Tibia.spr" : sprites_file_);
+    if (sprites_file_.empty()) return {};
+    std::filesystem::path p(sprites_file_);
+    if (p.is_absolute()) return p;
+    if (client_path_.empty()) return {};
+    return client_path_ / p;
 }
 
 std::filesystem::path ClientVersion::getItemMetadataPath() const {
+    if (!custom_items_db_path_.empty()) {
+        return custom_items_db_path_;
+    }
     if (client_path_.empty()) {
         return {};
     }
@@ -64,8 +70,9 @@ bool ClientVersion::validateFiles() const {
         if (std::filesystem::exists(path)) {
             return true;
         }
-        // Fallback check in data/ directory
-        auto filename = (data_source_ == ItemDataSource::SRV) ? "items.srv" : "items.otb";
+        auto filename = path.empty()
+            ? ((data_source_ == ItemDataSource::SRV) ? "items.srv" : "items.otb")
+            : path.filename().string();
         return std::filesystem::exists(std::filesystem::current_path() / "data" / filename);
     }
     case ItemDataSource::DAT:
@@ -79,6 +86,7 @@ bool ClientVersion::validateFiles() const {
 
 void ClientVersion::backup() {
     backup_data_ = BackupData{
+        id_,
         version_,
         name_,
         otb_version_,
@@ -98,10 +106,13 @@ void ClientVersion::backup() {
         extended_,
         frame_durations_,
         frame_groups_,
+        dat_format_,
+        custom_items_db_path_,
     };
 }
 
 void ClientVersion::restore() {
+    id_ = backup_data_.id;
     version_ = backup_data_.version;
     name_ = backup_data_.name;
     otb_version_ = backup_data_.otb_version;
@@ -121,6 +132,8 @@ void ClientVersion::restore() {
     extended_ = backup_data_.extended;
     frame_durations_ = backup_data_.frame_durations;
     frame_groups_ = backup_data_.frame_groups;
+    dat_format_ = backup_data_.dat_format;
+    custom_items_db_path_ = backup_data_.custom_items_db_path;
 }
 
 } // namespace Domain

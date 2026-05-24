@@ -1,4 +1,5 @@
 #include "StartupController.h"
+#include "Presentation/Dialogs/ClientConfigurationController.h"
 #include "IO/Otbm/OtbmReader.h"
 #include "Services/ClientSignatureDetector.h"
 #include <chrono>
@@ -9,6 +10,8 @@
 
 namespace MapEditor {
 namespace AppLogic {
+
+StartupController::~StartupController() = default;
 
 StartupController::StartupController(
     UI::StartupDialog &dialog, MapOperationHandler &map_ops,
@@ -323,7 +326,7 @@ void StartupController::handleClientAutoMatch(
 void StartupController::handleClientSelection(uint32_t version) {
   spdlog::info("Manual client selection: version {}", version);
 
-  auto *selected_version = registry_.getVersion(version);
+  auto *selected_version = registry_.getFirstByVersion(version);
   if (!selected_version) {
     spdlog::warn("Selected client version {} not found in registry", version);
     return;
@@ -484,7 +487,8 @@ void StartupController::handleLoadMap() {
 void StartupController::handleClientConfiguration() {
   spdlog::info("Opening client configuration dialog");
 
-  dialog_.getClientConfigDialog().open(registry_, config_);
+  client_config_ctrl_ = std::make_unique<Presentation::ClientConfigurationController>();
+  dialog_.getClientConfigDialog().open(*client_config_ctrl_, registry_, config_);
 }
 
 void StartupController::handlePreferences() {

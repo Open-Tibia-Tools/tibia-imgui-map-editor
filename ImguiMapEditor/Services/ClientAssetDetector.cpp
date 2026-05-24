@@ -194,16 +194,19 @@ ClientAssetDetector::detect(const std::filesystem::path &client_path,
                             const std::map<uint32_t, Domain::ClientVersion> *versions) {
   Domain::ClientAssetDetectionResult result;
 
-  if (!std::filesystem::exists(client_path)) {
+  auto dat_path = client_path / (metadata_file.empty() ? "Tibia.dat" : metadata_file);
+  auto spr_path = client_path / (sprites_file.empty() ? "Tibia.spr" : sprites_file);
+
+  bool dat_exists = std::filesystem::exists(dat_path);
+  bool spr_exists = std::filesystem::exists(spr_path);
+
+  if (!dat_exists && !spr_exists && !std::filesystem::exists(client_path)) {
     result.warnings.push_back("Client path does not exist: " + client_path.string());
     return result;
   }
 
-  auto dat_path = client_path / (metadata_file.empty() ? "Tibia.dat" : metadata_file);
-  auto spr_path = client_path / (sprites_file.empty() ? "Tibia.spr" : sprites_file);
-
   if (std::filesystem::exists(dat_path)) {
-    result.metadata_file_name = std::filesystem::path(dat_path).filename().string();
+    result.metadata_file_name = dat_path.string();
     result.dat_signature = readU32FromFile(dat_path, result.warnings);
 
     // DAT probing: try parsing with known version readers
@@ -234,7 +237,7 @@ ClientAssetDetector::detect(const std::filesystem::path &client_path,
   }
 
   if (std::filesystem::exists(spr_path)) {
-    result.sprites_file_name = std::filesystem::path(spr_path).filename().string();
+    result.sprites_file_name = spr_path.string();
     result.spr_signature = readU32FromFile(spr_path, result.warnings);
 
     std::vector<SpriteProbeResult> candidates;
