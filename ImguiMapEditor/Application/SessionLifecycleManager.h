@@ -25,7 +25,11 @@ namespace MapEditor::AppLogic {
  */
 class SessionLifecycleManager {
 public:
+  using SessionDestroyCallback = std::function<void(const EditorSession&)>;
+
   SessionLifecycleManager() = default;
+
+  void setSessionDestroyCallback(SessionDestroyCallback cb) { on_session_destroy_ = std::move(cb); }
 
   /**
    * Request closing a tab by index.
@@ -80,6 +84,7 @@ public:
 private:
   std::vector<int> pending_close_tab_indices_;
   std::vector<std::unique_ptr<EditorSession>> pending_sessions_to_destroy_;
+  SessionDestroyCallback on_session_destroy_;
 };
 
 } // namespace MapEditor::AppLogic

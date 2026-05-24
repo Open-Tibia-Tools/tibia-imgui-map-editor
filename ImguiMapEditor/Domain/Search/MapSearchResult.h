@@ -11,7 +11,8 @@ struct MapSearchResult {
     Position position;
     uint16_t item_id = 0;           // 0 if creature
     std::string creature_name;      // empty if item
-    std::string display_name;       // formatted name for display
+    std::string display_name;       // formatted name for display (item/creature name)
+    std::string info_line;          // supplementary info (UID:, AID:, Text:, Container, ID)
     bool is_in_container = false;   // true if found inside a container
     
     bool isCreature() const { return item_id == 0 && !creature_name.empty(); }
@@ -23,8 +24,8 @@ struct MapSearchResult {
         if (item_id != 0) {
             result += " (" + std::to_string(item_id) + ")";
         }
-        result += " @ " + std::to_string(position.x) + "," + 
-                  std::to_string(position.y) + "," + 
+        result += " @ " + std::to_string(position.x) + "," +
+                  std::to_string(position.y) + "," +
                   std::to_string(position.z);
         return result;
     }

@@ -70,6 +70,14 @@ public:
     // ID conversion operations
     void setConvertToServerIdCallback(ActionCallback cb) { on_convert_to_server_id_ = std::move(cb); }
     void setConvertToClientIdCallback(ActionCallback cb) { on_convert_to_client_id_ = std::move(cb); }
+
+    // Search menu callbacks
+    void setQuickFindCallback(ActionCallback cb) { on_quick_find_ = std::move(cb); }
+    void setFindItemsCallback(ActionCallback cb) { on_find_items_ = std::move(cb); }
+    void setFindUniqueCallback(ActionCallback cb) { on_find_unique_ = std::move(cb); }
+    void setFindActionCallback(ActionCallback cb) { on_find_action_ = std::move(cb); }
+    void setFindContainerCallback(ActionCallback cb) { on_find_container_ = std::move(cb); }
+    void setFindWriteableCallback(ActionCallback cb) { on_find_writeable_ = std::move(cb); }
     
     // Theme persistence
     void setThemePtr(ThemeType* theme_ptr) { current_theme_ = theme_ptr; }
@@ -81,6 +89,7 @@ private:
     void renderFileMenu();
     void renderRecentFilesSubmenu();
     void renderEditMenu();
+    void renderSearchMenu();
     void renderViewMenu();
     void renderMapMenu();
     void renderThemeMenu();
@@ -112,6 +121,13 @@ private:
     ActionCallback on_clean_house_items_;
     ActionCallback on_convert_to_server_id_;
     ActionCallback on_convert_to_client_id_;
+
+    ActionCallback on_quick_find_;
+    ActionCallback on_find_items_;
+    ActionCallback on_find_unique_;
+    ActionCallback on_find_action_;
+    ActionCallback on_find_container_;
+    ActionCallback on_find_writeable_;
     
     ThemeType* current_theme_ = nullptr;
 };

@@ -4,8 +4,10 @@
 #include <vector>
 #include <functional>
 #include <string>
+#include <unordered_map>
 
 namespace MapEditor {
+namespace Domain { class ChunkedMap; }
 namespace Services { 
     class SpriteManager; 
     class ClientDataService;
@@ -17,11 +19,13 @@ namespace UI {
 /**
  * Dockable widget for searching items/creatures on the map.
  * Smart search: auto-detects name vs ID, searches all modes.
+ * Results are cached per-session; switching tabs preserves/restores results.
  */
 class SearchResultsWidget {
 public:
     using NavigateCallback = std::function<void(const Domain::Position&)>;
     using OpenAdvancedSearchCallback = std::function<void()>;
+    using SearchAsyncCallback = std::function<void(const std::string& query, bool search_items, bool search_creatures)>;
     
     SearchResultsWidget();
     ~SearchResultsWidget() = default;
@@ -35,31 +39,72 @@ public:
     void setMapSearchService(Services::MapSearchService* service) { search_service_ = service; }
     void setNavigateCallback(NavigateCallback cb) { on_navigate_ = std::move(cb); }
     void setOpenAdvancedSearchCallback(OpenAdvancedSearchCallback cb) { on_open_advanced_search_ = std::move(cb); }
+    void setSearchAsyncCallback(SearchAsyncCallback cb) { on_search_async_ = std::move(cb); }
+    
+    /** Switch active map. Saves current results for the old map, restores results for the new map. */
+    void setActiveMap(const Domain::ChunkedMap* map);
+
+    /** Remove cached results for a session being destroyed. */
+    void forgetMap(const Domain::ChunkedMap* map);
     
     void setResults(const std::vector<Domain::Search::MapSearchResult>& results);
     void clear();
-    size_t getResultCount() const { return results_.size(); }
+    void invalidateFilter();
+    size_t getResultCount() const { return total_results_; }
+
+    static constexpr size_t PAGE_SIZE = 10000;
+    static constexpr size_t MAX_RESULTS = 100000;
     
     void render(bool* p_open);
     
 private:
     void doSearch();
     void renderPreview(const Domain::Search::MapSearchResult& result);
+
+    void saveState();
+    void loadState(const Domain::ChunkedMap* map);
     
     Services::SpriteManager* sprite_manager_ = nullptr;
     Services::ClientDataService* client_data_ = nullptr;
     Services::MapSearchService* search_service_ = nullptr;
     NavigateCallback on_navigate_;
     OpenAdvancedSearchCallback on_open_advanced_search_;
+    SearchAsyncCallback on_search_async_;
     
     char search_buffer_[256] = {};
+    char filter_buffer_[256] = {};
     bool search_items_ = true;
     bool search_creatures_ = true;
     
     std::vector<Domain::Search::MapSearchResult> results_;
     int selected_index_ = -1;
-    
-    static constexpr size_t MAX_RESULTS = 1000;
+    int current_page_ = 0;
+    size_t total_results_ = 0;
+
+    std::vector<size_t> filtered_indices_;
+    size_t filtered_count_ = 0;
+    bool filter_dirty_ = true;
+
+    const Domain::ChunkedMap* active_map_ = nullptr;
+
+    struct SessionState {
+        std::vector<Domain::Search::MapSearchResult> results;
+        size_t total_results = 0;
+        int selected_index = -1;
+        int current_page = 0;
+        char filter_buffer[256] = {};
+        bool search_items = true;
+        bool search_creatures = true;
+    };
+    std::unordered_map<const void*, SessionState> session_states_;
+
+    void rebuildFilter();
+    void renderSearchBar(bool& enter_pressed);
+    void renderActionButtons(bool enter_pressed);
+    void renderResultsList(float row_height);
+    void renderFilterFooter(float btn_width);
+    void renderPagination();
+    void renderResultRow(size_t result_idx, const Domain::Search::MapSearchResult& result, bool is_selected, float row_height);
 };
 
 } // namespace UI

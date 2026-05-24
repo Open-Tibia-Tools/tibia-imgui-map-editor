@@ -4,6 +4,7 @@
 #include "ClientVersionManager.h"
 #include "Controllers/HotkeyController.h"
 #include "Controllers/MapInputController.h"
+#include "Controllers/SearchController.h"
 #include "MapOperationHandler.h"
 #include "MapTabManager.h"
 #include "Platform/GlfwWindow.h"
@@ -198,6 +199,10 @@ void CallbackMediator::wireTabCallbacks(Context &ctx) {
       ctx.ingame_box->restoreState(*session);
       ctx.browse_tile->restoreState(*session);
 
+      if (ctx.search_results) {
+          ctx.search_results->setActiveMap(session->getMap());
+      }
+
       ctx.browse_tile->setMap(session->getMap(),
                               ctx.version_manager->getClientData(),
                               ctx.version_manager->getSpriteManager());
@@ -324,6 +329,45 @@ void CallbackMediator::wireMenuCallbacks(Context &ctx) {
     if (ctx.map_operations)
       ctx.map_operations->handleConvertToClientId();
   });
+
+  // Search menu callbacks
+  ctx.menu_bar->setQuickFindCallback(
+      [ctx]() { if (ctx.quick_search) ctx.quick_search->open(); });
+
+  ctx.menu_bar->setFindItemsCallback(
+      [ctx]() { ctx.view_settings->show_search_results = true; });
+
+  ctx.menu_bar->setFindUniqueCallback(
+      [ctx]() {
+          if (ctx.search_controller) {
+              ctx.search_controller->searchUniqueAsync();
+              ctx.view_settings->show_search_results = true;
+          }
+      });
+
+  ctx.menu_bar->setFindActionCallback(
+      [ctx]() {
+          if (ctx.search_controller) {
+              ctx.search_controller->searchActionAsync();
+              ctx.view_settings->show_search_results = true;
+          }
+      });
+
+  ctx.menu_bar->setFindContainerCallback(
+      [ctx]() {
+          if (ctx.search_controller) {
+              ctx.search_controller->searchContainerAsync();
+              ctx.view_settings->show_search_results = true;
+          }
+      });
+
+  ctx.menu_bar->setFindWriteableCallback(
+      [ctx]() {
+          if (ctx.search_controller) {
+              ctx.search_controller->searchWriteableAsync();
+              ctx.view_settings->show_search_results = true;
+          }
+      });
 }
 
 void CallbackMediator::wireSecondaryClientCallbacks(Context &ctx) {
