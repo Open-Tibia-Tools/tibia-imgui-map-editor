@@ -484,7 +484,8 @@ void StartupController::handleLoadMap() {
 void StartupController::handleClientConfiguration() {
   spdlog::info("Opening client configuration dialog");
 
-  dialog_.getClientConfigDialog().open(registry_, config_);
+  client_config_ctrl_ = std::make_unique<Presentation::ClientConfigurationController>();
+  dialog_.getClientConfigDialog().open(*client_config_ctrl_, registry_, config_);
 }
 
 void StartupController::handlePreferences() {

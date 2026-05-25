@@ -348,6 +348,7 @@ set(PRESENTATION_SOURCES
     Presentation/Dialogs/ImportMapController.cpp
     Presentation/Dialogs/CleanupController.cpp
     Presentation/Dialogs/TownPickController.cpp
+    Presentation/Dialogs/ClientConfigurationController.cpp
 )
 
 set(BRUSHES_SOURCES

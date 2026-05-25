@@ -5,8 +5,10 @@
 #include "UI/Dialogs/Startup/StartupDialog.h"
 #include "Application/AppStateManager.h"
 #include "Application/MapOperationHandler.h"
+#include "Presentation/Dialogs/ClientConfigurationController.h"
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <vector>
 
 namespace MapEditor {
@@ -89,6 +91,9 @@ private:
 
   // === Callbacks ===
   std::function<void()> on_open_preferences_;
+
+  // === Client configuration controller ===
+  std::unique_ptr<Presentation::ClientConfigurationController> client_config_ctrl_;
 };
 
 } // namespace AppLogic
