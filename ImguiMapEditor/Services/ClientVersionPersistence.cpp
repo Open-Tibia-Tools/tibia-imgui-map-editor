@@ -171,8 +171,8 @@ bool ClientVersionPersistence::saveToJson(
 
     // Format signatures as hex strings
     std::ostringstream dat_ss, spr_ss;
-    dat_ss << std::uppercase << std::hex << client.getDatSignature();
-    spr_ss << std::uppercase << std::hex << client.getSprSignature();
+    dat_ss << std::uppercase << std::hex << std::setw(8) << std::setfill('0') << client.getDatSignature();
+    spr_ss << std::uppercase << std::hex << std::setw(8) << std::setfill('0') << client.getSprSignature();
     entry["datSignature"] = dat_ss.str();
     entry["sprSignature"] = spr_ss.str();
 

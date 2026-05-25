@@ -62,13 +62,13 @@ void ClientConfigurationController::open(Services::ClientVersionRegistry& regist
     auto config_path = std::filesystem::current_path() / "data" / "clients_saved.json";
     registry_->setConfigPath(config_path);
 
-    auto [indexs, default_ver] = Services::ClientVersionPersistence::loadFromJson(config_path);
-    for (auto& [index, cv] : indexs) {
+    auto [versions, default_ver] = Services::ClientVersionPersistence::loadFromJson(config_path);
+    for (auto& [index, cv] : versions) {
         if (!registry_->getVersion(index))
             registry_->addClient(cv);
     }
-    if (!indexs.empty())
-        registry_->setNextIndex(indexs.rbegin()->first);
+    if (!versions.empty())
+        registry_->setNextIndex(versions.rbegin()->first);
 
     if (registry_->getDefaultVersion() > 0)
         active_client_index_ = registry_->getDefaultVersion();
@@ -183,16 +183,16 @@ bool ClientConfigurationController::saveAll() {
     if (!registry_) return false;
     if (!validateBeforeSave()) return false;
 
-    auto indexs = registry_->getVersionsMap();
+    auto versions = registry_->getVersionsMap();
     uint32_t default_ver = registry_->getDefaultVersion();
 
     for (auto index : pending_deleted_) {
-        indexs.erase(index);
+        versions.erase(index);
         if (default_ver == index) default_ver = 0;
     }
 
     if (!Services::ClientVersionPersistence::saveToJson(
-            registry_->getConfigPath(), indexs, default_ver)) {
+            registry_->getConfigPath(), versions, default_ver)) {
         spdlog::error("Failed to save clients_saved.json");
         return false;
     }
@@ -200,8 +200,12 @@ bool ClientConfigurationController::saveAll() {
     for (auto index : pending_deleted_)
         registry_->removeClient(index);
 
-    for (const auto& [num, _] : registry_->getVersionsMap())
-        if (auto* cv = registry_->getVersion(num)) cv->clearDirty();
+    for (const auto& [num, _] : registry_->getVersionsMap()) {
+        if (auto* cv = registry_->getVersion(num)) {
+            cv->clearDirty();
+            cv->backup();
+        }
+    }
     for (const auto& [num, _] : registry_->getVersionsMap())
         markAllPendingAsSaved(num);
 
@@ -473,6 +477,8 @@ void ClientConfigurationController::autoDetectFromClientPath(
     if (auto* cv = registry_->getVersion(active_client_index_)) {
         cv->setMetadataFile((clientPath / "Tibia.dat").string());
         cv->setSpritesFile((clientPath / "Tibia.spr").string());
+        items_db_buf_[0] = '\0';
+        cv->setCustomItemsDbPath("");
         for (const auto& name : {"items.otb", "items.srv"}) {
             auto test_path = clientPath / name;
             if (std::filesystem::exists(test_path)) {
@@ -489,7 +495,10 @@ void ClientConfigurationController::autoDetectFromClientPath(
 
 void ClientConfigurationController::invalidateClientPath() {
     client_path_buf_[0] = '\0';
-    if (auto* cv = registry_->getVersion(active_client_index_)) cv->setClientPath("");
+    if (auto* cv = registry_->getVersion(active_client_index_)) {
+        cv->setClientPath("");
+        cv->markDirty();
+    }
     property_states_[active_client_index_]["clientPath"] = Domain::PropertyVisualState::Pending;
 }
 
