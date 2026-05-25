@@ -31,7 +31,7 @@ public:
     void setChangeCallback(ChangeCallback cb) { on_change_ = std::move(cb); }
 
     // === Selection ===
-    uint32_t activeVersion() const { return active_version_; }
+    uint32_t activeVersion() const { return active_client_index_; }
     void selectClient(uint32_t version);
 
     // === CRUD ===
@@ -117,7 +117,7 @@ private:
     Services::ConfigService* config_ = nullptr;
     bool is_open_ = false;
 
-    uint32_t active_version_ = 0;
+    uint32_t active_client_index_ = 0;
     std::string search_filter_;
     char search_buf_[128] = {};
 

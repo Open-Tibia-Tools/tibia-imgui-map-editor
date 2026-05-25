@@ -53,7 +53,7 @@ void ClientConfigurationController::open(Services::ClientVersionRegistry& regist
     registry_ = &registry;
     config_ = &config;
     is_open_ = true;
-    active_version_ = 0;
+    active_client_index_ = 0;
     search_buf_[0] = '\0';
     search_filter_.clear();
     pending_deleted_.clear();
@@ -71,14 +71,14 @@ void ClientConfigurationController::open(Services::ClientVersionRegistry& regist
         registry_->setNextIndex(versions.rbegin()->first);
 
     if (registry_->getDefaultVersion() > 0)
-        active_version_ = registry_->getDefaultVersion();
+        active_client_index_ = registry_->getDefaultVersion();
     else if (!registry_->getVersionsMap().empty())
-        active_version_ = registry_->getVersionsMap().begin()->first;
+        active_client_index_ = registry_->getVersionsMap().begin()->first;
 
     populateVersionData();
 
-    if (active_version_ != 0) {
-        if (auto* cv = registry_->getVersion(active_version_)) {
+    if (active_client_index_ != 0) {
+        if (auto* cv = registry_->getVersion(active_client_index_)) {
             cv->backup();
             syncFromClient(*cv);
         }
@@ -90,8 +90,8 @@ void ClientConfigurationController::close() { is_open_ = false; }
 // === Selection ===
 
 void ClientConfigurationController::selectClient(uint32_t version) {
-    if (version == active_version_) return;
-    active_version_ = version;
+    if (version == active_client_index_) return;
+    active_client_index_ = version;
     if (version == 0) return;
     if (auto* cv = registry_->getVersion(version)) {
         cv->backup();
@@ -128,7 +128,7 @@ void ClientConfigurationController::addClient() {
 }
 
 void ClientConfigurationController::duplicateClient() {
-    duplicateClient(active_version_);
+    duplicateClient(active_client_index_);
 }
 
 void ClientConfigurationController::duplicateClient(uint32_t from_index) {
@@ -170,8 +170,8 @@ void ClientConfigurationController::deleteClient(uint32_t version) {
     pending_deleted_.insert(version);
     clearPropertyStates(version);
     populateVersionData();
-    if (active_version_ == version) {
-        active_version_ = 0;
+    if (active_client_index_ == version) {
+        active_client_index_ = 0;
         if (!filtered_versions_.empty())
             selectClient(filtered_versions_[0]);
     }
@@ -229,8 +229,8 @@ void ClientConfigurationController::discardChanges() {
     search_filter_.clear();
     search_buf_[0] = '\0';
     populateVersionData();
-    if (active_version_ != 0) {
-        if (auto* cv = registry_->getVersion(active_version_))
+    if (active_client_index_ != 0) {
+        if (auto* cv = registry_->getVersion(active_client_index_))
             syncFromClient(*cv);
     } else if (!filtered_versions_.empty()) {
         selectClient(filtered_versions_[0]);
@@ -266,8 +266,8 @@ bool ClientConfigurationController::validateBeforeSave() {
 // === Asset detection ===
 
 void ClientConfigurationController::runAssetDetection() {
-    if (active_version_ == 0 || !registry_) return;
-    auto* cv = registry_->getVersion(active_version_);
+    if (active_client_index_ == 0 || !registry_) return;
+    auto* cv = registry_->getVersion(active_client_index_);
     if (!cv) return;
     syncToClient(*cv);
 
@@ -402,7 +402,11 @@ void ClientConfigurationController::syncToClient(Domain::ClientVersion& cv) {
     cv.setExtended(extended_bool_);
     cv.setFrameDurations(frame_durations_bool_);
     cv.setFrameGroups(frame_groups_bool_);
-    if (is_default_bool_ && registry_) registry_->setDefaultVersion(cv.getIndex());
+    if (is_default_bool_) {
+        registry_->setDefaultVersion(cv.getIndex());
+    } else if (registry_ && registry_->getDefaultVersion() == cv.getIndex()) {
+        registry_->setDefaultVersion(0);
+    }
 
     uint32_t ds = 0, ss = 0;
     std::istringstream(dat_sig_buf_) >> std::hex >> ds;
@@ -419,7 +423,7 @@ void ClientConfigurationController::syncToClient(Domain::ClientVersion& cv) {
 
 void ClientConfigurationController::applyDetectionResult(
     const Domain::ClientAssetDetectionResult& result) {
-    auto& states = property_states_[active_version_];
+    auto& states = property_states_[active_client_index_];
     auto apply = [&](const char* name, bool detected) {
         states[name] = detected ? Domain::PropertyVisualState::Pending
                                 : Domain::PropertyVisualState::Undetected;
@@ -466,7 +470,7 @@ void ClientConfigurationController::autoDetectFromClientPath(
     cpy(metadata_buf_, sizeof(metadata_buf_), (clientPath / "Tibia.dat").string());
     cpy(sprites_buf_, sizeof(sprites_buf_), (clientPath / "Tibia.spr").string());
 
-    if (auto* cv = registry_->getVersion(active_version_)) {
+    if (auto* cv = registry_->getVersion(active_client_index_)) {
         cv->setMetadataFile((clientPath / "Tibia.dat").string());
         cv->setSpritesFile((clientPath / "Tibia.spr").string());
         for (const auto& name : {"items.otb", "items.srv"}) {
@@ -485,8 +489,8 @@ void ClientConfigurationController::autoDetectFromClientPath(
 
 void ClientConfigurationController::invalidateClientPath() {
     client_path_buf_[0] = '\0';
-    if (auto* cv = registry_->getVersion(active_version_)) cv->setClientPath("");
-    property_states_[active_version_]["clientPath"] = Domain::PropertyVisualState::Pending;
+    if (auto* cv = registry_->getVersion(active_client_index_)) cv->setClientPath("");
+    property_states_[active_client_index_]["clientPath"] = Domain::PropertyVisualState::Pending;
 }
 
 // === Render context ===

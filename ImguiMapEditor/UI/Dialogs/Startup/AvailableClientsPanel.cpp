@@ -1,5 +1,6 @@
 #include "AvailableClientsPanel.h"
 #include <IconsFontAwesome6.h>
+#include <filesystem>
 #include <imgui.h>
 
 namespace MapEditor {
@@ -22,6 +23,8 @@ void AvailableClientsPanel::render() {
         continue;
 
       if (client->getMetadataFile().empty() || client->getSpritesFile().empty())
+        continue;
+      if (!std::filesystem::exists(client->getMetadataFile()) || !std::filesystem::exists(client->getSpritesFile()))
         continue;
 
       total_count++;
