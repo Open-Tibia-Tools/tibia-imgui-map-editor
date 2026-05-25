@@ -59,7 +59,7 @@ bool ClientConfigurationDialog::render() {
     if (!is_open_ || !controller_) return false;
 
     ImGuiIO& io = ImGui::GetIO();
-    ImVec2 win_size(1180, 780);
+    ImVec2 win_size(1180, 800);
     ImVec2 win_pos((io.DisplaySize.x - win_size.x) * 0.5f,
                    (io.DisplaySize.y - win_size.y) * 0.5f);
     ImGui::SetNextWindowPos(win_pos, ImGuiCond_Appearing);
@@ -107,16 +107,6 @@ void ClientConfigurationDialog::renderTitleBar() {
     ImGui::SetCursorPosY(6);
     ImGui::SetCursorPosX(10);
     ImGui::TextColored(kTextOffWhite, "Client Configuration");
-
-    float close_x = ImGui::GetWindowWidth() - 30;
-    ImGui::SetCursorPos(ImVec2(close_x, 4));
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.1f, 0.1f, 0.6f));
-    if (ImGui::Button(ICON_FA_XMARK "##close", ImVec2(24, 24))) {
-        if (controller_->hasDirty()) ImGui::OpenPopup("Unsaved Changes");
-        else is_open_ = false;
-    }
-    ImGui::PopStyleColor(2);
     ImGui::EndChild();
 }
 
@@ -144,7 +134,7 @@ void ClientConfigurationDialog::renderToolbar() {
 }
 
 void ClientConfigurationDialog::renderBody() {
-    float body_h = ImGui::GetContentRegionAvail().y - 48.0f;
+    float body_h = ImGui::GetContentRegionAvail().y - 56.0f;
     ImGui::BeginChild("##body", ImVec2(0, body_h), ImGuiChildFlags_None);
     renderLeftSidebar();
     ImGui::SameLine(0, 8);

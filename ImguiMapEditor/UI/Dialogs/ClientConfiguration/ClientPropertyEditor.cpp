@@ -124,10 +124,12 @@ void ClientPropertyEditor::render() {
     if (!cv) return;
 
     renderIdentitySection();
-    renderFilesSection();
-    renderCompatibilitySection();
-    renderSignaturesSection();
-    renderFeaturesSection();
+    if (cv->getVersion() > 0) {
+        renderFilesSection();
+        renderCompatibilitySection();
+        renderSignaturesSection();
+        renderFeaturesSection();
+    }
 }
 
 void ClientPropertyEditor::renderStatusBar() {
@@ -200,7 +202,13 @@ void ClientPropertyEditor::renderIdentitySection() {
     for (size_t i = 0; i < templates.size(); ++i)
         if (static_cast<int>(templates[i].version) == *eb.versionInt) { ver_sel = static_cast<int>(i); break; }
     static bool open_custom_popup = false;
-    if (ImGui::BeginCombo("##versioncombo", ver_sel >= 0 ? ver_labels[ver_sel].c_str() : "")) {
+    bool version_empty = (cv->getVersion() == 0);
+    if (version_empty) {
+        float pulse = (std::sin(static_cast<float>(ImGui::GetTime()) * 3.0f) + 1.0f) * 0.5f;
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.6f, 0.5f, 0.0f, 0.3f + pulse * 0.5f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.5f, 0.0f, 0.5f + pulse * 0.5f));
+    }
+    if (ImGui::BeginCombo("##versioncombo", ver_sel >= 0 ? ver_labels[ver_sel].c_str() : version_empty ? "Select version..." : "")) {
         for (size_t i = 0; i < templates.size(); ++i) {
             if (ImGui::Selectable(ver_labels[i].c_str(), ver_sel == static_cast<int>(i))) {
                 const auto& tpl = templates[i];
@@ -247,6 +255,7 @@ void ClientPropertyEditor::renderIdentitySection() {
             open_custom_popup = true;
         ImGui::EndCombo();
     }
+    if (version_empty) ImGui::PopStyleColor(2);
     ImGui::PopItemWidth();
 
     if (open_custom_popup) {
@@ -324,6 +333,8 @@ void ClientPropertyEditor::renderClientPathField() {
     const auto& states = controller_->getStates(active_version_);
 
     bool pathStale = std::filesystem::path(eb.metadata).parent_path().string() != std::string(eb.clientPath);
+    bool path_empty = (eb.clientPath[0] == '\0');
+    bool client_version_set = (cv->getVersion() > 0);
 
     ImGui::TextUnformatted("Client Path:");
     ImGui::SameLine(labelColumn());
@@ -332,6 +343,9 @@ void ClientPropertyEditor::renderClientPathField() {
         if (pathStale) {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+        } else if (path_empty && client_version_set) {
+            float pulse = (std::sin(static_cast<float>(ImGui::GetTime()) * 3.0f) + 1.0f) * 0.5f;
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.6f, 0.5f, 0.0f, 0.3f + pulse * 0.5f));
         }
         ScopedPropertyColor sc("clientPath", &states);
         if (ImGui::InputText("##clientpath", eb.clientPath, eb.clientPathSize)) {
@@ -340,16 +354,18 @@ void ClientPropertyEditor::renderClientPathField() {
             controller_->setPropertyState(active_version_, "clientPath", Domain::PropertyVisualState::Pending);
         }
         if (pathStale) ImGui::PopStyleColor(2);
+        else if (path_empty && client_version_set) ImGui::PopStyleColor();
     }
     if (ImGui::IsItemHovered()) {
         if (pathStale)
             ImGui::SetTooltip("File path diverged from client folder.");
+        else if (path_empty && client_version_set)
+            ImGui::SetTooltip("Browse to your Tibia client folder");
         else
             ImGui::SetTooltip("Folder containing Tibia.dat and Tibia.spr");
     }
     ImGui::PopItemWidth();
     ImGui::SameLine();
-    bool path_empty = (eb.clientPath[0] == '\0');
     if (path_empty) {
         float pulse = (std::sin(static_cast<float>(ImGui::GetTime()) * 3.0f) + 1.0f) * 0.5f;
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.8f, 0.2f, 0.5f + pulse * 0.5f));
