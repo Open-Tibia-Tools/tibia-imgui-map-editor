@@ -30,11 +30,12 @@ std::filesystem::path ClientVersion::getItemMetadataPath() const {
 }
 
 bool ClientVersion::hasValidPaths() const {
-    return std::filesystem::exists(metadata_file_);
+    return !metadata_file_.empty() && std::filesystem::exists(metadata_file_);
 }
 
 bool ClientVersion::validateFiles() const {
-    if (!std::filesystem::exists(metadata_file_) || !std::filesystem::exists(sprites_file_)) {
+    if (metadata_file_.empty() || sprites_file_.empty() ||
+        !std::filesystem::exists(metadata_file_) || !std::filesystem::exists(sprites_file_)) {
         return false;
     }
 

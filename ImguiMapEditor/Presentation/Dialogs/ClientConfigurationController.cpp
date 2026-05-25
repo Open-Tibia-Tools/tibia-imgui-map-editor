@@ -213,8 +213,10 @@ bool ClientConfigurationController::saveAll() {
     pending_created_.clear();
 
     auto old_path = std::filesystem::current_path() / "data" / "configured_clients.json";
-    if (std::filesystem::exists(old_path))
-        std::filesystem::remove(old_path);
+    if (std::filesystem::exists(old_path)) {
+        std::error_code ec;
+        std::filesystem::remove(old_path, ec);
+    }
 
     return true;
 }
@@ -471,24 +473,28 @@ void ClientConfigurationController::autoDetectFromClientPath(
     auto cpy = [](char* dst, size_t sz, const std::string& src) {
         std::strncpy(dst, src.c_str(), sz - 1); dst[sz - 1] = '\0';
     };
-    cpy(metadata_buf_, sizeof(metadata_buf_), (clientPath / "Tibia.dat").string());
-    cpy(sprites_buf_, sizeof(sprites_buf_), (clientPath / "Tibia.spr").string());
 
     if (auto* cv = registry_->getVersion(active_client_index_)) {
-        cv->setMetadataFile((clientPath / "Tibia.dat").string());
-        cv->setSpritesFile((clientPath / "Tibia.spr").string());
-        items_db_buf_[0] = '\0';
-        cv->setCustomItemsDbPath("");
-        for (const auto& name : {"items.otb", "items.srv"}) {
-            auto test_path = clientPath / name;
-            if (std::filesystem::exists(test_path)) {
-                auto path_str = test_path.string();
-                cpy(items_db_buf_, sizeof(items_db_buf_), path_str);
-                cv->setCustomItemsDbPath(test_path);
-                break;
+        auto dat_test = clientPath / "Tibia.dat";
+        auto spr_test = clientPath / "Tibia.spr";
+        if (std::filesystem::exists(dat_test) && std::filesystem::exists(spr_test)) {
+            cpy(metadata_buf_, sizeof(metadata_buf_), dat_test.string());
+            cpy(sprites_buf_, sizeof(sprites_buf_), spr_test.string());
+            cv->setMetadataFile(dat_test.string());
+            cv->setSpritesFile(spr_test.string());
+            items_db_buf_[0] = '\0';
+            cv->setCustomItemsDbPath("");
+            for (const auto& name : {"items.otb", "items.srv"}) {
+                auto test_path = clientPath / name;
+                if (std::filesystem::exists(test_path)) {
+                    auto path_str = test_path.string();
+                    cpy(items_db_buf_, sizeof(items_db_buf_), path_str);
+                    cv->setCustomItemsDbPath(test_path);
+                    break;
+                }
             }
+            cv->markDirty();
         }
-        cv->markDirty();
     }
     auto_filling_ = false;
 }

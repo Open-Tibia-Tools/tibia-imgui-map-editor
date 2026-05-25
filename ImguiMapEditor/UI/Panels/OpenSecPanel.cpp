@@ -106,6 +106,8 @@ void OpenSecPanel::browseForClientFolder(State &state) {
         } else {
           state.selected_client_index = 0;
         }
+      } else if (version == 0) {
+        state.selected_client_index = 0;
       }
     }
     validateClientForSec(state);

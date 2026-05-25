@@ -241,18 +241,18 @@ void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
       if (!spr.empty()) missing_files.push_back(spr);
 
       if (client_version->getDataSource() == Domain::ItemDataSource::OTB) {
-          auto path = client_version->getItemMetadataPath();
-          auto otb = missing(path);
+          auto metadata_path = client_version->getItemMetadataPath();
+          auto otb = missing(metadata_path);
           if (!otb.empty()) {
-              auto fallback = std::filesystem::current_path() / "data" / path.filename();
+              auto fallback = std::filesystem::current_path() / "data" / metadata_path.filename();
               otb = std::filesystem::exists(fallback) ? "" : otb;
           }
           if (!otb.empty()) missing_files.push_back(otb);
       } else if (client_version->getDataSource() == Domain::ItemDataSource::SRV) {
-          auto path = client_version->getItemMetadataPath();
-          auto srv = missing(path);
+          auto metadata_path = client_version->getItemMetadataPath();
+          auto srv = missing(metadata_path);
           if (!srv.empty()) {
-              auto fallback = std::filesystem::current_path() / "data" / path.filename();
+              auto fallback = std::filesystem::current_path() / "data" / metadata_path.filename();
               srv = std::filesystem::exists(fallback) ? "" : srv;
           }
           if (!srv.empty()) missing_files.push_back(srv);

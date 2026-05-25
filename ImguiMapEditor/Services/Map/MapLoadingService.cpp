@@ -406,11 +406,12 @@ bool MapLoadingService::loadClientData(
 
   // Validate required files exist
   bool valid = true;
-  if (!std::filesystem::exists(dat_path) || !std::filesystem::exists(spr_path)) {
+  if (dat_path.empty() || spr_path.empty() ||
+      !std::filesystem::exists(dat_path) || !std::filesystem::exists(spr_path)) {
       valid = false;
   } else if (effective_source != Domain::ItemDataSource::DAT) {
-      if (!std::filesystem::exists(metadata_path) &&
-          !std::filesystem::exists(metadata_fallback_path)) {
+      if ((metadata_path.empty() || !std::filesystem::exists(metadata_path)) &&
+          (metadata_fallback_path.empty() || !std::filesystem::exists(metadata_fallback_path))) {
           valid = false;
       }
   }

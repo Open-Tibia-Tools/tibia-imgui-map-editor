@@ -207,13 +207,12 @@ void ClientPropertyEditor::renderIdentitySection() {
     }
     if (ImGui::BeginCombo("##versioncombo", ver_sel >= 0 ? ver_labels[ver_sel].c_str() : version_empty ? "Select version..." : "")) {
         for (size_t i = 0; i < templates.size(); ++i) {
+            ImGui::PushID(static_cast<int>(i));
             if (ImGui::Selectable(ver_labels[i].c_str(), ver_sel == static_cast<int>(i))) {
                 const auto& tpl = templates[i];
                 *eb.versionInt = static_cast<int>(tpl.version);
                 if (cv) {
                     cv->setVersion(tpl.version);
-                    cv->setDataSource(tpl.data_source);
-                    *eb.dataSourceIdx = static_cast<int>(tpl.data_source);
                     cv->setOtbVersion(tpl.otb_id);
                     *eb.otbId = static_cast<int>(tpl.otb_id);
                     cv->setOtbMajor(tpl.otb_major);
@@ -246,6 +245,7 @@ void ClientPropertyEditor::renderIdentitySection() {
                 }
             }
             if (ver_sel == static_cast<int>(i)) ImGui::SetItemDefaultFocus();
+            ImGui::PopID();
         }
         ImGui::Separator();
         if (ImGui::Selectable("<custom>"))
