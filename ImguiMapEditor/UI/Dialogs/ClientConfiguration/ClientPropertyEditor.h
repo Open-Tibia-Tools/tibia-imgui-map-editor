@@ -41,7 +41,6 @@ private:
   void renderCompatibilitySection();
   void renderSignaturesSection();
   void renderFeaturesSection();
-  void renderAutoDetectedFileInputs();
 
   void beginSection(const char *title);
   void endSection();
@@ -56,17 +55,18 @@ private:
 
   char name_buf_[64] = {};
   char desc_buf_[256] = {};
-  char data_dir_buf_[64] = {};
+  char data_dir_buf_[512] = {};
   char client_path_buf_[512] = {};
-  char metadata_buf_[64] = {};
-  char sprites_buf_[64] = {};
+  char metadata_buf_[512] = {};
+  char sprites_buf_[512] = {};
+  char items_db_buf_[512] = {};
   char dat_sig_buf_[16] = {};
   char spr_sig_buf_[16] = {};
+  char otbm_versions_buf_[64] = {};
   int version_int_ = 0;
   int data_source_idx_ = 0;
   int otb_id_int_ = 0;
   int otb_major_int_ = 0;
-  char otbm_versions_buf_[64] = {};
   bool transparent_bool_ = false;
   bool extended_bool_ = false;
   bool frame_durations_bool_ = false;

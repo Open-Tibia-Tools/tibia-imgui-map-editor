@@ -65,6 +65,18 @@ public:
   ItemDataSource getDataSource() const { return data_source_; }
   void setDataSource(ItemDataSource source) { data_source_ = source; }
 
+  // DatFormat (auto-derived from version)
+  DatFormat getDatFormat() const { return dat_format_; }
+  void setDatFormat(DatFormat fmt) { dat_format_ = fmt; }
+
+  // Custom items database path (overrides auto-detection)
+  const std::filesystem::path &getCustomItemsDbPath() const {
+    return custom_items_db_path_;
+  }
+  void setCustomItemsDbPath(const std::filesystem::path &path) {
+    custom_items_db_path_ = path;
+  }
+
   // Feature flags
   bool isTransparent() const { return transparency_; }
   void setTransparent(bool v) { transparency_ = v; }
@@ -128,11 +140,13 @@ private:
   ItemDataSource data_source_ = ItemDataSource::OTB;
   bool visible_ = true;
   bool is_default_ = false;
+  DatFormat dat_format_ = DatFormat::Unknown;
   bool transparency_ = false;
   bool extended_ = false;
   bool frame_durations_ = false;
   bool frame_groups_ = false;
   bool is_dirty_ = false;
+  std::filesystem::path custom_items_db_path_;
 
   struct BackupData {
     uint32_t version;
@@ -154,6 +168,8 @@ private:
     bool extended;
     bool frame_durations;
     bool frame_groups;
+    DatFormat dat_format;
+    std::filesystem::path custom_items_db_path;
   } backup_data_;
 };
 

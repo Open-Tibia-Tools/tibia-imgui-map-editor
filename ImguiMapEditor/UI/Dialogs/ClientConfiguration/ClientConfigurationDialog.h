@@ -62,6 +62,7 @@ private:
   struct VersionGroup {
     int major;
     std::string label;
+    bool visible = true;
     std::vector<uint32_t> versions;
   };
   std::vector<VersionGroup> version_groups_;

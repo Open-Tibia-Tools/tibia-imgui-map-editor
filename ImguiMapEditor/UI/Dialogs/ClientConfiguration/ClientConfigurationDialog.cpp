@@ -13,6 +13,7 @@
 #include <imgui.h>
 #include <map>
 #include <nfd.hpp>
+#include <set>
 #include <spdlog/spdlog.h>
 
 namespace MapEditor {
@@ -73,6 +74,27 @@ void ClientConfigurationDialog::open(Services::ClientVersionRegistry &registry,
     active_version_ = registry_->getVersionsMap().begin()->first;
   }
 
+  version_groups_.clear();
+  std::map<int, std::vector<uint32_t>> grouped;
+  for (const auto &[ver_num, cv] : registry_->getVersionsMap()) {
+    grouped[getMajorGroup(ver_num)].push_back(ver_num);
+  }
+  for (auto &[major, vers] : grouped) {
+    std::sort(vers.begin(), vers.end());
+    std::string label;
+    if (major >= 1000)
+      label = std::format("{}.{}", major, 0);
+    else if (major >= 100)
+      label = std::format("{}.x", major);
+    else
+      label = std::format("{}.x", major);
+    version_groups_.push_back({major, label, true, std::move(vers)});
+  }
+  std::sort(version_groups_.begin(), version_groups_.end(),
+            [](const VersionGroup &a, const VersionGroup &b) {
+              return a.major < b.major;
+            });
+
   populateVersionData();
 
 
@@ -114,19 +136,33 @@ bool ClientConfigurationDialog::matchesFilter(const Domain::ClientVersion &ver) 
 }
 
 void ClientConfigurationDialog::populateVersionData() {
-  version_groups_.clear();
-  std::map<int, std::vector<uint32_t>> grouped;
+  if (version_groups_.empty())
+    return;
 
+  // Gather all existing group majors
+  std::set<int> existing_groups;
+  for (const auto &grp : version_groups_)
+    existing_groups.insert(grp.major);
+
+  // Clear version vectors
+  for (auto &grp : version_groups_)
+    grp.versions.clear();
+
+  // Fill and track new groups
+  std::map<int, std::vector<uint32_t>> all_by_major;
   for (const auto &[ver_num, cv] : registry_->getVersionsMap()) {
     if (pending_deleted_.count(ver_num))
       continue;
     if (!matchesFilter(cv))
       continue;
-    grouped[getMajorGroup(ver_num)].push_back(ver_num);
+    int grp_idx = getMajorGroup(ver_num);
+    all_by_major[grp_idx].push_back(ver_num);
   }
 
-  for (auto &[major, vers] : grouped) {
-    std::sort(vers.begin(), vers.end());
+  // Add new groups
+  for (const auto &[major, vers] : all_by_major) {
+    if (existing_groups.count(major))
+      continue;
     std::string label;
     if (major >= 1000)
       label = std::format("{}.{}", major, 0);
@@ -134,18 +170,34 @@ void ClientConfigurationDialog::populateVersionData() {
       label = std::format("{}.x", major);
     else
       label = std::format("{}.x", major);
-    version_groups_.push_back({major, label, std::move(vers)});
+    version_groups_.push_back({major, label, true, vers});
   }
 
+  // Sort groups
   std::sort(version_groups_.begin(), version_groups_.end(),
             [](const VersionGroup &a, const VersionGroup &b) {
               return a.major < b.major;
             });
 
+  // Fill existing groups
+  for (auto &grp : version_groups_) {
+    auto it = all_by_major.find(grp.major);
+    if (it != all_by_major.end()) {
+      grp.versions = std::move(it->second);
+      std::sort(grp.versions.begin(), grp.versions.end());
+    }
+  }
+
   if (!version_groups_.empty()) {
     if (active_tab_ >= static_cast<int>(version_groups_.size()))
       active_tab_ = 0;
-    filtered_versions_ = version_groups_[active_tab_].versions;
+    // Build merged filtered list from visible groups for backward compat
+    filtered_versions_.clear();
+    for (const auto &grp : version_groups_) {
+      if (!grp.visible) continue;
+      for (auto v : grp.versions)
+        filtered_versions_.push_back(v);
+    }
   } else {
     filtered_versions_.clear();
     active_tab_ = 0;
@@ -204,7 +256,7 @@ void ClientConfigurationDialog::addClient() {
     ++new_version;
 
   Domain::ClientVersion cv(new_version, new_name, 0);
-  cv.setDataDirectory("1287");
+  cv.setDataDirectory(std::format("data/{}", new_version));
   cv.setMetadataFile("Tibia.dat");
   cv.setSpritesFile("Tibia.spr");
   cv.setOtbMajor(3);
@@ -451,49 +503,58 @@ void ClientConfigurationDialog::renderBody() {
 }
 
 void ClientConfigurationDialog::renderLeftSidebar() {
-  ImGui::BeginChild("##leftbar", ImVec2(320, 0), ImGuiChildFlags_Borders);
-
-  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
-  ImGui::SetCursorPosX(10);
-  ImGui::TextColored(kTextMuted, "Select Version Group");
-
-  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4);
+  ImGui::BeginChild("##leftbar", ImVec2(350, 0), ImGuiChildFlags_Borders);
 
   if (!version_groups_.empty()) {
-    float btn_w = 72.0f;
-    int cols = 3;
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 3.0f));
+    int cols = 5;
     for (size_t i = 0; i < version_groups_.size(); ++i) {
       if (i > 0 && i % cols != 0)
         ImGui::SameLine();
-      bool active = (static_cast<int>(i) == active_tab_);
-      if (active) {
+      auto &grp = version_groups_[i];
+      if (grp.visible) {
         ImGui::PushStyleColor(ImGuiCol_Button, kBlueAccent);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kBlueHover);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, kBlueActive);
       }
-      if (ImGui::Button(version_groups_[i].label.c_str(), ImVec2(btn_w, 0))) {
-        active_tab_ = static_cast<int>(i);
-        filtered_versions_ = version_groups_[i].versions;
+      if (ImGui::Button(grp.label.c_str(), ImVec2(50, 0))) {
+        grp.visible = !grp.visible;
+        populateVersionData();
+        if (active_version_ != 0) {
+          bool still_visible = false;
+          for (const auto &g : version_groups_) {
+            if (!g.visible) continue;
+            for (auto v : g.versions) {
+              if (v == active_version_) { still_visible = true; break; }
+            }
+            if (still_visible) break;
+          }
+          if (!still_visible && !filtered_versions_.empty())
+            selectClient(filtered_versions_[0]);
+        }
       }
-      if (active)
-        ImGui::PopStyleColor(3);
+      if (grp.visible)
+        ImGui::PopStyleColor(2);
     }
+    ImGui::PopStyleVar();
   }
 
   ImGui::Separator();
 
-
-  ImGui::Columns(2, "##ver_cols", false);
-  ImGui::SetColumnWidth(0, 180);
+  ImGui::Columns(3, "##ver_cols3", false);
+  ImGui::SetColumnWidth(0, 170);
+  ImGui::SetColumnWidth(1, 70);
   ImGui::TextColored(kTextMuted, "Name");
   ImGui::NextColumn();
-  ImGui::TextColored(kTextMuted, "Version");
+  ImGui::TextColored(kTextMuted, "Ver");
+  ImGui::NextColumn();
+  ImGui::TextColored(kTextMuted, "Cfg");
+  ImGui::NextColumn();
   ImGui::Columns(1);
   ImGui::Separator();
 
   renderVersionList();
 
-
+  ImGui::Separator();
   ImGui::SetNextItemWidth(-1);
   if (ImGui::InputTextWithHint("##search_bottom", ICON_FA_MAGNIFYING_GLASS " Search...",
                                search_buf_, sizeof(search_buf_))) {
@@ -505,11 +566,19 @@ void ClientConfigurationDialog::renderLeftSidebar() {
 }
 
 void ClientConfigurationDialog::renderVersionList() {
+  std::vector<uint32_t> all_versions;
+  for (const auto &grp : version_groups_) {
+    if (!grp.visible) continue;
+    for (auto v : grp.versions)
+      all_versions.push_back(v);
+  }
+  std::sort(all_versions.begin(), all_versions.end());
+
   ImGui::BeginChild("##verlist", ImVec2(0, -34), ImGuiChildFlags_None);
-  if (filtered_versions_.empty()) {
+  if (all_versions.empty()) {
     ImGui::TextDisabled("  No matching clients");
   }
-  for (uint32_t ver_num : filtered_versions_) {
+  for (uint32_t ver_num : all_versions) {
     auto *cv = registry_->getVersion(ver_num);
     if (!cv)
       continue;
@@ -522,8 +591,9 @@ void ClientConfigurationDialog::renderVersionList() {
 
     ImGui::PushID(static_cast<int>(ver_num));
 
-    ImGui::Columns(2, "##verlist_cols", false);
-    ImGui::SetColumnWidth(0, 180);
+    ImGui::Columns(3, "##verlist_cols3", false);
+    ImGui::SetColumnWidth(0, 170);
+    ImGui::SetColumnWidth(1, 70);
 
     std::string name_display = cv->getName();
     if (cv->isDirty())
@@ -544,6 +614,13 @@ void ClientConfigurationDialog::renderVersionList() {
 
     ImGui::NextColumn();
     ImGui::TextColored(kTextMuted, "%u", cv->getVersion());
+
+    ImGui::NextColumn();
+    bool configured = !cv->getClientPath().empty();
+    if (configured) {
+      ImGui::TextColored(kGreenStatus, ICON_FA_CHECK);
+    }
+
     ImGui::Columns(1);
 
     ImGui::PopID();

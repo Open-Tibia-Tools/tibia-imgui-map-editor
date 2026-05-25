@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <format>
 #include <imgui.h>
 #include <nfd.hpp>
@@ -13,6 +15,19 @@ namespace MapEditor {
 namespace UI {
 
 namespace {
+
+const char *getParserName(uint32_t version) {
+  if (version >= 1057) return "DAT Parser 10.57+";
+  if (version >= 1050) return "DAT Parser 10.50+";
+  if (version >= 1010) return "DAT Parser 10.10+";
+  if (version >= 960) return "DAT Parser 9.60+";
+  if (version >= 860) return "DAT Parser 8.60";
+  if (version >= 780) return "DAT Parser 7.80";
+  if (version >= 755) return "DAT Parser 7.55";
+  if (version >= 740) return "DAT Parser 7.40";
+  if (version >= 710) return "DAT Parser 7.10";
+  return "Unknown Parser";
+}
 
 constexpr const char *kAutoProps[] = {
     "metadataFile", "spritesFile", "datSignature", "sprSignature",
@@ -130,6 +145,9 @@ void ClientPropertyEditor::syncFromClient(const Domain::ClientVersion &cv) {
   metadata_buf_[sizeof(metadata_buf_) - 1] = '\0';
   std::strncpy(sprites_buf_, cv.getSpritesFile().c_str(), sizeof(sprites_buf_) - 1);
   sprites_buf_[sizeof(sprites_buf_) - 1] = '\0';
+  std::strncpy(items_db_buf_, cv.getCustomItemsDbPath().string().c_str(),
+               sizeof(items_db_buf_) - 1);
+  items_db_buf_[sizeof(items_db_buf_) - 1] = '\0';
 
   std::snprintf(dat_sig_buf_, sizeof(dat_sig_buf_), "%08X", cv.getDatSignature());
   std::snprintf(spr_sig_buf_, sizeof(spr_sig_buf_), "%08X", cv.getSprSignature());
@@ -199,6 +217,11 @@ void ClientPropertyEditor::syncToClient(Domain::ClientVersion &cv) {
 
   cv.setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(
       std::clamp(data_source_idx_, 0, static_cast<int>(Domain::ItemDataSource::DAT))));
+
+  if (items_db_buf_[0] != '\0')
+    cv.setCustomItemsDbPath(std::filesystem::path(items_db_buf_));
+  else
+    cv.setCustomItemsDbPath(std::filesystem::path());
 
   cv.markDirty();
 }
@@ -301,41 +324,111 @@ void ClientPropertyEditor::renderIdentitySection() {
   if (!ImGui::TreeNodeEx("Identity", ImGuiTreeNodeFlags_DefaultOpen))
     return;
 
+  auto *cv = registry_->getVersion(active_version_);
+
   ImGui::Text("Item Data Source:");
   ImGui::SameLine(labelColumn());
-  ImGui::PushItemWidth(200);
-  const char *sources[] = {"Tibia.dat + Tibia.spr + items.otb", "Tibia.dat + Tibia.spr + items.srv", "Tibia.dat + Tibia.spr only (Client IDs)"};
-  if (ImGui::Combo("##datasource", &data_source_idx_, sources, IM_ARRAYSIZE(sources))) {
-    auto *cv = registry_->getVersion(active_version_);
+
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6, 4));
+  bool is_otb = (data_source_idx_ == 0);
+  bool is_srv = (data_source_idx_ == 1);
+  bool is_dat = (data_source_idx_ == 2);
+
+  if (is_otb) {
+    ImGui::PushStyleColor(ImGuiCol_Button, kBlueAccent);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kBlueHover);
+  }
+  if (ImGui::Button("OTB", ImVec2(42, 0))) {
+    data_source_idx_ = 0;
     if (cv) {
-      cv->setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(
-          std::clamp(data_source_idx_, 0, static_cast<int>(IM_ARRAYSIZE(sources) - 1))));
+      cv->setDataSource(Domain::ItemDataSource::OTB);
       cv->markDirty();
     }
+  }
+  if (is_otb) ImGui::PopStyleColor(2);
+
+  ImGui::SameLine();
+  if (is_srv) {
+    ImGui::PushStyleColor(ImGuiCol_Button, kBlueAccent);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kBlueHover);
+  }
+  if (ImGui::Button("SRV", ImVec2(42, 0))) {
+    data_source_idx_ = 1;
+    if (cv) {
+      cv->setDataSource(Domain::ItemDataSource::SRV);
+      cv->markDirty();
+    }
+  }
+  if (is_srv) ImGui::PopStyleColor(2);
+
+  ImGui::SameLine();
+  if (is_dat) {
+    ImGui::PushStyleColor(ImGuiCol_Button, kBlueAccent);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kBlueHover);
+  }
+  if (ImGui::Button("DAT", ImVec2(42, 0))) {
+    data_source_idx_ = 2;
+    if (cv) {
+      cv->setDataSource(Domain::ItemDataSource::DAT);
+      cv->markDirty();
+    }
+  }
+  if (is_dat) ImGui::PopStyleColor(2);
+  ImGui::PopStyleVar();
+
+  ImGui::Text("Client Version:");
+  ImGui::SameLine(labelColumn());
+  ImGui::PushItemWidth(140);
+  std::vector<std::string> ver_labels;
+  std::vector<uint32_t> ver_values;
+  if (registry_) {
+    for (const auto &[ver, cv2] : registry_->getVersionsMap()) {
+      ver_labels.push_back(std::format("{} ({})", cv2.getName(), ver));
+      ver_values.push_back(ver);
+    }
+  }
+  int ver_sel = -1;
+  for (size_t i = 0; i < ver_values.size(); ++i) {
+    if (static_cast<int>(ver_values[i]) == version_int_) {
+      ver_sel = static_cast<int>(i);
+      break;
+    }
+  }
+  if (ImGui::BeginCombo("##versioncombo", ver_sel >= 0 ? ver_labels[ver_sel].c_str() : "")) {
+    for (size_t i = 0; i < ver_values.size(); ++i) {
+      bool is_selected = (ver_sel == static_cast<int>(i));
+      if (ImGui::Selectable(ver_labels[i].c_str(), is_selected)) {
+        ver_sel = static_cast<int>(i);
+        version_int_ = static_cast<int>(ver_values[ver_sel]);
+        if (cv) {
+          cv->setVersion(static_cast<uint32_t>(version_int_));
+          std::string new_data_dir = std::format("data/{}", version_int_);
+          cv->setDataDirectory(new_data_dir);
+          std::strncpy(data_dir_buf_, new_data_dir.c_str(), sizeof(data_dir_buf_) - 1);
+          data_dir_buf_[sizeof(data_dir_buf_) - 1] = '\0';
+          cv->markDirty();
+        }
+      }
+      if (is_selected)
+        ImGui::SetItemDefaultFocus();
+    }
+    ImGui::EndCombo();
   }
   ImGui::PopItemWidth();
 
-  ImGui::Text("Version:");
-  ImGui::SameLine(labelColumn());
-  ImGui::PushItemWidth(120);
-  if (ImGui::InputInt("##version", &version_int_)) {
-    version_int_ = std::max(0, version_int_);
-    auto *cv = registry_->getVersion(active_version_);
-    if (cv) {
-      cv->setVersion(static_cast<uint32_t>(version_int_));
-      cv->markDirty();
-    }
-  }
-  ImGui::PopItemWidth();
+  ImGui::SameLine();
+  ImGui::Text("Parser:");
+  ImGui::SameLine();
+  ImGui::TextColored(kGreenStatus, "%s", getParserName(static_cast<uint32_t>(version_int_)));
 
   ImGui::Text("Name:");
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(-1);
   if (ImGui::InputText("##name", name_buf_, sizeof(name_buf_))) {
-    auto *cv = registry_->getVersion(active_version_);
-    if (cv) {
-      cv->setName(name_buf_);
-      cv->markDirty();
+    auto *cver = registry_->getVersion(active_version_);
+    if (cver) {
+      cver->setName(name_buf_);
+      cver->markDirty();
     }
   }
   ImGui::PopItemWidth();
@@ -344,10 +437,10 @@ void ClientPropertyEditor::renderIdentitySection() {
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(-1);
   if (ImGui::InputText("##desc", desc_buf_, sizeof(desc_buf_))) {
-    auto *cv = registry_->getVersion(active_version_);
-    if (cv) {
-      cv->setDescription(desc_buf_);
-      cv->markDirty();
+    auto *cver = registry_->getVersion(active_version_);
+    if (cver) {
+      cver->setDescription(desc_buf_);
+      cver->markDirty();
     }
   }
   ImGui::PopItemWidth();
@@ -359,11 +452,13 @@ void ClientPropertyEditor::renderFilesSection() {
   if (!ImGui::TreeNodeEx("Files && Paths", ImGuiTreeNodeFlags_DefaultOpen))
     return;
 
+  auto *cv = registry_->getVersion(active_version_);
+
+  // Client Path
   ImGui::Text("Client Path:");
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
   if (ImGui::InputText("##clientpath", client_path_buf_, sizeof(client_path_buf_))) {
-    auto *cv = registry_->getVersion(active_version_);
     if (cv) {
       cv->setClientPath(client_path_buf_);
       cv->markDirty();
@@ -387,7 +482,6 @@ void ClientPropertyEditor::renderFilesSection() {
     if (NFD::PickFolder(outPath) == NFD_OKAY) {
       std::strncpy(client_path_buf_, outPath.get(), sizeof(client_path_buf_) - 1);
       client_path_buf_[sizeof(client_path_buf_) - 1] = '\0';
-      auto *cv = registry_->getVersion(active_version_);
       if (cv) {
         cv->setClientPath(outPath.get());
         cv->markDirty();
@@ -399,91 +493,155 @@ void ClientPropertyEditor::renderFilesSection() {
   if (path_empty)
     ImGui::PopStyleColor(2);
 
+  // Data Directory
   ImGui::Text("Data Directory:");
   ImGui::SameLine(labelColumn());
-  ImGui::PushItemWidth(-1);
+  ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
   if (ImGui::InputText("##datadir", data_dir_buf_, sizeof(data_dir_buf_))) {
-    auto *cv = registry_->getVersion(active_version_);
     if (cv) {
       cv->setDataDirectory(data_dir_buf_);
       cv->markDirty();
     }
   }
   if (ImGui::IsItemHovered())
-    ImGui::SetTooltip("Editor data subdirectory for this client version");
+    ImGui::SetTooltip("Editor data subdirectory for this client version. Defaults to data/<version>");
   ImGui::PopItemWidth();
-
-  renderAutoDetectedFileInputs();
-  ImGui::TreePop();
-}
-
-void ClientPropertyEditor::renderAutoDetectedFileInputs() {
-  const auto &states = property_states_[active_version_];
-
-  auto render = [&](const char *label, const char *id, const char *prop, char *buf,
-                    size_t bufsz, auto setter) {
-    ImGui::Text("%s:", label);
-    ImGui::SameLine(labelColumn());
-    ImGui::PushItemWidth(-1);
-    ScopedPropertyColor sc(prop, &states);
-    if (ImGui::InputText(id, buf, bufsz)) {
-      auto *cv = registry_->getVersion(active_version_);
+  ImGui::SameLine();
+  if (ImGui::Button(ICON_FA_FOLDER_OPEN "##ddbrowse", ImVec2(28, 0))) {
+    NFD::UniquePath outPath;
+    if (NFD::PickFolder(outPath) == NFD_OKAY) {
+      std::strncpy(data_dir_buf_, outPath.get(), sizeof(data_dir_buf_) - 1);
+      data_dir_buf_[sizeof(data_dir_buf_) - 1] = '\0';
       if (cv) {
-        setter(*cv);
+        cv->setDataDirectory(outPath.get());
         cv->markDirty();
       }
-      if (isAutoProp(prop))
-        property_states_[active_version_][prop] = Domain::PropertyVisualState::Pending;
     }
-    ImGui::PopItemWidth();
-  };
-
-  render("Metadata File", "##metadata", "metadataFile", metadata_buf_,
-         sizeof(metadata_buf_),
-         [&](Domain::ClientVersion &cv) { cv.setMetadataFile(metadata_buf_); });
-  render("Sprites File", "##sprites", "spritesFile", sprites_buf_,
-         sizeof(sprites_buf_),
-         [&](Domain::ClientVersion &cv) { cv.setSpritesFile(sprites_buf_); });
-
-  auto *cv = registry_->getVersion(active_version_);
-  if (cv && cv->getDataSource() != Domain::ItemDataSource::DAT) {
-    const char *fileName = (cv->getDataSource() == Domain::ItemDataSource::SRV) ? "items.srv" : "items.otb";
-    ImGui::Text("%s:", fileName);
-    ImGui::SameLine(labelColumn());
-    std::string otb_display;
-    std::string cl_path(client_path_buf_);
-    bool otb_found = false;
-    if (!cl_path.empty()) {
-      std::filesystem::path target = std::filesystem::path(cl_path) / fileName;
-      std::filesystem::path fallback = std::filesystem::current_path() / "data" / fileName;
-      if (std::filesystem::exists(target)) {
-        otb_display = std::format("{} Found", ICON_FA_CHECK);
-        otb_found = true;
-      } else if (std::filesystem::exists(fallback)) {
-        otb_display = std::format("{} Found in data/", ICON_FA_CHECK);
-        otb_found = true;
-      } else {
-        otb_display = std::format("{} Not found", ICON_FA_XMARK);
-      }
-    } else {
-      otb_display = std::format("{} Set client path first", ICON_FA_CIRCLE_QUESTION);
-    }
-    ImVec4 otb_col = otb_found ? kGreenStatus : ImVec4(0.9f, 0.4f, 0.3f, 1.0f);
-    ImGui::TextColored(otb_col, "%s", otb_display.c_str());
-    if (ImGui::IsItemHovered())
-      ImGui::SetTooltip("%s is required to load maps with this configuration. Place it in the client folder or the editor's data directory.", fileName);
   }
+
+  // Metadata File (editable input, auto-filled from client path)
+  ImGui::Text("Metadata File:");
+  ImGui::SameLine(labelColumn());
+  ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
+  if (ImGui::InputText("##metadata", metadata_buf_, sizeof(metadata_buf_))) {
+    if (cv) {
+      cv->setMetadataFile(metadata_buf_);
+      cv->markDirty();
+    }
+  }
+  if (ImGui::IsItemHovered())
+    ImGui::SetTooltip("File name of the DAT (.dat) file");
+  ImGui::PopItemWidth();
+  ImGui::SameLine();
+  if (ImGui::Button(ICON_FA_FOLDER_OPEN "##metabrowse", ImVec2(28, 0))) {
+    NFD::UniquePath outPath;
+    if (NFD::OpenDialog(outPath, nullptr, 0) == NFD_OKAY) {
+      std::filesystem::path selectedPath(outPath.get());
+      if (cv) {
+        auto parent = selectedPath.parent_path();
+        if (!parent.empty() && parent != cv->getClientPath()) {
+          cv->setClientPath(parent);
+          std::strncpy(client_path_buf_, parent.string().c_str(), sizeof(client_path_buf_) - 1);
+          client_path_buf_[sizeof(client_path_buf_) - 1] = '\0';
+        }
+        cv->setMetadataFile(selectedPath.filename().string());
+        std::strncpy(metadata_buf_, selectedPath.filename().string().c_str(), sizeof(metadata_buf_) - 1);
+        metadata_buf_[sizeof(metadata_buf_) - 1] = '\0';
+        cv->markDirty();
+      }
+      if (on_change_)
+        on_change_();
+    }
+  }
+
+  // Sprites File (editable input, auto-filled from client path)
+  ImGui::Text("Sprites File:");
+  ImGui::SameLine(labelColumn());
+  ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
+  if (ImGui::InputText("##sprites", sprites_buf_, sizeof(sprites_buf_))) {
+    if (cv) {
+      cv->setSpritesFile(sprites_buf_);
+      cv->markDirty();
+    }
+  }
+  if (ImGui::IsItemHovered())
+    ImGui::SetTooltip("File name of the SPR (.spr) file");
+  ImGui::PopItemWidth();
+  ImGui::SameLine();
+  if (ImGui::Button(ICON_FA_FOLDER_OPEN "##sprbrowse", ImVec2(28, 0))) {
+    NFD::UniquePath outPath;
+    if (NFD::OpenDialog(outPath, nullptr, 0) == NFD_OKAY) {
+      std::filesystem::path selectedPath(outPath.get());
+      if (cv) {
+        auto parent = selectedPath.parent_path();
+        if (!parent.empty() && parent != cv->getClientPath()) {
+          cv->setClientPath(parent);
+          std::strncpy(client_path_buf_, parent.string().c_str(), sizeof(client_path_buf_) - 1);
+          client_path_buf_[sizeof(client_path_buf_) - 1] = '\0';
+        }
+        cv->setSpritesFile(selectedPath.filename().string());
+        std::strncpy(sprites_buf_, selectedPath.filename().string().c_str(), sizeof(sprites_buf_) - 1);
+        sprites_buf_[sizeof(sprites_buf_) - 1] = '\0';
+        cv->markDirty();
+      }
+      if (on_change_)
+        on_change_();
+    }
+  }
+
+  // Items Database
+  {
+    ImGui::Text("Items Database:");
+    ImGui::SameLine(labelColumn());
+    bool is_dat_source = (data_source_idx_ == 2);
+    if (is_dat_source) {
+      ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+      ImGui::TextColored(kTextMuted, "N/A - Using client IDs from DAT");
+      ImGui::PopStyleVar();
+    } else {
+      std::string items_path;
+      if (cv) items_path = cv->getItemMetadataPath().string();
+      ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
+      ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.13f, 0.15f, 1.0f));
+      ImGui::InputText("##itemsdb", items_path.data(), items_path.size(),
+                       ImGuiInputTextFlags_ReadOnly);
+      ImGui::PopStyleColor();
+      if (ImGui::IsItemHovered() && !items_path.empty())
+        ImGui::SetTooltip("%s", items_path.c_str());
+      ImGui::PopItemWidth();
+      ImGui::SameLine();
+      if (ImGui::Button(ICON_FA_FOLDER_OPEN "##itemsdbbrowse", ImVec2(28, 0))) {
+        NFD::UniquePath outPath;
+        if (NFD::OpenDialog(outPath, nullptr, 0) == NFD_OKAY) {
+          std::string selected(outPath.get());
+          std::strncpy(items_db_buf_, selected.c_str(), sizeof(items_db_buf_) - 1);
+          items_db_buf_[sizeof(items_db_buf_) - 1] = '\0';
+          if (cv) {
+            cv->setCustomItemsDbPath(std::filesystem::path(selected));
+            cv->markDirty();
+          }
+        }
+      }
+    }
+  }
+
+  ImGui::TreePop();
 }
 
 void ClientPropertyEditor::renderCompatibilitySection() {
   if (!ImGui::TreeNodeEx("Compatibility", ImGuiTreeNodeFlags_DefaultOpen))
     return;
 
+  char otb_id_buf[16], otb_major_buf[16];
+  std::snprintf(otb_id_buf, sizeof(otb_id_buf), "%d", otb_id_int_);
+  std::snprintf(otb_major_buf, sizeof(otb_major_buf), "%d", otb_major_int_);
+
   ImGui::Text("OTB ID:");
-  ImGui::SameLine(labelColumn());
-  ImGui::PushItemWidth(120);
-  if (ImGui::InputInt("##otbid", &otb_id_int_)) {
-    otb_id_int_ = std::max(0, otb_id_int_);
+  ImGui::SameLine();
+  ImGui::PushItemWidth(55);
+  if (ImGui::InputText("##otbid", otb_id_buf, sizeof(otb_id_buf),
+                       ImGuiInputTextFlags_CharsDecimal)) {
+    otb_id_int_ = std::max(0, std::atoi(otb_id_buf));
     auto *cv = registry_->getVersion(active_version_);
     if (cv) {
       cv->markDirty();
@@ -492,11 +650,13 @@ void ClientPropertyEditor::renderCompatibilitySection() {
   }
   ImGui::PopItemWidth();
 
-  ImGui::Text("OTB Major:");
-  ImGui::SameLine(labelColumn());
-  ImGui::PushItemWidth(120);
-  if (ImGui::InputInt("##otbmajor", &otb_major_int_)) {
-    otb_major_int_ = std::max(0, otb_major_int_);
+  ImGui::SameLine();
+  ImGui::Text("Major:");
+  ImGui::SameLine();
+  ImGui::PushItemWidth(55);
+  if (ImGui::InputText("##otbmajor", otb_major_buf, sizeof(otb_major_buf),
+                       ImGuiInputTextFlags_CharsDecimal)) {
+    otb_major_int_ = std::max(0, std::atoi(otb_major_buf));
     auto *cv = registry_->getVersion(active_version_);
     if (cv) {
       cv->markDirty();
@@ -505,9 +665,10 @@ void ClientPropertyEditor::renderCompatibilitySection() {
   }
   ImGui::PopItemWidth();
 
-  ImGui::Text("OTBM Versions:");
-  ImGui::SameLine(labelColumn());
-  ImGui::PushItemWidth(-1);
+  ImGui::SameLine();
+  ImGui::Text("OTBM:");
+  ImGui::SameLine();
+  ImGui::PushItemWidth(80);
   if (ImGui::InputText("##otbmver", otbm_versions_buf_, sizeof(otbm_versions_buf_))) {
     auto *cv = registry_->getVersion(active_version_);
     if (cv) {

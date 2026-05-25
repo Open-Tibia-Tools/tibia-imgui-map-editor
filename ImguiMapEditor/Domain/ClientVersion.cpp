@@ -10,20 +10,25 @@ ClientVersion::ClientVersion(uint32_t version, const std::string& name, uint32_t
 }
 
 std::filesystem::path ClientVersion::getDatPath() const {
-    if (client_path_.empty()) {
-        return {};
-    }
-    return client_path_ / (metadata_file_.empty() ? "Tibia.dat" : metadata_file_);
+    if (metadata_file_.empty()) return {};
+    std::filesystem::path p(metadata_file_);
+    if (p.is_absolute()) return p;
+    if (client_path_.empty()) return {};
+    return client_path_ / p;
 }
 
 std::filesystem::path ClientVersion::getSprPath() const {
-    if (client_path_.empty()) {
-        return {};
-    }
-    return client_path_ / (sprites_file_.empty() ? "Tibia.spr" : sprites_file_);
+    if (sprites_file_.empty()) return {};
+    std::filesystem::path p(sprites_file_);
+    if (p.is_absolute()) return p;
+    if (client_path_.empty()) return {};
+    return client_path_ / p;
 }
 
 std::filesystem::path ClientVersion::getItemMetadataPath() const {
+    if (!custom_items_db_path_.empty()) {
+        return custom_items_db_path_;
+    }
     if (client_path_.empty()) {
         return {};
     }
@@ -98,6 +103,8 @@ void ClientVersion::backup() {
         extended_,
         frame_durations_,
         frame_groups_,
+        dat_format_,
+        custom_items_db_path_,
     };
 }
 
@@ -121,6 +128,8 @@ void ClientVersion::restore() {
     extended_ = backup_data_.extended;
     frame_durations_ = backup_data_.frame_durations;
     frame_groups_ = backup_data_.frame_groups;
+    dat_format_ = backup_data_.dat_format;
+    custom_items_db_path_ = backup_data_.custom_items_db_path;
 }
 
 } // namespace Domain
