@@ -3,6 +3,7 @@
 // NOTE: TilesetXmlReader, TilesetRegistry, BrushRegistry, CreatureBrush
 // includes removed - tileset logic moved to TilesetService
 #include <algorithm>
+#include <format>
 #include <spdlog/spdlog.h>
 
 namespace MapEditor {
@@ -10,8 +11,9 @@ namespace Services {
 
 ClientDataResult
 ClientDataService::load(const std::filesystem::path &client_path,
-                        const std::filesystem::path &otb_path,
+                        const std::filesystem::path &item_metadata_path,
                         uint32_t client_version,
+                        ::MapEditor::Domain::ItemDataSource data_source,
                         LoadProgressCallback progress) {
   ClientDataResult result;
   // Clear any existing data first
@@ -25,13 +27,12 @@ ClientDataService::load(const std::filesystem::path &client_path,
   // OTB is the modern binary format
   std::vector<Domain::ItemType> item_definitions;
 
-  bool is_srv = otb_path.extension() == ".srv";
-
-  if (is_srv) {
+  if (data_source == ::MapEditor::Domain::ItemDataSource::DAT) {
+    spdlog::info("ClientDataService: Using DAT-only mode (Client IDs as Server IDs)");
+    // item_definitions will be generated later during merge
+  } else if (data_source == ::MapEditor::Domain::ItemDataSource::SRV) {
     // Load SRV format
-    std::filesystem::path srv_path = otb_path.extension() == ".srv"
-                                         ? otb_path
-                                         : otb_path.parent_path() / "items.srv";
+    std::filesystem::path srv_path = item_metadata_path;
 
     IO::SrvResult srv_result = IO::SrvReader::read(srv_path);
     if (!srv_result.success) {
@@ -51,7 +52,7 @@ ClientDataService::load(const std::filesystem::path &client_path,
                  item_definitions.size());
   } else {
     // Load OTB format (default)
-    IO::OtbResult otb_result = IO::OtbReader::read(otb_path);
+    IO::OtbResult otb_result = IO::OtbReader::read(item_metadata_path);
     if (!otb_result.success) {
       result.error = "Failed to load OTB: " + otb_result.error;
       return result;
@@ -107,6 +108,18 @@ ClientDataService::load(const std::filesystem::path &client_path,
     progress(60, "Merging data...");
 
   // 3. Merge data
+  if (data_source == ::MapEditor::Domain::ItemDataSource::DAT) {
+      // Generate item definitions directly from DAT
+      item_definitions.reserve(dat_result.items.size());
+      for (const auto& dat_item : dat_result.items) {
+          Domain::ItemType it;
+          it.server_id = dat_item.id;
+          it.client_id = dat_item.id;
+          it.name = std::format("Item {}", dat_item.id);
+          item_definitions.push_back(std::move(it));
+      }
+  }
+
   mergeOtbWithDat(item_definitions, dat_result, client_version);
 
   // 4. Store outfit data for creature sprite lookup
@@ -145,17 +158,6 @@ ClientDataService::load(const std::filesystem::path &client_path,
     result.error = "Failed to open SPR file: " + spr_result.error;
     return result;
   }
-
-  // Final success update
-  result.success = true;
-
-  loaded_ = true;
-  client_version_ = client_version;
-
-  if (progress)
-    progress(100, "Done");
-
-  // ...
 
   // Final success update
   result.success = true;
@@ -297,7 +299,6 @@ void ClientDataService::clear() {
 }
 
 void ClientDataService::mergeOtbWithDat(
-    // ...
     const std::vector<Domain::ItemType> &otb_items,
     const IO::DatResult &dat_result, uint32_t client_version) {
 

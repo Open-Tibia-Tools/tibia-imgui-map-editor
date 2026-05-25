@@ -67,8 +67,11 @@ ClientVersionValidator::ValidationResult ClientVersionValidator::validateWithMap
     
     // Get client version from map's OTB version
     uint32_t map_client_version = 0;
-    if (auto* map_ver = registry_.getVersionByOtbVersion(map_otb_version)) {
-        map_client_version = map_ver->getVersion();
+    if (auto* matched = registry_.findBestByVersion(result.detected_version)) {
+        // Verify the matched client's OTB version matches the map's OTB version
+        if (matched->getOtbVersion() == map_otb_version) {
+            map_client_version = matched->getVersion();
+        }
     }
     
     if (map_client_version > 0 && result.detected_version > 0 && 

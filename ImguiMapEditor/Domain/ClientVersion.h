@@ -16,8 +16,12 @@ namespace Domain {
 class ClientVersion {
 public:
   ClientVersion() = default;
-  ClientVersion(uint32_t version, const std::string &name,
+  ClientVersion(uint32_t index, uint32_t version, const std::string &name,
                 uint32_t otb_version);
+
+  // Unique index (auto-assigned at creation, persistent across sessions)
+  uint32_t getIndex() const { return index_; }
+  void setIndex(uint32_t index) { index_ = index; }
 
   // Version identifiers
   uint32_t getVersion() const { return version_; }
@@ -62,6 +66,21 @@ public:
   const std::string &getSpritesFile() const { return sprites_file_; }
   void setSpritesFile(const std::string &file) { sprites_file_ = file; }
 
+  ItemDataSource getDataSource() const { return data_source_; }
+  void setDataSource(ItemDataSource source) { data_source_ = source; }
+
+  // DatFormat (auto-derived from version)
+  DatFormat getDatFormat() const { return dat_format_; }
+  void setDatFormat(DatFormat fmt) { dat_format_ = fmt; }
+
+  // Custom items database path (overrides auto-detection)
+  const std::filesystem::path &getCustomItemsDbPath() const {
+    return custom_items_db_path_;
+  }
+  void setCustomItemsDbPath(const std::filesystem::path &path) {
+    custom_items_db_path_ = path;
+  }
+
   // Feature flags
   bool isTransparent() const { return transparency_; }
   void setTransparent(bool v) { transparency_ = v; }
@@ -79,18 +98,14 @@ public:
   }
   bool supportsFrameGroups() const { return frame_groups_ || version_ >= 1057; }
 
-  // Path helpers (use configurable metadata/sprites file names)
-  std::filesystem::path getDatPath() const;
-  std::filesystem::path getSprPath() const;
-  std::filesystem::path getOtbPath() const;
+  // Path helpers (return stored paths directly)
+  std::filesystem::path getDatPath() const { return metadata_file_; }
+  std::filesystem::path getSprPath() const { return sprites_file_; }
+  std::filesystem::path getItemMetadataPath() const;
 
   // Validation
   bool hasValidPaths() const;
   bool validateFiles() const;
-
-  // Visibility (some versions are internal/deprecated)
-  bool isVisible() const { return visible_; }
-  void setVisible(bool visible) { visible_ = visible; }
 
   // Default client flag
   bool isDefault() const { return is_default_; }
@@ -110,6 +125,7 @@ public:
   void restore();
 
 private:
+  uint32_t index_ = 0;
   uint32_t version_ = 0;
   std::string name_;
   uint32_t otb_version_ = 0;
@@ -120,15 +136,17 @@ private:
   std::filesystem::path client_path_;
   std::string data_directory_;
   std::string description_;
-  std::string metadata_file_ = "Tibia.dat";
-  std::string sprites_file_ = "Tibia.spr";
-  bool visible_ = true;
+  std::string metadata_file_;
+  std::string sprites_file_;
+  ItemDataSource data_source_ = ItemDataSource::OTB;
   bool is_default_ = false;
+  DatFormat dat_format_ = DatFormat::Unknown;
   bool transparency_ = false;
   bool extended_ = false;
   bool frame_durations_ = false;
   bool frame_groups_ = false;
   bool is_dirty_ = false;
+  std::filesystem::path custom_items_db_path_;
 
   struct BackupData {
     uint32_t version;
@@ -143,12 +161,14 @@ private:
     std::string description;
     std::string metadata_file;
     std::string sprites_file;
-    bool visible;
+    ItemDataSource data_source;
     bool is_default;
     bool transparency;
     bool extended;
     bool frame_durations;
     bool frame_groups;
+    DatFormat dat_format;
+    std::filesystem::path custom_items_db_path;
   } backup_data_;
 };
 

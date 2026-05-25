@@ -2,54 +2,62 @@
 namespace MapEditor {
 namespace Domain {
 
-ClientVersion::ClientVersion(uint32_t version, const std::string& name, uint32_t otb_version)
-    : version_(version)
+ClientVersion::ClientVersion(uint32_t index, uint32_t version, const std::string &name,
+                             uint32_t otb_version)
+    : index_(index)
+    , version_(version)
     , name_(name)
     , otb_version_(otb_version)
 {
 }
 
-std::filesystem::path ClientVersion::getDatPath() const {
+std::filesystem::path ClientVersion::getItemMetadataPath() const {
+    if (!custom_items_db_path_.empty()) {
+        return custom_items_db_path_;
+    }
     if (client_path_.empty()) {
         return {};
     }
-    return client_path_ / (metadata_file_.empty() ? "Tibia.dat" : metadata_file_);
-}
-
-std::filesystem::path ClientVersion::getSprPath() const {
-    if (client_path_.empty()) {
+    switch (data_source_) {
+    case ItemDataSource::SRV:
+        return client_path_ / "items.srv";
+    case ItemDataSource::OTB:
+        return client_path_ / "items.otb";
+    case ItemDataSource::DAT:
+    default:
         return {};
     }
-    return client_path_ / (sprites_file_.empty() ? "Tibia.spr" : sprites_file_);
-}
-
-std::filesystem::path ClientVersion::getOtbPath() const {
-    if (client_path_.empty()) {
-        return {};
-    }
-    return client_path_ / "items.otb";
 }
 
 bool ClientVersion::hasValidPaths() const {
-    if (client_path_.empty()) {
-        return false;
-    }
-    return std::filesystem::exists(client_path_);
+    return !metadata_file_.empty() && std::filesystem::exists(metadata_file_);
 }
 
 bool ClientVersion::validateFiles() const {
-    if (!hasValidPaths()) {
+    if (metadata_file_.empty() || sprites_file_.empty() ||
+        !std::filesystem::exists(metadata_file_) || !std::filesystem::exists(sprites_file_)) {
         return false;
     }
-    
-    auto dat_path = getDatPath();
-    auto spr_path = getSprPath();
-    auto otb_path = getOtbPath();
-    auto srv_path = client_path_ / "items.srv";
-    
-    return std::filesystem::exists(dat_path) &&
-           std::filesystem::exists(spr_path) &&
-           (std::filesystem::exists(otb_path) || std::filesystem::exists(srv_path));
+
+    switch (data_source_) {
+    case ItemDataSource::OTB:
+    case ItemDataSource::SRV: {
+        auto path = getItemMetadataPath();
+        if (std::filesystem::exists(path)) {
+            return true;
+        }
+        auto filename = path.empty()
+            ? ((data_source_ == ItemDataSource::SRV) ? "items.srv" : "items.otb")
+            : path.filename().string();
+        return std::filesystem::exists(std::filesystem::current_path() / "data" / filename);
+    }
+    case ItemDataSource::DAT:
+        return true;
+    default:
+        break;
+    }
+
+    return false;
 }
 
 void ClientVersion::backup() {
@@ -66,12 +74,14 @@ void ClientVersion::backup() {
         description_,
         metadata_file_,
         sprites_file_,
-        visible_,
+        data_source_,
         is_default_,
         transparency_,
         extended_,
         frame_durations_,
         frame_groups_,
+        dat_format_,
+        custom_items_db_path_,
     };
 }
 
@@ -88,12 +98,14 @@ void ClientVersion::restore() {
     description_ = backup_data_.description;
     metadata_file_ = backup_data_.metadata_file;
     sprites_file_ = backup_data_.sprites_file;
-    visible_ = backup_data_.visible;
+    data_source_ = backup_data_.data_source;
     is_default_ = backup_data_.is_default;
     transparency_ = backup_data_.transparency;
     extended_ = backup_data_.extended;
     frame_durations_ = backup_data_.frame_durations;
     frame_groups_ = backup_data_.frame_groups;
+    dat_format_ = backup_data_.dat_format;
+    custom_items_db_path_ = backup_data_.custom_items_db_path;
 }
 
 } // namespace Domain

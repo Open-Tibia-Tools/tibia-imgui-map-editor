@@ -99,7 +99,16 @@ void OpenSecPanel::browseForClientFolder(State &state) {
     client_path_buffer_ = state.client_path.string();
 
     if (validator_) {
-      state.selected_version = validator_->detectVersion(state.client_path);
+      uint32_t version = validator_->detectVersion(state.client_path);
+      if (registry_ && version > 0) {
+        if (auto* cv = registry_->findBestByVersion(version)) {
+          state.selected_client_index = cv->getIndex();
+        } else {
+          state.selected_client_index = 0;
+        }
+      } else if (version == 0) {
+        state.selected_client_index = 0;
+      }
     }
     validateClientForSec(state);
   }
@@ -258,10 +267,19 @@ void OpenSecPanel::renderClientSelector(State &state) {
   client_path_buffer_ = state.client_path.string();
   ImGui::PushItemWidth(-80);
   if (ImGui::InputText("##secclientpath", &client_path_buffer_)) {
-    state.client_path = client_path_buffer_;
-    if (validator_) {
-      state.selected_version = validator_->detectVersion(state.client_path);
-    }
+      state.client_path = client_path_buffer_;
+      if (validator_) {
+        uint32_t version = validator_->detectVersion(state.client_path);
+        if (registry_ && version > 0) {
+          if (auto* cv = registry_->findBestByVersion(version)) {
+            state.selected_client_index = cv->getIndex();
+          } else {
+            state.selected_client_index = 0;
+          }
+        } else if (version == 0) {
+          state.selected_client_index = 0;
+        }
+      }
     validateClientForSec(state);
   }
   if (ImGui::IsItemHovered()) {
@@ -281,7 +299,16 @@ void OpenSecPanel::renderClientSelector(State &state) {
       client_path_buffer_ = clipboard; // std::string assignment
       state.client_path = client_path_buffer_;
       if (validator_) {
-        state.selected_version = validator_->detectVersion(state.client_path);
+        uint32_t version = validator_->detectVersion(state.client_path);
+        if (registry_ && version > 0) {
+          if (auto* cv = registry_->findBestByVersion(version)) {
+            state.selected_client_index = cv->getIndex();
+          } else {
+            state.selected_client_index = 0;
+          }
+        } else if (version == 0) {
+          state.selected_client_index = 0;
+        }
       }
       validateClientForSec(state);
     }
@@ -303,9 +330,20 @@ void OpenSecPanel::renderClientSelector(State &state) {
   ImGui::TableNextColumn();
   ImGui::TextDisabled("Version:");
   ImGui::TableNextColumn();
-  if (state.selected_version > 0) {
-    ImGui::Text("%u.%02u", state.selected_version / 100,
-                state.selected_version % 100);
+  if (state.selected_client_index > 0) {
+    uint32_t ver = 0;
+    if (registry_) {
+      for (const auto* cv : registry_->getAllVersions()) {
+        if (cv && cv->getIndex() == state.selected_client_index) {
+          ver = cv->getVersion();
+          break;
+        }
+      }
+    }
+    if (ver > 0)
+      ImGui::Text("%u.%02u", ver / 100, ver % 100);
+    else
+      ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Auto-detect");
   } else {
     ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Auto-detect");
   }

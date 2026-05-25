@@ -9,33 +9,34 @@
 namespace MapEditor {
 namespace Services {
 
-ClientVersionsData
+std::pair<std::map<uint32_t, Domain::ClientVersion>, uint32_t>
 ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
-  ClientVersionsData result;
+  std::map<uint32_t, Domain::ClientVersion> versions;
+  uint32_t default_index = 0;
 
   if (!std::filesystem::exists(path)) {
-    spdlog::error("Failed to load clients.json: file not found at {}",
-                  path.string());
-    return result;
+    spdlog::error("Failed to load {}: file not found at {}",
+                  path.filename().string(), path.string());
+    return {versions, default_index};
   }
 
   std::ifstream file(path);
   if (!file.is_open()) {
-    spdlog::error("Failed to open clients.json: {}", path.string());
-    return result;
+    spdlog::error("Failed to open {}: {}", path.filename().string(), path.string());
+    return {versions, default_index};
   }
 
   nlohmann::json json;
   try {
     json = nlohmann::json::parse(file);
   } catch (const nlohmann::json::parse_error &e) {
-    spdlog::error("Failed to parse clients.json: {}", e.what());
-    return result;
+    spdlog::error("Failed to parse {}: {}", path.filename().string(), e.what());
+    return {versions, default_index};
   }
 
   if (!json.contains("clients") || !json["clients"].is_array()) {
-    spdlog::error("Invalid clients.json structure: missing 'clients' array");
-    return result;
+    spdlog::error("Invalid {} structure: missing 'clients' array", path.filename().string());
+    return {versions, default_index};
   }
 
   for (const auto &client : json["clients"]) {
@@ -43,6 +44,7 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
       continue;
     }
 
+    uint32_t index = client.value("index", client["version"].get<uint32_t>());
     uint32_t version_number = client["version"].get<uint32_t>();
     std::string name = client["name"].get<std::string>();
     std::string description = client.value("description", "Client " + name);
@@ -94,7 +96,8 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
       continue;
     }
 
-    Domain::ClientVersion version(version_number, name, otb_id);
+    Domain::ClientVersion version(index, version_number, name, otb_id);
+    version.setIndex(index);
     version.setDatSignature(dat_sig);
     version.setSprSignature(spr_sig);
     version.setOtbMajor(otb_major);
@@ -111,43 +114,55 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
     std::string data_dir = client.value("dataDirectory", "");
     version.setDataDirectory(data_dir);
     version.setDescription(description);
-    version.setVisible(true);
     version.setDefault(is_default);
 
-    version.setMetadataFile(client.value("metadataFile", "Tibia.dat"));
-    version.setSpritesFile(client.value("spritesFile", "Tibia.spr"));
+    version.setClientPath(client.value("clientPath", ""));
+    version.setMetadataFile(client.value("metadataFile", ""));
+    version.setSpritesFile(client.value("spritesFile", ""));
+    version.setCustomItemsDbPath(client.value("itemsDbPath", ""));
+
+    std::string source_str = client.value("itemDataSource", "OTB");
+    if (source_str == "SRV") {
+      version.setDataSource(Domain::ItemDataSource::SRV);
+    } else if (source_str == "DAT") {
+      version.setDataSource(Domain::ItemDataSource::DAT);
+    } else if (source_str == "OTB") {
+      version.setDataSource(Domain::ItemDataSource::OTB);
+    } else {
+      spdlog::warn("Unknown itemDataSource '{}' for client {}, falling back to 'OTB'", source_str, version_number);
+      version.setDataSource(Domain::ItemDataSource::OTB);
+    }
+
     version.setTransparent(client.value("transparency", false));
     version.setExtended(client.value("extended", false));
     version.setFrameDurations(client.value("frameDurations", false));
     version.setFrameGroups(client.value("frameGroups", false));
 
     if (is_default) {
-      result.default_version = version_number;
+      default_index = index;
     }
 
-    if (result.versions.find(version_number) == result.versions.end()) {
-      result.versions[version_number] = version;
-      if (otb_id > 0) {
-        result.otb_to_version[otb_id] = version_number;
-        spdlog::debug("Mapped otbId {} -> version {}", otb_id, version_number);
-      }
+    if (versions.find(index) == versions.end()) {
+      versions[index] = version;
     }
   }
 
-  spdlog::info("Loaded {} client versions from clients.json",
-               result.versions.size());
-  return result;
+  spdlog::info("Loaded {} client versions from {}",
+                versions.size(), path.string());
+  return {versions, default_index};
 }
 
-bool ClientVersionPersistence::saveToJson(const std::filesystem::path &path,
-                                          const ClientVersionsData &data) {
+bool ClientVersionPersistence::saveToJson(
+    const std::filesystem::path &path,
+    const std::map<uint32_t, Domain::ClientVersion> &versions,
+    uint32_t default_index) {
   nlohmann::json root;
-  root["$schema"] = "./clients.schema.json";
   root["clients"] = nlohmann::json::array();
 
-  for (const auto &[ver_num, client] : data.versions) {
+  for (const auto &[index, client] : versions) {
     nlohmann::json entry;
-    entry["version"] = ver_num;
+    entry["index"] = index;
+    entry["version"] = client.getVersion();
     entry["name"] = client.getName();
     entry["description"] = client.getDescription();
     entry["otbId"] = client.getOtbVersion();
@@ -156,8 +171,8 @@ bool ClientVersionPersistence::saveToJson(const std::filesystem::path &path,
 
     // Format signatures as hex strings
     std::ostringstream dat_ss, spr_ss;
-    dat_ss << std::uppercase << std::hex << client.getDatSignature();
-    spr_ss << std::uppercase << std::hex << client.getSprSignature();
+    dat_ss << std::uppercase << std::hex << std::setw(8) << std::setfill('0') << client.getDatSignature();
+    spr_ss << std::uppercase << std::hex << std::setw(8) << std::setfill('0') << client.getSprSignature();
     entry["datSignature"] = dat_ss.str();
     entry["sprSignature"] = spr_ss.str();
 
@@ -166,14 +181,32 @@ bool ClientVersionPersistence::saveToJson(const std::filesystem::path &path,
       entry["otbmVersions"] = otbm_versions;
     }
 
+    entry["clientPath"] = client.getClientPath().string();
     entry["metadataFile"] = client.getMetadataFile();
     entry["spritesFile"] = client.getSpritesFile();
+    entry["itemsDbPath"] = client.getCustomItemsDbPath().string();
+
+    switch (client.getDataSource()) {
+    case Domain::ItemDataSource::OTB:
+      entry["itemDataSource"] = "OTB";
+      break;
+    case Domain::ItemDataSource::SRV:
+      entry["itemDataSource"] = "SRV";
+      break;
+    case Domain::ItemDataSource::DAT:
+      entry["itemDataSource"] = "DAT";
+      break;
+    default:
+      entry["itemDataSource"] = "OTB";
+      break;
+    }
+
     entry["transparency"] = client.isTransparent();
     entry["extended"] = client.isExtended();
     entry["frameDurations"] = client.hasFrameDurations();
     entry["frameGroups"] = client.hasFrameGroups();
 
-    if (client.isDefault()) {
+    if (index == default_index) {
       entry["default"] = true;
     }
 
@@ -182,13 +215,56 @@ bool ClientVersionPersistence::saveToJson(const std::filesystem::path &path,
 
   std::ofstream file(path);
   if (!file.is_open()) {
-    spdlog::error("Failed to open clients.json for writing: {}", path.string());
+    spdlog::error("Failed to open {} for writing: {}",
+                  path.filename().string(), path.string());
     return false;
   }
 
   file << root.dump(2);
-  spdlog::info("Saved {} clients to {}", data.versions.size(), path.string());
+  spdlog::info("Saved {} clients to {}", versions.size(), path.string());
   return true;
+}
+
+std::vector<Domain::ClientTemplate> ClientVersionPersistence::loadTemplatesFromJson(
+    const std::filesystem::path &path) {
+  std::vector<Domain::ClientTemplate> templates;
+  std::ifstream file(path);
+  if (!file.is_open()) return templates;
+
+  nlohmann::json json;
+  try { file >> json; } catch (...) { return templates; }
+  if (!json.contains("clients") || !json["clients"].is_array()) return templates;
+
+  for (const auto &client : json["clients"]) {
+    if (!client.contains("version")) continue;
+    Domain::ClientTemplate tpl;
+    tpl.version = client["version"].get<uint32_t>();
+    tpl.name = client.value("name", "");
+    tpl.description = client.value("description", "");
+    tpl.otb_id = client.value("otbId", 0);
+    tpl.otb_major = client.value("otbMajor", 0);
+
+    std::string source = client.value("itemDataSource", "OTB");
+    if (source == "SRV") tpl.data_source = Domain::ItemDataSource::SRV;
+    else if (source == "DAT") tpl.data_source = Domain::ItemDataSource::DAT;
+
+    if (client.contains("otbmVersions") && client["otbmVersions"].is_array())
+      for (const auto &v : client["otbmVersions"]) tpl.otbm_versions.push_back(v.get<uint32_t>());
+
+    std::string ds = client.value("datSignature", "0");
+    std::string ss = client.value("sprSignature", "0");
+    try { tpl.dat_signature = static_cast<uint32_t>(std::stoul(ds, nullptr, 16)); } catch (...) {}
+    try { tpl.spr_signature = static_cast<uint32_t>(std::stoul(ss, nullptr, 16)); } catch (...) {}
+
+    tpl.transparency = client.value("transparency", false);
+    tpl.extended = client.value("extended", false);
+    tpl.frame_durations = client.value("frameDurations", false);
+    tpl.frame_groups = client.value("frameGroups", false);
+    tpl.data_directory = client.value("dataDirectory", "");
+
+    templates.push_back(std::move(tpl));
+  }
+  return templates;
 }
 
 } // namespace Services

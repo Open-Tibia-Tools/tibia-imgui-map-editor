@@ -21,7 +21,7 @@ public:
     struct State {
         std::filesystem::path sec_folder;
         std::filesystem::path client_path;
-        uint32_t selected_version = 0;
+        uint32_t selected_client_index = 0;
         bool has_items_srv = false;
         bool paths_valid = false;
         std::string validation_error;

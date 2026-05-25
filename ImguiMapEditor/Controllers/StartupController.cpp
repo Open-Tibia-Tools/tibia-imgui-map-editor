@@ -1,4 +1,5 @@
 #include "StartupController.h"
+#include "Presentation/Dialogs/ClientConfigurationController.h"
 #include "IO/Otbm/OtbmReader.h"
 #include "Services/ClientSignatureDetector.h"
 #include <chrono>
@@ -9,6 +10,8 @@
 
 namespace MapEditor {
 namespace AppLogic {
+
+StartupController::~StartupController() = default;
 
 StartupController::StartupController(
     UI::StartupDialog &dialog, MapOperationHandler &map_ops,
@@ -33,7 +36,7 @@ void StartupController::update() {
     break;
 
   case UI::StartupDialog::Action::SelectClient:
-    handleClientSelection(result.selected_version);
+    handleClientSelection(result.selected_client_index);
     break;
 
   case UI::StartupDialog::Action::BrowseMap:
@@ -160,7 +163,7 @@ void StartupController::handleMapSelection(const std::filesystem::path &path,
       // Per RME analysis: OTB Minor Version = ClientVersionID = otbId
       // This is the key for looking up the client configuration
       uint32_t client_version_id = ver.client_version_minor; // otbId
-      auto *client_ver = registry_.getVersionByOtbVersion(client_version_id);
+      auto *client_ver = registry_.findBestMatch(client_version_id, ver.client_version_major);
       if (client_ver) {
         map_info.client_version = client_ver->getVersion();
         spdlog::info("OTBM header: OTB Minor (otbId) {} -> Client Version {}",
@@ -208,16 +211,19 @@ void StartupController::handleClientAutoMatch(
   spdlog::info("Attempting client auto-match for: {}", map_path.string());
 
   UI::ClientInfo client_info;
-  Domain::ClientVersion *matched_version = nullptr;
+  const Domain::ClientVersion *matched_version = nullptr;
 
   // Primary method: Use OTBM header's OTB Minor version (= otbId =
   // ClientVersionID) This is the RME-compatible approach
   const auto &map_info = dialog_.getSelectedMapInfo();
   if (map_info.valid && map_info.items_minor_version > 0) {
-    uint32_t otb_id = map_info.items_minor_version;
-    matched_version = registry_.getVersionByOtbVersion(otb_id);
+    uint32_t otb_minor = map_info.items_minor_version;
+    uint32_t items_major = map_info.items_major_version;
+    matched_version = registry_.findBestMatch(otb_minor, items_major);
     if (matched_version) {
-      spdlog::info("Client matched via OTBM otbId {}: version {}", otb_id,
+      matched_client_index_ = matched_version->getIndex();
+      spdlog::info("Client matched via OTBM otbId {}.{}: index {}, version {}",
+                   otb_minor, items_major, matched_client_index_,
                    matched_version->getVersion());
     }
   }
@@ -229,8 +235,9 @@ void StartupController::handleClientAutoMatch(
         Services::ClientSignatureDetector::detectFromFolder(
             parent_path, registry_.getVersionsMap());
     if (detected_version > 0) {
-      matched_version = registry_.getVersion(detected_version);
+      matched_version = registry_.findBestByVersion(detected_version);
       if (matched_version) {
+        matched_client_index_ = matched_version->getIndex();
         spdlog::info("Client matched via signatures: version {}",
                      detected_version);
       }
@@ -239,7 +246,6 @@ void StartupController::handleClientAutoMatch(
 
   if (matched_version) {
     uint32_t version_num = matched_version->getVersion();
-    matched_client_version_ = version_num;
     client_info.version = version_num;
     client_info.version_string = "Tibia " + std::to_string(version_num / 100) +
                                  "." + std::to_string(version_num % 100);
@@ -320,22 +326,22 @@ void StartupController::handleClientAutoMatch(
   }
 }
 
-void StartupController::handleClientSelection(uint32_t version) {
-  spdlog::info("Manual client selection: version {}", version);
+void StartupController::handleClientSelection(uint32_t index) {
+  spdlog::info("Manual client selection: index {}", index);
 
-  auto *selected_version = registry_.getVersion(version);
+  auto *selected_version = registry_.getVersion(index);
   if (!selected_version) {
-    spdlog::warn("Selected client version {} not found in registry", version);
+    spdlog::warn("Selected client index {} not found in registry", index);
     return;
   }
 
-  matched_client_version_ = version;
+  matched_client_index_ = index;
 
   // Populate ClientInfo from selected version
   UI::ClientInfo client_info;
-  client_info.version = version;
-  client_info.version_string = "Tibia " + std::to_string(version / 100) + "." +
-                               std::to_string(version % 100);
+  client_info.version = selected_version->getVersion();
+  client_info.version_string = "Tibia " + std::to_string(selected_version->getVersion() / 100) + "." +
+                               std::to_string(selected_version->getVersion() % 100);
 
   // Format signatures as hex strings
   std::ostringstream dat_ss, spr_ss;
@@ -386,7 +392,7 @@ void StartupController::handleClientSelection(uint32_t version) {
 
   dialog_.setClientInfo(client_info);
   dialog_.setClientNotConfigured(selected_version->getClientPath().empty());
-  spdlog::info("Client {} selected, status: {}", version, client_info.status);
+  spdlog::info("Client {} selected, status: {}", selected_version->getVersion(), client_info.status);
 }
 
 void StartupController::handleBrowseMap() {
@@ -446,45 +452,38 @@ void StartupController::handleNewMapFlow() {
 }
 
 void StartupController::handleNewMapConfirmed(const UI::NewMapPanel::State& config) {
-  spdlog::info("Creating new map: {} ({}x{}) for version {}", config.map_name, 
-               config.map_width, config.map_height, config.selected_version);
-  
-  // Save client path to version registry if provided
-  if (config.selected_version > 0 && !config.client_path.empty()) {
-    registry_.setClientPath(config.selected_version, config.client_path);
-    registry_.savePathsToConfig(config_);
-    config_.setLastClientVersion(std::to_string(config.selected_version));
-    config_.save();
-  }
+  spdlog::info("Creating new map: {} ({}x{}) for index {}", config.map_name, 
+               config.map_width, config.map_height, config.selected_client_index);
   
   // Create new map directly via MapOperationHandler
   map_ops_.handleNewMapDirect(config.map_name, config.map_width, 
-                               config.map_height, config.selected_version);
+                               config.map_height, config.selected_client_index);
 }
 
 void StartupController::handleOpenSecMapConfirmed(
     const std::filesystem::path& folder, uint32_t version) {
   spdlog::info("Opening SEC map: {} version {}", folder.string(), version);
   
-  // Save version to config
-  config_.setLastClientVersion(std::to_string(version));
-  config_.save();
+  // Resolve version to index
+  auto* client_ver = registry_.findBestByVersion(version);
+  uint32_t index = client_ver ? client_ver->getIndex() : 0;
   
   // Load SEC map directly via MapOperationHandler
-  map_ops_.handleOpenSecMapDirect(folder, version);
+  map_ops_.handleOpenSecMapDirect(folder, index);
 }
 
 void StartupController::handleLoadMap() {
   spdlog::info("Loading map: {}", selected_map_path_.string());
 
   // Load via MapOperationHandler - now loads directly, no ProjectConfig state needed
-  map_ops_.handleOpenRecentMap(selected_map_path_, matched_client_version_);
+  map_ops_.handleOpenRecentMap(selected_map_path_, matched_client_index_);
 }
 
 void StartupController::handleClientConfiguration() {
   spdlog::info("Opening client configuration dialog");
 
-  dialog_.getClientConfigDialog().open(registry_, config_);
+  client_config_ctrl_ = std::make_unique<Presentation::ClientConfigurationController>();
+  dialog_.getClientConfigDialog().open(*client_config_ctrl_, registry_, config_);
 }
 
 void StartupController::handlePreferences() {

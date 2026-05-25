@@ -7,9 +7,11 @@
 #include "Application/MapOperationHandler.h"
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <vector>
 
 namespace MapEditor {
+namespace Presentation { class ClientConfigurationController; }
 namespace AppLogic {
 
 /**
@@ -28,7 +30,7 @@ public:
                     Services::RecentLocationsService &recent_locations,
                     AppStateManager &state_manager);
 
-  ~StartupController() = default;
+  ~StartupController();
 
   /**
    * Called each frame when in WelcomeScreen state.
@@ -45,6 +47,8 @@ public:
    * Prepare recent clients list for dialog rendering.
    */
   std::vector<uint32_t> getRecentClients() const;
+
+  uint32_t getMatchedClientIndex() const { return matched_client_index_; }
 
   /**
    * Request application exit.
@@ -64,7 +68,7 @@ private:
   // === Flow handlers ===
   void handleMapSelection(const std::filesystem::path &path, int index);
   void handleClientAutoMatch(const std::filesystem::path &map_path);
-  void handleClientSelection(uint32_t version);
+  void handleClientSelection(uint32_t index);
   void handleBrowseMap();
   void handleBrowseSecMap();
   void handleNewMapFlow();
@@ -84,11 +88,14 @@ private:
 
   // === State ===
   std::filesystem::path selected_map_path_;
-  uint32_t matched_client_version_ = 0;
+  uint32_t matched_client_index_ = 0;
   bool exit_requested_ = false;
 
   // === Callbacks ===
   std::function<void()> on_open_preferences_;
+
+  // === Client configuration controller ===
+  std::unique_ptr<Presentation::ClientConfigurationController> client_config_ctrl_;
 };
 
 } // namespace AppLogic

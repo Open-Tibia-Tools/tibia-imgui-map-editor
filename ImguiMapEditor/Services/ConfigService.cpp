@@ -98,35 +98,6 @@ void ConfigService::remove(const std::string& key) {
     dirty_ = true;
 }
 
-std::string ConfigService::getLastClientVersion() const {
-    return get<std::string>("last_client_version", "");
-}
-
-void ConfigService::setLastClientVersion(const std::string& version) {
-    set("last_client_version", version);
-}
-
-std::filesystem::path ConfigService::getClientPath(uint32_t version) const {
-    try {
-        if (config_.contains("client_paths")) {
-            auto& paths = config_["client_paths"];
-            std::string ver_str = std::to_string(version);
-            if (paths.contains(ver_str)) {
-                return std::filesystem::path(paths[ver_str].get<std::string>());
-            }
-        }
-    } catch (...) {}
-    return std::filesystem::path{};
-}
-
-void ConfigService::setClientPath(uint32_t version, const std::filesystem::path& path) {
-    if (!config_.contains("client_paths")) {
-        config_["client_paths"] = nlohmann::json::object();
-    }
-    config_["client_paths"][std::to_string(version)] = path.string();
-    dirty_ = true;
-}
-
 std::vector<std::string> ConfigService::getRecentFiles() const {
     return get<std::vector<std::string>>("recent_files", {});
 }

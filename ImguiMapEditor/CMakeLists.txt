@@ -348,6 +348,7 @@ set(PRESENTATION_SOURCES
     Presentation/Dialogs/ImportMapController.cpp
     Presentation/Dialogs/CleanupController.cpp
     Presentation/Dialogs/TownPickController.cpp
+    Presentation/Dialogs/ClientConfigurationController.cpp
 )
 
 set(BRUSHES_SOURCES
@@ -487,10 +488,10 @@ set(COPY_DATA_COMMANDS
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data/shaders"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data/fonts"
-    # Copy clients.json
+    # Copy clients_templates.json
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/clients.json"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data/clients.json"
+        "${CMAKE_CURRENT_SOURCE_DIR}/clients_templates.json"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data/clients_templates.json"
     # Copy entire sample_data directory tree (includes tilesets/, creatures/, items/, etc.)
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/sample_data"

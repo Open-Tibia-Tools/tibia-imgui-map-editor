@@ -29,9 +29,9 @@ void StartupDialog::initialize(Services::ClientVersionRegistry *registry,
 
   // Wire up extracted panel components
   available_clients_panel_.setRegistry(registry);
-  available_clients_panel_.setSelectionCallback([this](uint32_t version) {
+  available_clients_panel_.setSelectionCallback([this](uint32_t index) {
     pending_result_.action = Action::SelectClient;
-    pending_result_.selected_version = version;
+    pending_result_.selected_client_index = index;
   });
 
   recent_maps_panel_.setSelectionCallback(
@@ -39,7 +39,6 @@ void StartupDialog::initialize(Services::ClientVersionRegistry *registry,
         selected_recent_index_ = index;
         pending_result_.action = Action::SelectRecentMap;
         pending_result_.selected_path = entry.path;
-        pending_result_.selected_version = entry.detected_version;
         pending_result_.selected_index = index;
       });
 
@@ -88,7 +87,7 @@ void StartupDialog::setSelectedIndex(int index) {
 }
 
 void StartupDialog::render(const std::vector<RecentMapEntry> &recent_maps,
-                           const std::vector<uint32_t> &recent_clients) {
+                           uint32_t matched_client_index) {
   ImGuiIO &io = ImGui::GetIO();
 
   // Centered modal window with default size 1280x720
@@ -162,7 +161,7 @@ void StartupDialog::render(const std::vector<RecentMapEntry> &recent_maps,
     // ===== PANEL 4: Latest Used Clients =====
     ImGui::BeginChild("##RecentClients", ImVec2(panel_width, main_height),
                       true);
-    renderRecentClientsPanel(recent_clients);
+    renderRecentClientsPanel(matched_client_index);
     ImGui::EndChild();
 
     // ===== FOOTER SECTION =====
@@ -333,9 +332,8 @@ void StartupDialog::renderClientInfoPanel() {
 }
 
 void StartupDialog::renderRecentClientsPanel(
-    const std::vector<uint32_t> &clients) {
-  // Sync state and delegate to extracted component
-  available_clients_panel_.setSelectedVersion(client_info_.version);
+    uint32_t selected_client_index) {
+  available_clients_panel_.setSelectedIndex(selected_client_index);
   available_clients_panel_.render();
 }
 

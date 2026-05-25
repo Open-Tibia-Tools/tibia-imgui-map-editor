@@ -49,8 +49,6 @@ bool SettingsRegistry::load() {
 void SettingsRegistry::save() {
   if (!config_service_) return;
 
-  if (version_registry_)
-    version_registry_->savePathsToConfig(*config_service_);
   if (recent_locations_)
     recent_locations_->saveToConfig(*config_service_);
 

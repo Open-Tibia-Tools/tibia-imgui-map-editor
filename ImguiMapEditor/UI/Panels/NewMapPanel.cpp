@@ -46,21 +46,20 @@ void NewMapPanel::renderRecentClients(State &state) {
   ImGui::Separator();
 
   for (const auto &entry : recent_->getRecentClients()) {
-    bool is_default = (entry.client_version == registry_->getDefaultVersion());
+    bool is_default = (entry.client_index == registry_->getDefaultVersion());
 
     // Get client name from registry
     std::string version_str;
-    if (auto *client = registry_->getVersion(entry.client_version)) {
+    if (auto *client = registry_->getVersion(entry.client_index)) {
       version_str = client->getName();
     } else {
-      version_str = std::format("{}.{:02}", entry.client_version / 100,
-                                entry.client_version % 100);
+      version_str = std::format("Client {}", entry.client_index);
     }
 
     ImGui::PushID(&entry);
     if (ImGui::Selectable("", false, 0, ImVec2(0, 24))) {
       state.client_path = entry.path;
-      state.selected_version = entry.client_version;
+      state.selected_client_index = entry.client_index;
       path_buffer_ = entry.path.string();
     }
     // Tooltip for the whole row

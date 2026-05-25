@@ -49,7 +49,7 @@ void NewMapDialog::render() {
 
     ImGui::SameLine(0, 10.0f);
 
-    bool can_create = state_.selected_version > 0;
+    bool can_create = state_.selected_client_index > 0;
     if (!can_create) {
       ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
     }

@@ -53,7 +53,7 @@ A claim is an actionable statement: a bug report, a style violation, a design cr
 Catalog them in your internal reasoning. Tag each claim with:
 - **Source**: which reviewer, inline vs top-level
 - **Location**: file path and line range if applicable
-- **Type**: bug | style | design | performance | correctness | scope-expansion
+- **Type**: bug | style | design | performance | correctness | 
 
 ---
 
@@ -108,7 +108,6 @@ For every claim you cannot disprove, decide:
 - The claim is a style preference that contradicts existing codebase style
 - The claim would require touching 15+ unrelated files (flag as follow-up issue)
 - The claim is already addressed by a different PR or commit
-- The claim is outside the PR scope AND not actionable within the current changes
 - The claim is factually wrong (see Step 2)
 - The claim is purely cosmetic with zero user-facing impact AND project doesn't prioritize cosmetics
 
@@ -122,7 +121,6 @@ Reviewers often point out issues in code adjacent to the PR changes — files or
 - The issue violates fundamental project architecture rules
 
 **You MAY skip scope-expansion claims** if:
-- Fixing them would require a separate full PR worth of changes
 - The issue is cosmetic and pre-existing across dozens of files
 - The issue is a known trade-off documented in the project
 
@@ -158,8 +156,7 @@ Wait for the user to review before implementing, UNLESS the user explicitly said
 For each "apply" claim, make the change following project conventions:
 - Use existing patterns and utilities
 - Maintain the same code style as surrounding code
-- Do NOT introduce scope creep beyond what the claim requires
-- For scope-expansion claims, only fix the specific issue raised — not a full rewrite
+
 
 After implementing all changes, run the project's build/lint/typecheck commands to verify nothing is broken.
 
@@ -176,16 +173,3 @@ After implementing all changes, run the project's build/lint/typecheck commands 
 
 ---
 
-## Quick-Start Example
-
-```
-User: "The reviews are in — please address them"
-       https://github.com/owner/repo/pull/42
-
-1. Fetch: gh pr view 42, gh api comments, gh pr diff
-2. Extract: 5 claims from 2 reviewers
-3. Disprove: Claim #3 is wrong — the function already handles null in line 128
-4. Decide: Apply #1, #2, #5. Skip #4 (cosmetic, 30+ files). Disprove #3.
-5. Present summary. User confirms.
-6. Implement 3 changes. Run build. Done.
-```

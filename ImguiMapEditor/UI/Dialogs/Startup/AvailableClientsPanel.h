@@ -12,14 +12,14 @@ namespace UI {
  */
 class AvailableClientsPanel {
 public:
-  using SelectionCallback = std::function<void(uint32_t version)>;
+  using SelectionCallback = std::function<void(uint32_t index)>;
 
   void setRegistry(Services::ClientVersionRegistry *registry) {
     registry_ = registry;
   }
 
-  void setSelectedVersion(uint32_t version) { selected_version_ = version; }
-  uint32_t getSelectedVersion() const { return selected_version_; }
+  void setSelectedIndex(uint32_t index) { selected_client_index_ = index; }
+  uint32_t getSelectedIndex() const { return selected_client_index_; }
 
   void setSelectionCallback(SelectionCallback callback) {
     on_selection_ = std::move(callback);
@@ -29,7 +29,7 @@ public:
 
 private:
   Services::ClientVersionRegistry *registry_ = nullptr;
-  uint32_t selected_version_ = 0;
+  uint32_t selected_client_index_ = 0;
   SelectionCallback on_selection_;
 };
 

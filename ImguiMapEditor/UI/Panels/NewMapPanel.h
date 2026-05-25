@@ -21,7 +21,7 @@ public:
         uint16_t map_width = 1024;
         uint16_t map_height = 1024;
         std::filesystem::path client_path;
-        uint32_t selected_version = 0;
+        uint32_t selected_client_index = 0;
         bool paths_valid = false;
         std::string validation_error;
     };

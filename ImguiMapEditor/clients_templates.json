@@ -1,5 +1,4 @@
 {
-  "$schema": "./clients.schema.json",
   "clients": [
     {
       "version": 740,

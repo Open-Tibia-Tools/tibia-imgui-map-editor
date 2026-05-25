@@ -1,38 +1,24 @@
 #pragma once
 #include "Domain/ClientVersion.h"
+#include "Domain/ClientVersionTypes.h"
 #include <filesystem>
 #include <map>
+#include <utility>
+#include <vector>
 
 namespace MapEditor {
 namespace Services {
 
-struct ClientVersionsData {
-  std::map<uint32_t, Domain::ClientVersion> versions;
-  std::map<uint32_t, uint32_t> otb_to_version;
-  uint32_t default_version = 0;
-};
-
-/**
- * Handles JSON serialization/deserialization for client versions.
- * Reads from and writes to clients.json.
- */
 class ClientVersionPersistence {
 public:
-  /**
-   * Load client versions from clients.json file.
-   * @param path Path to clients.json
-   * @return Loaded data, or empty on failure
-   */
-  static ClientVersionsData loadFromJson(const std::filesystem::path &path);
-
-  /**
-   * Save client versions to clients.json file.
-   * @param path Path to clients.json
-   * @param data Client versions data to save
-   * @return true if saved successfully
-   */
+  static std::pair<std::map<uint32_t, Domain::ClientVersion>, uint32_t>
+  loadFromJson(const std::filesystem::path &path);
   static bool saveToJson(const std::filesystem::path &path,
-                         const ClientVersionsData &data);
+                         const std::map<uint32_t, Domain::ClientVersion> &versions,
+                         uint32_t default_index);
+
+  static std::vector<Domain::ClientTemplate> loadTemplatesFromJson(
+      const std::filesystem::path &path);
 };
 
 } // namespace Services

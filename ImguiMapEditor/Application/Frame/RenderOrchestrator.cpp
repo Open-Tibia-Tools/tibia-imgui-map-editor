@@ -54,8 +54,8 @@ void RenderOrchestrator::render(Context &ctx) {
   if (ctx.state_manager->isInState(AppStateManager::State::Startup) &&
       ctx.startup_dialog && ctx.startup_controller) {
     auto recent_maps = ctx.startup_controller->getRecentMaps();
-    auto recent_clients = ctx.startup_controller->getRecentClients();
-    ctx.startup_dialog->render(recent_maps, recent_clients);
+    auto matched_index = ctx.startup_controller->getMatchedClientIndex();
+    ctx.startup_dialog->render(recent_maps, matched_index);
   }
 
   // Only render MainWindow in Editor state

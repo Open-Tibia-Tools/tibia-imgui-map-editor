@@ -57,7 +57,7 @@ public:
   struct Result {
     Action action = Action::None;
     std::filesystem::path selected_path;
-    uint32_t selected_version = 0;
+    uint32_t selected_client_index = 0;
     int selected_index = -1;
     // For NewMapConfirmed action
     NewMapPanel::State new_map_config;
@@ -75,7 +75,7 @@ public:
 
   // === Main render (called each frame) ===
   void render(const std::vector<RecentMapEntry> &recent_maps,
-              const std::vector<uint32_t> &recent_clients);
+              uint32_t matched_client_index);
 
   // === State setters (from controller) ===
   void setSelectedMapInfo(const SelectedMapInfo &info);
@@ -116,7 +116,7 @@ private:
   void renderRecentMapsPanel(const std::vector<RecentMapEntry> &entries);
   void renderSelectedMapPanel();
   void renderClientInfoPanel();
-  void renderRecentClientsPanel(const std::vector<uint32_t> &clients);
+  void renderRecentClientsPanel(uint32_t selected_client_index);
 
   // === Dependencies ===
   Services::ClientVersionRegistry *registry_ = nullptr;

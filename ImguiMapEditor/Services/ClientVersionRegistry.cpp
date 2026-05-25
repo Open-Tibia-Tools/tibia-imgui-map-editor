@@ -1,6 +1,5 @@
 #include "ClientVersionRegistry.h"
 #include "ClientVersionPersistence.h"
-#include "ConfigService.h"
 #include <algorithm>
 #include <spdlog/spdlog.h>
 #include <vector>
@@ -9,85 +8,70 @@ namespace MapEditor {
 namespace Services {
 
 bool ClientVersionRegistry::loadDefaults(const ConfigService &config) {
-  // Search for clients.json in standard locations
-  std::vector<std::filesystem::path> search_paths = {
-      "data/clients.json", "../data/clients.json", "clients.json"};
+  // 1. Load templates from client_templates.json
+  std::vector<std::filesystem::path> template_paths = {
+      "data/clients_templates.json", "../data/clients_templates.json", "clients_templates.json"};
 
-  for (const auto &path : search_paths) {
+  for (const auto &path : template_paths) {
     if (std::filesystem::exists(path)) {
-      // Use ClientVersionPersistence to load JSON
-      auto data = ClientVersionPersistence::loadFromJson(path);
-      if (!data.versions.empty()) {
-        // Bulk load into registry
-        loadVersions(path, std::move(data.versions),
-                     std::move(data.otb_to_version), data.default_version);
-        loadPathsFromConfig(config);
-        spdlog::info("Loaded client versions from: {}", path.string());
-        return true;
-      }
+      auto templates = ClientVersionPersistence::loadTemplatesFromJson(path);
+      templates_ = std::move(templates);
+      spdlog::info("Loaded {} client templates from: {}", templates_.size(), path.string());
+      break;
     }
   }
 
-  spdlog::warn("Could not find clients.json");
+  // 2. Load saved clients from clients_saved.json (if missing, empty list — no error)
+  std::vector<std::filesystem::path> saved_paths = {
+      "data/clients_saved.json", "../data/clients_saved.json", "clients_saved.json"};
+
+  for (const auto &path : saved_paths) {
+    if (std::filesystem::exists(path)) {
+      auto data = ClientVersionPersistence::loadFromJson(path);
+      versions_ = std::move(data.first);
+      default_index_ = data.second;
+      clients_json_path_ = path;
+      if (!versions_.empty()) {
+          setNextIndex(versions_.rbegin()->first);
+      }
+      spdlog::info("Loaded {} saved clients from: {}", versions_.size(), path.string());
+      return true;
+    }
+  }
+
+  // No saved clients yet — that's fine, user will add them
+  spdlog::info("No saved clients found — starting with empty list");
   return true;
 }
 
-void ClientVersionRegistry::loadVersions(
-    const std::filesystem::path &json_path,
-    std::map<uint32_t, Domain::ClientVersion> versions,
-    std::map<uint32_t, uint32_t> otb_to_version, uint32_t default_version) {
-  clients_json_path_ = json_path;
-  versions_ = std::move(versions);
-  otb_to_version_ = std::move(otb_to_version);
-  default_version_ = default_version;
-
-  spdlog::info("Loaded {} client versions", versions_.size());
-}
-
-void ClientVersionRegistry::loadPathsFromConfig(const ConfigService &config) {
-  for (auto &[version_num, version] : versions_) {
-    auto path = config.getClientPath(version_num);
-    if (!path.empty()) {
-      version.setClientPath(path);
-    }
-  }
-}
-
-void ClientVersionRegistry::savePathsToConfig(ConfigService &config) const {
-  for (const auto &[version_num, version] : versions_) {
-    auto path = version.getClientPath();
-    if (!path.empty()) {
-      config.setClientPath(version_num, path);
-    }
-  }
-}
-
 Domain::ClientVersion *
-ClientVersionRegistry::getVersion(uint32_t version_number) {
-  auto it = versions_.find(version_number);
+ClientVersionRegistry::getVersion(uint32_t index) {
+  auto it = versions_.find(index);
   return it != versions_.end() ? &it->second : nullptr;
 }
 
 const Domain::ClientVersion *
-ClientVersionRegistry::getVersion(uint32_t version_number) const {
-  auto it = versions_.find(version_number);
+ClientVersionRegistry::getVersion(uint32_t index) const {
+  auto it = versions_.find(index);
   return it != versions_.end() ? &it->second : nullptr;
 }
 
-Domain::ClientVersion *
-ClientVersionRegistry::getVersionByOtbVersion(uint32_t otb_version) {
-  auto it = otb_to_version_.find(otb_version);
-  if (it != otb_to_version_.end()) {
-    return getVersion(it->second);
+const Domain::ClientVersion *
+ClientVersionRegistry::findBestMatch(uint32_t otb_minor, uint32_t items_major) const {
+  for (const auto &[index, cv] : versions_) {
+    if (cv.getOtbVersion() == otb_minor && cv.getOtbMajor() == items_major) {
+      return &cv;
+    }
   }
   return nullptr;
 }
 
 const Domain::ClientVersion *
-ClientVersionRegistry::getVersionByOtbVersion(uint32_t otb_version) const {
-  auto it = otb_to_version_.find(otb_version);
-  if (it != otb_to_version_.end()) {
-    return getVersion(it->second);
+ClientVersionRegistry::findBestByVersion(uint32_t version) const {
+  for (const auto &[index, cv] : versions_) {
+    if (cv.getVersion() == version) {
+      return &cv;
+    }
   }
   return nullptr;
 }
@@ -97,65 +81,15 @@ ClientVersionRegistry::getAllVersions() const {
   std::vector<const Domain::ClientVersion *> result;
   result.reserve(versions_.size());
 
-  for (const auto &[num, version] : versions_) {
+  for (const auto &[idx, version] : versions_) {
     result.push_back(&version);
   }
 
-  // Sort by version number descending (newest first)
   std::sort(result.begin(), result.end(), [](const auto *a, const auto *b) {
-    return a->getVersion() > b->getVersion();
+    return a->getIndex() < b->getIndex();
   });
 
   return result;
-}
-
-std::vector<const Domain::ClientVersion *>
-ClientVersionRegistry::getVisibleVersions() const {
-  std::vector<const Domain::ClientVersion *> result;
-
-  for (const auto &[num, version] : versions_) {
-    if (version.isVisible()) {
-      result.push_back(&version);
-    }
-  }
-
-  // Sort by version number descending
-  std::sort(result.begin(), result.end(), [](const auto *a, const auto *b) {
-    return a->getVersion() > b->getVersion();
-  });
-
-  return result;
-}
-
-void ClientVersionRegistry::setClientPath(uint32_t version_number,
-                                          const std::filesystem::path &path) {
-  auto *version = getVersion(version_number);
-  if (version) {
-    version->setClientPath(path);
-  }
-}
-
-Domain::ClientVersion *
-ClientVersionRegistry::findVersionForOtb(uint32_t otb_minor_version) {
-  // First try exact match
-  auto *exact = getVersionByOtbVersion(otb_minor_version);
-  if (exact) {
-    return exact;
-  }
-
-  // Find closest version with lower or equal OTB version
-  Domain::ClientVersion *best = nullptr;
-  uint32_t best_otb = 0;
-
-  for (auto &[num, version] : versions_) {
-    uint32_t otb = version.getOtbVersion();
-    if (otb <= otb_minor_version && otb > best_otb) {
-      best = &version;
-      best_otb = otb;
-    }
-  }
-
-  return best;
 }
 
 bool ClientVersionRegistry::hasAnyValidPaths() const {
@@ -167,93 +101,68 @@ bool ClientVersionRegistry::hasAnyValidPaths() const {
   return false;
 }
 
-void ClientVersionRegistry::setDefaultVersion(uint32_t version_number) {
-  // Clear previous default
+void ClientVersionRegistry::setDefaultVersion(uint32_t index) {
   for (auto &[num, version] : versions_) {
     version.setDefault(false);
   }
 
-  // Set new default
-  default_version_ = version_number;
-  if (auto *version = getVersion(version_number)) {
+  default_index_ = index;
+  if (auto *version = getVersion(index)) {
     version->setDefault(true);
   }
 }
 
 bool ClientVersionRegistry::addClient(const Domain::ClientVersion &version) {
-  uint32_t ver_num = version.getVersion();
-  if (versions_.find(ver_num) != versions_.end()) {
-    spdlog::warn("Cannot add client version {}: already exists", ver_num);
+  uint32_t idx = version.getIndex();
+  if (versions_.find(idx) != versions_.end()) {
+    spdlog::warn("Cannot add client index {}: already exists", idx);
     return false;
   }
-
-  versions_[ver_num] = version;
-
-  // Add to OTB lookup if it has an OTB version
-  if (version.getOtbVersion() > 0) {
-    otb_to_version_[version.getOtbVersion()] = ver_num;
-  }
-
-  spdlog::info("Added client version {}", ver_num);
+  versions_[idx] = version;
+  spdlog::info("Added client index {}", idx);
   return true;
 }
 
-bool ClientVersionRegistry::updateClient(uint32_t version_number,
+bool ClientVersionRegistry::updateClient(uint32_t index,
                                          const Domain::ClientVersion &updated) {
-  auto it = versions_.find(version_number);
+  auto it = versions_.find(index);
   if (it == versions_.end()) {
-    spdlog::warn("Cannot update client version {}: not found", version_number);
+    spdlog::warn("Cannot update client with index {}: not found", index);
     return false;
   }
 
-  // Remove old OTB mapping
-  if (it->second.getOtbVersion() > 0) {
-    otb_to_version_.erase(it->second.getOtbVersion());
-  }
-
-  // Update
   it->second = updated;
+  it->second.setIndex(index);
 
-  // Add new OTB mapping
-  if (updated.getOtbVersion() > 0) {
-    otb_to_version_[updated.getOtbVersion()] = version_number;
-  }
-
-  spdlog::info("Updated client version {}", version_number);
+  spdlog::info("Updated client with index {}", index);
   return true;
 }
 
-bool ClientVersionRegistry::removeClient(uint32_t version_number) {
-  auto it = versions_.find(version_number);
+bool ClientVersionRegistry::removeClient(uint32_t index) {
+  auto it = versions_.find(index);
   if (it == versions_.end()) {
-    spdlog::warn("Cannot remove client version {}: not found", version_number);
+    spdlog::warn("Cannot remove client with index {}: not found", index);
     return false;
   }
 
-  // Remove OTB mapping
-  if (it->second.getOtbVersion() > 0) {
-    otb_to_version_.erase(it->second.getOtbVersion());
-  }
-
-  // Clear default if removing default version
-  if (default_version_ == version_number) {
-    default_version_ = 0;
+  if (default_index_ == index) {
+    default_index_ = 0;
   }
 
   versions_.erase(it);
-  spdlog::info("Removed client version {}", version_number);
+  spdlog::info("Removed client with index {}", index);
   return true;
 }
 
-void ClientVersionRegistry::backupVersion(uint32_t version_number) {
-  auto it = versions_.find(version_number);
+void ClientVersionRegistry::backupVersion(uint32_t index) {
+  auto it = versions_.find(index);
   if (it != versions_.end()) {
     it->second.backup();
   }
 }
 
-void ClientVersionRegistry::restoreVersion(uint32_t version_number) {
-  auto it = versions_.find(version_number);
+void ClientVersionRegistry::restoreVersion(uint32_t index) {
+  auto it = versions_.find(index);
   if (it != versions_.end()) {
     it->second.restore();
     it->second.clearDirty();
