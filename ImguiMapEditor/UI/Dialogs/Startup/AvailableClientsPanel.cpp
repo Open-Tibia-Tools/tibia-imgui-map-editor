@@ -46,7 +46,7 @@ void AvailableClientsPanel::render() {
                               ImVec4(0.22f, 0.25f, 0.30f, 0.8f));
       }
 
-      ImVec2 item_size = ImVec2(ImGui::GetContentRegionAvail().x, 32.0f);
+      ImVec2 item_size = ImVec2(ImGui::GetContentRegionAvail().x, 44.0f);
 
       if (ImGui::Selectable("##ClientEntry", is_selected, 0, item_size)) {
         selected_client_index_ = index;
@@ -55,26 +55,22 @@ void AvailableClientsPanel::render() {
         }
       }
 
-      ImGui::SetCursorPosY(ImGui::GetCursorPosY() - item_size.y);
-      ImGui::Indent(8.0f);
+      ImVec2 sel_min = ImGui::GetItemRectMin();
 
-      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6.0f);
-
-      ImGui::TextColored(kTextMuted, "%u", client->getVersion());
-      ImGui::SameLine(80);
-      ImGui::TextColored(kGreenStatus, "%s", client->getName().c_str());
-
-      ImGui::SameLine();
       const char* type_str = "???";
       switch (client->getDataSource()) {
         case Domain::ItemDataSource::OTB: type_str = "OTB"; break;
         case Domain::ItemDataSource::SRV: type_str = "SRV"; break;
         case Domain::ItemDataSource::DAT: type_str = "DAT"; break;
       }
-      ImGui::TextColored(kTextMuted, "| %s", type_str);
 
-      ImGui::Unindent(8.0f);
-      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + item_size.y - 28);
+      ImGui::SetCursorScreenPos(ImVec2(sel_min.x + 8.0f, sel_min.y + 4.0f));
+      ImGui::TextColored(kGreenStatus, "%s", client->getName().c_str());
+
+      ImGui::SetCursorScreenPos(ImVec2(sel_min.x + 8.0f, sel_min.y + 22.0f));
+      ImGui::TextColored(kTextMuted, "%u | %s", client->getVersion(), type_str);
+
+      ImGui::SetCursorScreenPos(ImVec2(sel_min.x, sel_min.y + item_size.y));
 
       ImGui::PopStyleColor(2);
       ImGui::PopID();

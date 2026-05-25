@@ -103,6 +103,8 @@ void OpenSecPanel::browseForClientFolder(State &state) {
       if (registry_ && version > 0) {
         if (auto* cv = registry_->findBestByVersion(version)) {
           state.selected_client_index = cv->getIndex();
+        } else {
+          state.selected_client_index = 0;
         }
       }
     }

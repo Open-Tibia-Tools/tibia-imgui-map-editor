@@ -170,9 +170,6 @@ void ClientPropertyEditor::renderIdentitySection() {
     ImGui::SameLine(labelColumn());
 
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6, 4));
-    bool is_otb = (*eb.dataSourceIdx == 0);
-    bool is_srv = (*eb.dataSourceIdx == 1);
-    bool is_dat = (*eb.dataSourceIdx == 2);
 
     auto dataSrcButton = [&](const char* name, int idx, Domain::ItemDataSource ds) {
         bool active = (*eb.dataSourceIdx == idx);
@@ -649,7 +646,7 @@ void ClientPropertyEditor::renderFeaturesSection() {
         if (ImGui::Checkbox("Set as Default", eb.isDefault)) {
             if (auto* cv = registry_->getVersion(active_version_)) {
                 cv->setDefault(*eb.isDefault);
-                if (*eb.isDefault && registry_) registry_->setDefaultVersion(cv->getVersion());
+                if (*eb.isDefault && registry_) registry_->setDefaultVersion(cv->getIndex());
                 cv->markDirty();
             }
         }

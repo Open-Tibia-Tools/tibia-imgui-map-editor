@@ -157,6 +157,7 @@ void ClientConfigurationController::duplicateClient(uint32_t from_index) {
     clone.setFrameDurations(src->hasFrameDurations());
     clone.setFrameGroups(src->hasFrameGroups());
     clone.setDataSource(src->getDataSource());
+    clone.setDatFormat(src->getDatFormat());
     clone.setCustomItemsDbPath(src->getCustomItemsDbPath());
     clone.markDirty();
 
@@ -253,6 +254,10 @@ bool ClientConfigurationController::validateBeforeSave() {
     std::unordered_set<std::string> names;
     for (const auto& [index, cv] : registry_->getVersionsMap()) {
         if (pending_deleted_.count(index)) continue;
+        if (cv.getName().empty()) {
+            validation_error_ = std::format("Client with index {} has an empty name.", index);
+            return false;
+        }
         if (!names.insert(cv.getName()).second) {
             validation_error_ = std::format("Duplicate client name: '{}'.", cv.getName());
             return false;
@@ -384,6 +389,7 @@ void ClientConfigurationController::syncToClient(Domain::ClientVersion& cv) {
     cv.setMetadataFile(metadata_buf_);
     cv.setSpritesFile(sprites_buf_);
     cv.setOtbMajor(static_cast<uint32_t>(std::max(0, otb_major_int_)));
+    cv.setOtbVersion(static_cast<uint32_t>(std::max(0, otb_id_int_)));
 
     std::vector<uint32_t> otbm;
     std::istringstream iss(otbm_versions_buf_);
@@ -399,7 +405,7 @@ void ClientConfigurationController::syncToClient(Domain::ClientVersion& cv) {
     cv.setExtended(extended_bool_);
     cv.setFrameDurations(frame_durations_bool_);
     cv.setFrameGroups(frame_groups_bool_);
-    if (is_default_bool_ && registry_) registry_->setDefaultVersion(cv.getVersion());
+    if (is_default_bool_ && registry_) registry_->setDefaultVersion(cv.getIndex());
 
     uint32_t ds = 0, ss = 0;
     std::istringstream(dat_sig_buf_) >> std::hex >> ds;

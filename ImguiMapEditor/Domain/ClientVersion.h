@@ -19,7 +19,7 @@ public:
   ClientVersion(uint32_t index, uint32_t version, const std::string &name,
                 uint32_t otb_version);
 
-  // Unique index (auto-assigned, immutable after construction)
+  // Unique index (auto-assigned at creation, persistent across sessions)
   uint32_t getIndex() const { return index_; }
   void setIndex(uint32_t index) { index_ = index; }
 

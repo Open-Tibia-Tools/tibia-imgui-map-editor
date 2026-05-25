@@ -58,32 +58,22 @@ ClientVersionRegistry::getVersion(uint32_t version_number) const {
 
 const Domain::ClientVersion *
 ClientVersionRegistry::findBestMatch(uint32_t otb_minor, uint32_t items_major) const {
-  const Domain::ClientVersion *best = nullptr;
-  uint32_t best_index = UINT32_MAX;
   for (const auto &[index, cv] : versions_) {
     if (cv.getOtbVersion() == otb_minor && cv.getOtbMajor() == items_major) {
-      if (index < best_index) {
-        best = &cv;
-        best_index = index;
-      }
+      return &cv;
     }
   }
-  return best;
+  return nullptr;
 }
 
 const Domain::ClientVersion *
 ClientVersionRegistry::findBestByVersion(uint32_t version) const {
-  const Domain::ClientVersion *best = nullptr;
-  uint32_t best_index = UINT32_MAX;
   for (const auto &[index, cv] : versions_) {
     if (cv.getVersion() == version) {
-      if (index < best_index) {
-        best = &cv;
-        best_index = index;
-      }
+      return &cv;
     }
   }
-  return best;
+  return nullptr;
 }
 
 std::vector<const Domain::ClientVersion *>

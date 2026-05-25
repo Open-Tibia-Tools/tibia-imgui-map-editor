@@ -265,7 +265,7 @@ void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
                 "\nPlease add missing files or configure the correct client path.";
     }
     notify(NotificationType::Error,
-           "Client version " + std::to_string(index) +
+           "Client index " + std::to_string(index) +
                " not configured.\n" + reason);
   }
 }
@@ -320,6 +320,10 @@ void MapOperationHandler::handleOpenSecMapDirect(
 void MapOperationHandler::loadMapFromPath(const std::filesystem::path &path,
                                           uint32_t index) {
   Services::MapLoadingResult result;
+
+  if (index > 0) {
+    current_client_index_ = index;
+  }
 
   if (existing_client_data_ && existing_sprite_manager_) {
     // Use existing client data - items will get correct ItemType pointers

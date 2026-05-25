@@ -53,8 +53,7 @@ void NewMapPanel::renderRecentClients(State &state) {
     if (auto *client = registry_->getVersion(entry.client_index)) {
       version_str = client->getName();
     } else {
-      version_str = std::format("{}.{:02}", entry.client_index / 100,
-                                entry.client_index % 100);
+      version_str = std::format("Client {}", entry.client_index);
     }
 
     ImGui::PushID(&entry);

@@ -48,6 +48,8 @@ public:
    */
   std::vector<uint32_t> getRecentClients() const;
 
+  uint32_t getMatchedClientIndex() const { return matched_client_index_; }
+
   /**
    * Request application exit.
    */
