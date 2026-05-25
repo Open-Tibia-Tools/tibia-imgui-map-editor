@@ -25,9 +25,8 @@ void IngameBoxWindow::render(Domain::ChunkedMap* map,
     // Use external visibility flag if provided, otherwise use internal one
     bool* open_ptr = p_open ? p_open : &is_open_;
     
-    if (p_open && !*p_open) return;
-
-    ImGuiWindowFlags flags = ImGuiWindowFlags_None;
+    // Window flags for floating, resizable window
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
 
     // Calculate current pixel dimensions based on tile settings
     int pixel_width = preview_width_tiles_ * Config::Rendering::TILE_SIZE_INT;
@@ -38,6 +37,8 @@ void IngameBoxWindow::render(Domain::ChunkedMap* map,
         first_render_ = false;
     }
     
+    // Let ImGui handle visibility - this ensures docking layout is restored
+    // NOTE: Window title must be static - ImGui uses title as window ID
     if (!ImGui::Begin("Ingame Preview", open_ptr, flags)) {
         ImGui::End();
         return;

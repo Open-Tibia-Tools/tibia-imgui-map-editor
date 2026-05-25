@@ -5,7 +5,6 @@
 // Forward declarations
 namespace MapEditor::Domain {
 struct Position;
-class ChunkedMap;
 namespace Tileset {
 class TilesetRegistry;
 }
@@ -91,7 +90,6 @@ private:
   Brushes::BrushController &brush_controller_;
   AppLogic::SearchController &search_controller_;
   AppLogic::MapInputController &input_controller_;
-  const Domain::ChunkedMap* current_map_ = nullptr;
 };
 
 } // namespace MapEditor::Presentation

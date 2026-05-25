@@ -228,7 +228,7 @@ private:
   - [2.2. SpriteAsyncLoader Pipeline](#22-spriteasyncloader-pipeline)
   - [2.3. The `process()` Frame-Tick Contract](#23-the-process-frame-tick-contract)
   - [2.4. PBO — The GPU Handoff Boundary](#24-pbo--the-gpu-handoff-boundary)
-  - [2.5. Search Async Pipeline — Known Limitation](#25-search-async-pipeline--known-limitation)
+  - [2.5. Adding a New Async System](#25-adding-a-new-async-system)
 - [3. Session-Scoped vs App-Scoped Services](#3-session-scoped-vs-app-scoped-services)
   - [3.1. App-Scoped Services (Singleton Lifetime)](#31-app-scoped-services-singleton-lifetime)
   - [3.2. Session-Scoped State (Per-Map Lifetime)](#32-session-scoped-state-per-map-lifetime)
@@ -369,7 +369,7 @@ Mouse click (screen pixels)
 | Thread | Allowed Operations | Forbidden |
 |--------|-------------------|-----------|
 | **Main thread** | ALL OpenGL calls, ALL ImGui calls, PBO uploads, service calls | Blocking on file I/O |
-| **Background thread(s)** | File I/O (.spr/.dat reading), sprite decompression, map search (read-only tile iteration) | Any `gl*` call, any ImGui call, touching `GLuint` handles, writing to `ChunkedMap` |
+| **Background thread(s)** | File I/O (.spr/.dat reading), sprite decompression | Any `gl*` call, any ImGui call, touching `GLuint` handles |
 
 > [!CAUTION]
 > **NEVER** call any `gl*` function from a background thread.
@@ -417,38 +417,6 @@ Main thread (every frame)
 `PixelBufferObject` is the **architectural boundary** between CPU-side async work and GPU-side uploads.
 - **2 PBOs** alternate: one maps for CPU write while the other uploads to GPU.
 - **Fence sync** (`glFenceSync` / `glClientWaitSync`) ensures the GPU is done before reuse.
-
-### 2.5. Search Async Pipeline — Known Limitation
-
-Map-wide searches (Find Unique, Find Action, Find Container, Find Writeable, text search) run on background threads via `std::async`. The pipeline:
-
-```text
-User triggers search (menu item or search bar)
-  → SearchController::search*Async()
-    → std::async(std::launch::async, ...)     // background thread
-      → MapSearchService::search*()            // read-only tile iteration
-      → std::lexicographical_compare sort      // non-allocating, case-insensitive
-    → returns std::future
-  ↓
-Main thread (every frame)
-  Application::update()
-    → SearchController::processAsyncSearch()
-      → future.wait_for(0s) == ready?
-        → future.get() → SearchResultsWidget::setResults()
-```
-
-**Synchronization primitives:**
-- Single `async_search_future_` member (no queue; one search at a time).
-- `async_search_active_` flag prevents launching a new search while one is in flight, avoiding `std::future` destructor blocking.
-
-> [!WARNING]
-> **KNOWN LIMITATION — Data Race on Map Data:**
-> Background search threads read `ChunkedMap` tiles and items concurrently with the main thread,
-> which may modify tiles during editing (brush strokes, property edits, undo/redo).
-> `ChunkedMap` does **not** currently have a read-write lock or snapshot mechanism.
-> In practice searches complete in seconds, during which map edits are unlikely.
-> No crashes have been observed. A proper fix would require a shared lock on `ChunkedMap`
-> or immutable snapshots for search operations (follow-up issue).
 
 ---
 
@@ -1524,7 +1492,7 @@ Before writing ANY code, verify:
 ☐ Am I building on a 🔴 NOT FUNCTIONAL system? → STOP and discuss
 ☐ Do I need undo/redo? → Use HistoryManager pattern (Section 12)
 ☐ Does this affect tile rendering? → Update BOTH cached and dynamic paths (Section 6.3)
-☐ Am I creating a new async system? → Follow process() contract (Section 2.3)
+☐ Am I creating a new async system? → Follow process() contract (Section 2.5)
 ☐ Does this need to notify multiple components? → Use CallbackMediator (Section 5)
 ☐ Am I about to duplicate code? → Create shared utility instead
 ```
@@ -1533,5 +1501,3 @@ Before writing ANY code, verify:
 
 
 </architecture>
-
-always use "build_ninja.bat" when compiling. its faster.

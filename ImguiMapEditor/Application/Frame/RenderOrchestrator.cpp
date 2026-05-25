@@ -114,9 +114,7 @@ void RenderOrchestrator::renderEditorState(Context &ctx,
     ctx.minimap->render(&ctx.view_settings->show_minimap_window);
 
     // Browse tile window
-    if (ctx.view_settings->show_browse_tile) {
-      ctx.browse_tile->setSelection(&session->getSelectionService());
-    }
+    ctx.browse_tile->setSelection(&session->getSelectionService());
     ctx.browse_tile->render(&ctx.view_settings->show_browse_tile);
 
     // Tileset/Palettes widget (brush selection)

@@ -4,8 +4,6 @@
 #include "ClientVersionManager.h"
 #include "Controllers/HotkeyController.h"
 #include "Controllers/MapInputController.h"
-#include "Controllers/SearchController.h"
-#include "Core/Config.h"
 #include "MapOperationHandler.h"
 #include "MapTabManager.h"
 #include "Platform/GlfwWindow.h"
@@ -41,31 +39,6 @@
 namespace MapEditor {
 
 void CallbackMediator::wireAll(Context &ctx) {
-  // === Edit Towns dialog — inject persistent dependencies once ===
-  // The dialog auto-tracks the active session via MapTabManager, so
-  // callbacks only need to open it — no per-call wiring required.
-  if (ctx.edit_towns) {
-    // Gives the dialog access to active session's map and towns
-    ctx.edit_towns->setTabManager(ctx.tab_manager);
-    // Go To: pans the main map camera to a town's temple position
-    ctx.edit_towns->setGoToCallback([ctx](const Domain::Position &pos) {
-      ctx.map_panel->setCameraCenter(pos.x, pos.y, pos.z);
-    });
-    // Pick Position: shows a hint toast, TownPickController handles the click
-    ctx.edit_towns->setPickPositionCallback([ctx]() -> bool {
-      Presentation::showInfo("Click on map to select temple position", 2000);
-      return true;
-    });
-    // Converts tile coords to screen center for the viewport temple marker.
-    // tileToScreen returns the tile top-left; we offset by half a tile
-    // (scaled by zoom) so the marker icon sits at the tile center.
-    ctx.edit_towns->setTileToScreenFunc([ctx](const Domain::Position &pos) -> glm::vec2 {
-      glm::vec2 screen = ctx.map_panel->tileToScreen(pos);
-      float half_tile = Config::Rendering::TILE_SIZE * 0.5f * ctx.map_panel->getZoom();
-      return glm::vec2(screen.x + half_tile, screen.y + half_tile);
-    });
-  }
-
   wirePlatformCallbacks(ctx);
   wireTabCallbacks(ctx);
   wireMapOperationCallbacks(ctx);
@@ -170,10 +143,14 @@ void CallbackMediator::wireTabCallbacks(Context &ctx) {
   });
 
   // Hotkey map menu
-  // Dependencies were injected once in wireAll(); dialog auto-discovers the
-  // active map via MapTabManager, so show() needs no parameters.
   ctx.hotkey->setEditTownsCallback([ctx]() {
-    if (ctx.edit_towns) ctx.edit_towns->show();
+    auto *session = ctx.tab_manager->getActiveSession();
+    if (session && session->getMap()) {
+      ctx.edit_towns->setGoToCallback([ctx](const Domain::Position &pos) {
+        ctx.map_panel->setCameraCenter(pos.x, pos.y, pos.z);
+      });
+      ctx.edit_towns->show(session->getMap());
+    }
   });
   ctx.hotkey->setMapPropertiesCallback([ctx]() {
     auto *session = ctx.tab_manager->getActiveSession();
@@ -220,10 +197,6 @@ void CallbackMediator::wireTabCallbacks(Context &ctx) {
       ctx.minimap->restoreState(*session);
       ctx.ingame_box->restoreState(*session);
       ctx.browse_tile->restoreState(*session);
-
-      if (ctx.search_results) {
-          ctx.search_results->setActiveMap(session->getMap());
-      }
 
       ctx.browse_tile->setMap(session->getMap(),
                               ctx.version_manager->getClientData(),
@@ -321,9 +294,18 @@ void CallbackMediator::wireMenuCallbacks(Context &ctx) {
   });
 
   // Map menu
-  // Same as hotkey: deps injected once, show() needs no parameters.
   ctx.menu_bar->setEditTownsCallback([ctx]() {
-    if (ctx.edit_towns) ctx.edit_towns->show();
+    auto *session = ctx.tab_manager->getActiveSession();
+    if (session && session->getMap()) {
+      ctx.edit_towns->setGoToCallback([ctx](const Domain::Position &pos) {
+        ctx.map_panel->setCameraCenter(pos.x, pos.y, pos.z);
+      });
+      ctx.edit_towns->setPickPositionCallback([ctx]() -> bool {
+        Presentation::showInfo("Click on map to select temple position", 2000);
+        return true;
+      });
+      ctx.edit_towns->show(session->getMap());
+    }
   });
 
   ctx.menu_bar->setMapPropertiesCallback([ctx]() {
@@ -342,45 +324,6 @@ void CallbackMediator::wireMenuCallbacks(Context &ctx) {
     if (ctx.map_operations)
       ctx.map_operations->handleConvertToClientId();
   });
-
-  // Search menu callbacks
-  ctx.menu_bar->setQuickFindCallback(
-      [ctx]() { if (ctx.quick_search) ctx.quick_search->open(); });
-
-  ctx.menu_bar->setFindItemsCallback(
-      [ctx]() { ctx.view_settings->show_search_results = true; });
-
-  ctx.menu_bar->setFindUniqueCallback(
-      [ctx]() {
-          if (ctx.search_controller) {
-              ctx.search_controller->searchUniqueAsync();
-              ctx.view_settings->show_search_results = true;
-          }
-      });
-
-  ctx.menu_bar->setFindActionCallback(
-      [ctx]() {
-          if (ctx.search_controller) {
-              ctx.search_controller->searchActionAsync();
-              ctx.view_settings->show_search_results = true;
-          }
-      });
-
-  ctx.menu_bar->setFindContainerCallback(
-      [ctx]() {
-          if (ctx.search_controller) {
-              ctx.search_controller->searchContainerAsync();
-              ctx.view_settings->show_search_results = true;
-          }
-      });
-
-  ctx.menu_bar->setFindWriteableCallback(
-      [ctx]() {
-          if (ctx.search_controller) {
-              ctx.search_controller->searchWriteableAsync();
-              ctx.view_settings->show_search_results = true;
-          }
-      });
 }
 
 void CallbackMediator::wireSecondaryClientCallbacks(Context &ctx) {

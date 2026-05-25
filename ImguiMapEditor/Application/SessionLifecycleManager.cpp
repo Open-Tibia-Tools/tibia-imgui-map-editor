@@ -67,13 +67,10 @@ void SessionLifecycleManager::destroyPendingSessions(
     spdlog::info("SessionLifecycle: Destroying {} deferred sessions",
                  pending_sessions_to_destroy_.size());
 
-    // Clean up render states and search cache for all sessions about to be destroyed
+    // Clean up render states for all sessions about to be destroyed
     for (const auto &session : pending_sessions_to_destroy_) {
       if (session) {
         rendering_manager.destroyRenderState(session->getID());
-        if (on_session_destroy_) {
-          on_session_destroy_(*session);
-        }
       }
     }
 

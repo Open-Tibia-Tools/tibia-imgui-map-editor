@@ -1,5 +1,12 @@
 #include "MapOperationHandler.h"
+
+#include <filesystem>
 #include <ranges>
+#include <string>
+#include <vector>
+
+#include <nfd.hpp>
+#include <spdlog/spdlog.h>
 
 #include "IO/Otbm/OtbmReader.h"
 #include "ImGuiNotify.hpp"
@@ -9,8 +16,6 @@
 #include "Services/SpriteManager.h"
 #include "UI/Map/MapPanel.h"
 #include "Utils/ScopedFlag.h"
-#include <nfd.hpp>
-#include <spdlog/spdlog.h>
 
 namespace MapEditor {
 namespace AppLogic {
@@ -240,10 +245,10 @@ void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
       if (!dat.empty()) missing_files.push_back(dat);
       if (!spr.empty()) missing_files.push_back(spr);
 
-      if (client_version->getDataSource() == Domain::ItemDataSource::OTB) {
+      if (client_version->getDataSource() == ::MapEditor::Domain::ItemDataSource::OTB) {
           auto otb = missing(client_version->getItemMetadataPath());
           if (!otb.empty()) missing_files.push_back(otb);
-      } else if (client_version->getDataSource() == Domain::ItemDataSource::SRV) {
+      } else if (client_version->getDataSource() == ::MapEditor::Domain::ItemDataSource::SRV) {
           auto srv = missing(client_version->getItemMetadataPath());
           if (!srv.empty()) missing_files.push_back(srv);
       }

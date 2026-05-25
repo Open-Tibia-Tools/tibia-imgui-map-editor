@@ -72,7 +72,7 @@ public:
     ClientDataResult load(const std::filesystem::path& client_path,
                           const std::filesystem::path& item_metadata_path,
                           uint32_t client_version,
-                           Domain::ItemDataSource data_source = Domain::ItemDataSource::OTB,
+                          ::MapEditor::::MapEditor::Domain::ItemDataSource data_source = ::MapEditor::::MapEditor::Domain::ItemDataSource::OTB,
                           LoadProgressCallback progress = nullptr);
     
     /**
@@ -191,8 +191,6 @@ public:
     void clear();
 
 private:
-    // Merges item metadata (OTB/SRV items, or DAT-generated stubs) with DAT item definitions.
-    // The name is historical; "otb_items" may contain SRV items or DAT-generated stubs.
     void mergeOtbWithDat(const std::vector<Domain::ItemType>& otb_items,
                          const IO::DatResult& dat_result,
                          uint32_t client_version);

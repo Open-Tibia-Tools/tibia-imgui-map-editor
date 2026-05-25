@@ -1,4 +1,6 @@
 #include "ClientVersion.h"
+#include <filesystem>
+
 namespace MapEditor {
 namespace Domain {
 

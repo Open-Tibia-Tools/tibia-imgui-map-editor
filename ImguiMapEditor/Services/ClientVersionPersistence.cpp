@@ -1,10 +1,14 @@
 #include "ClientVersionPersistence.h"
+
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <limits>
+#include <sstream>
+#include <vector>
+
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
-#include <sstream>
 
 namespace MapEditor {
 namespace Services {
@@ -119,14 +123,14 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
 
     std::string source_str = client.value("itemDataSource", "OTB");
     if (source_str == "SRV") {
-      version.setDataSource(Domain::ItemDataSource::SRV);
+      version.setDataSource(::MapEditor::Domain::ItemDataSource::SRV);
     } else if (source_str == "DAT") {
-      version.setDataSource(Domain::ItemDataSource::DAT);
+      version.setDataSource(::MapEditor::Domain::ItemDataSource::DAT);
     } else if (source_str == "OTB") {
-      version.setDataSource(Domain::ItemDataSource::OTB);
+      version.setDataSource(::MapEditor::Domain::ItemDataSource::OTB);
     } else {
       spdlog::warn("Unknown itemDataSource '{}' for client {}, falling back to 'OTB'", source_str, version_number);
-      version.setDataSource(Domain::ItemDataSource::OTB);
+      version.setDataSource(::MapEditor::Domain::ItemDataSource::OTB);
     }
 
     version.setTransparent(client.value("transparency", false));
@@ -155,7 +159,7 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
 bool ClientVersionPersistence::saveToJson(const std::filesystem::path &path,
                                           const ClientVersionsData &data) {
   nlohmann::json root;
-  root["$schema"] = "./clients.schema.json";
+  root[""] = "./clients.schema.json";
   root["clients"] = nlohmann::json::array();
 
   for (const auto &[ver_num, client] : data.versions) {
@@ -183,13 +187,13 @@ bool ClientVersionPersistence::saveToJson(const std::filesystem::path &path,
     entry["spritesFile"] = client.getSpritesFile();
 
     switch (client.getDataSource()) {
-    case Domain::ItemDataSource::OTB:
+    case ::MapEditor::Domain::ItemDataSource::OTB:
       entry["itemDataSource"] = "OTB";
       break;
-    case Domain::ItemDataSource::SRV:
+    case ::MapEditor::Domain::ItemDataSource::SRV:
       entry["itemDataSource"] = "SRV";
       break;
-    case Domain::ItemDataSource::DAT:
+    case ::MapEditor::Domain::ItemDataSource::DAT:
       entry["itemDataSource"] = "DAT";
       break;
     default:

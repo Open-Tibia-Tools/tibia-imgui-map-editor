@@ -115,7 +115,7 @@ public:
    */
   bool loadClientData(uint32_t client_version,
                       const std::filesystem::path &pending_path,
-                      std::optional<Domain::ItemDataSource> source_override = std::nullopt);
+                      std::optional<::MapEditor::Domain::ItemDataSource> source_override = std::nullopt);
 
   /**
    * Load SEC format map from directory.

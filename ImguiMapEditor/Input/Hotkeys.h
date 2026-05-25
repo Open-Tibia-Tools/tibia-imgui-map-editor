@@ -48,10 +48,6 @@ inline constexpr Binding HIGHLIGHT_ITEMS{GLFW_KEY_V, 0, "Highlight Items"};
 // Preview Window
 inline constexpr Binding SHOW_INGAME_BOX{GLFW_KEY_I, GLFW_MOD_SHIFT,
                                          "Show Ingame Box"};
-inline constexpr Binding SHOW_MINIMAP{GLFW_KEY_M, GLFW_MOD_CONTROL,
-                                       "Show Minimap"};
-inline constexpr Binding SHOW_BROWSE_TILE{GLFW_KEY_B, GLFW_MOD_CONTROL,
-                                           "Show Browse Tile"};
 inline constexpr Binding SHOW_TOOLTIPS{GLFW_KEY_Y, 0, "Show Tooltips"};
 inline constexpr Binding SHOW_PREVIEW{GLFW_KEY_L, 0, "Show Preview"};
 

@@ -1,5 +1,4 @@
 #include "HotkeyRegistry.h"
-#include "Domain/HotkeyActionIds.h"
 #include "IO/HotkeyJsonReader.h"
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
@@ -88,66 +87,63 @@ std::string HotkeyRegistry::formatShortcut(const Domain::HotkeyBinding& binding)
 
 HotkeyRegistry HotkeyRegistry::createDefaults() {
     HotkeyRegistry registry;
-    using namespace Domain::Actions;
 
     // File operations
-    registry.registerBinding({NEW_MAP, GLFW_KEY_N, GLFW_MOD_CONTROL, "file"});
-    registry.registerBinding({OPEN_MAP, GLFW_KEY_O, GLFW_MOD_CONTROL, "file"});
-    registry.registerBinding({SAVE_AS, GLFW_KEY_S, GLFW_MOD_CONTROL | GLFW_MOD_ALT, "file"});
-    registry.registerBinding({CLOSE_MAP, GLFW_KEY_Q, GLFW_MOD_CONTROL, "file"});
+    registry.registerBinding({"NEW", GLFW_KEY_N, GLFW_MOD_CONTROL, "file"});
+    registry.registerBinding({"OPEN", GLFW_KEY_O, GLFW_MOD_CONTROL, "file"});
+    registry.registerBinding({"SAVE_AS", GLFW_KEY_S, GLFW_MOD_CONTROL | GLFW_MOD_ALT, "file"});
+    registry.registerBinding({"CLOSE", GLFW_KEY_Q, GLFW_MOD_CONTROL, "file"});
 
     // Edit operations
-    registry.registerBinding({UNDO, GLFW_KEY_Z, GLFW_MOD_CONTROL, "edit"});
-    registry.registerBinding({REDO, GLFW_KEY_Y, GLFW_MOD_CONTROL, "edit"});
-    registry.registerBinding({CUT, GLFW_KEY_X, GLFW_MOD_CONTROL, "edit"});
-    registry.registerBinding({COPY, GLFW_KEY_C, GLFW_MOD_CONTROL, "edit"});
-    registry.registerBinding({PASTE, GLFW_KEY_V, GLFW_MOD_CONTROL, "edit"});
-    registry.registerBinding({PASTE_REPLACE, GLFW_KEY_V, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT, "edit"});
-    registry.registerBinding({DELETE_SEL, GLFW_KEY_DELETE, 0, "edit"});
-    registry.registerBinding({SAVE, GLFW_KEY_S, GLFW_MOD_CONTROL, "edit"});
+    registry.registerBinding({"UNDO", GLFW_KEY_Z, GLFW_MOD_CONTROL, "edit"});
+    registry.registerBinding({"REDO", GLFW_KEY_Y, GLFW_MOD_CONTROL, "edit"});
+    registry.registerBinding({"CUT", GLFW_KEY_X, GLFW_MOD_CONTROL, "edit"});
+    registry.registerBinding({"COPY", GLFW_KEY_C, GLFW_MOD_CONTROL, "edit"});
+    registry.registerBinding({"PASTE", GLFW_KEY_V, GLFW_MOD_CONTROL, "edit"});
+    registry.registerBinding({"PASTE_REPLACE", GLFW_KEY_V, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT, "edit"});
+    registry.registerBinding({"DELETE", GLFW_KEY_DELETE, 0, "edit"});
+    registry.registerBinding({"SAVE", GLFW_KEY_S, GLFW_MOD_CONTROL, "edit"});
 
     // View/zoom
-    registry.registerBinding({ZOOM_IN, GLFW_KEY_EQUAL, GLFW_MOD_CONTROL, "view"});
-    registry.registerBinding({ZOOM_OUT, GLFW_KEY_MINUS, GLFW_MOD_CONTROL, "view"});
-    registry.registerBinding({ZOOM_RESET, GLFW_KEY_0, GLFW_MOD_CONTROL, "view"});
-    registry.registerBinding({SHOW_GRID, GLFW_KEY_G, GLFW_MOD_SHIFT, "view"});
-    registry.registerBinding({GHOST_ITEMS, GLFW_KEY_G, 0, "view"});
-    registry.registerBinding({GHOST_HIGHER, GLFW_KEY_L, GLFW_MOD_CONTROL, "view"});
-    registry.registerBinding({GHOST_LOWER, GLFW_KEY_L, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT, "view"});
-    registry.registerBinding({SHOW_ALL_FLOORS, GLFW_KEY_W, GLFW_MOD_CONTROL, "view"});
-    registry.registerBinding({SHOW_SHADE, GLFW_KEY_Q, 0, "view"});
+    registry.registerBinding({"ZOOM_IN", GLFW_KEY_EQUAL, GLFW_MOD_CONTROL, "view"});
+    registry.registerBinding({"ZOOM_OUT", GLFW_KEY_MINUS, GLFW_MOD_CONTROL, "view"});
+    registry.registerBinding({"ZOOM_RESET", GLFW_KEY_0, GLFW_MOD_CONTROL, "view"});
+    registry.registerBinding({"SHOW_GRID", GLFW_KEY_G, GLFW_MOD_SHIFT, "view"});
+    registry.registerBinding({"GHOST_ITEMS", GLFW_KEY_G, 0, "view"});
+    registry.registerBinding({"GHOST_HIGHER_FLOORS", GLFW_KEY_L, GLFW_MOD_CONTROL, "view"});
+    registry.registerBinding({"GHOST_LOWER_FLOORS", GLFW_KEY_L, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT, "view"});
+    registry.registerBinding({"SHOW_ALL_FLOORS", GLFW_KEY_W, GLFW_MOD_CONTROL, "view"});
+    registry.registerBinding({"SHOW_SHADE", GLFW_KEY_Q, 0, "view"});
 
     // Overlay toggles
-    registry.registerBinding({SHOW_SPAWNS, GLFW_KEY_S, 0, "overlay"});
-    registry.registerBinding({SHOW_CREATURES, GLFW_KEY_F, 0, "overlay"});
-    registry.registerBinding({SHOW_BLOCKING, GLFW_KEY_O, 0, "overlay"});
-    registry.registerBinding({SHOW_SPECIAL, GLFW_KEY_E, 0, "overlay"});
-    registry.registerBinding({SHOW_HOUSES, GLFW_KEY_H, GLFW_MOD_CONTROL, "overlay"});
-    registry.registerBinding({HIGHLIGHT_ITEMS, GLFW_KEY_V, 0, "overlay"});
-    registry.registerBinding({HIGHLIGHT_LOCKED, GLFW_KEY_U, 0, "overlay"});
+    registry.registerBinding({"SHOW_SPAWNS", GLFW_KEY_S, 0, "overlay"});
+    registry.registerBinding({"SHOW_CREATURES", GLFW_KEY_F, 0, "overlay"});
+    registry.registerBinding({"SHOW_BLOCKING", GLFW_KEY_O, 0, "overlay"});
+    registry.registerBinding({"SHOW_SPECIAL", GLFW_KEY_E, 0, "overlay"});
+    registry.registerBinding({"SHOW_HOUSES", GLFW_KEY_H, GLFW_MOD_CONTROL, "overlay"});
+    registry.registerBinding({"HIGHLIGHT_ITEMS", GLFW_KEY_V, 0, "overlay"});
+    registry.registerBinding({"HIGHLIGHT_LOCKED_DOORS", GLFW_KEY_U, 0, "overlay"});
 
     // Preview
-    registry.registerBinding({SHOW_INGAME_BOX, GLFW_KEY_I, GLFW_MOD_SHIFT, "preview"});
-    registry.registerBinding({SHOW_MINIMAP, GLFW_KEY_M, GLFW_MOD_CONTROL, "preview"});
-    registry.registerBinding({SHOW_BROWSE_TILE, GLFW_KEY_B, GLFW_MOD_CONTROL, "preview"});
-    registry.registerBinding({SHOW_TOOLTIPS, GLFW_KEY_Y, 0, "preview"});
-    registry.registerBinding({SHOW_PREVIEW, GLFW_KEY_L, 0, "preview"});
+    registry.registerBinding({"SHOW_INGAME_BOX", GLFW_KEY_I, GLFW_MOD_SHIFT, "preview"});
+    registry.registerBinding({"SHOW_TOOLTIPS", GLFW_KEY_Y, 0, "preview"});
+    registry.registerBinding({"SHOW_PREVIEW", GLFW_KEY_L, 0, "preview"});
 
     // Navigation
-    registry.registerBinding({FLOOR_UP, GLFW_KEY_PAGE_UP, 0, "navigation"});
-    registry.registerBinding({FLOOR_DOWN, GLFW_KEY_PAGE_DOWN, 0, "navigation"});
+    registry.registerBinding({"FLOOR_UP", GLFW_KEY_PAGE_UP, 0, "navigation"});
+    registry.registerBinding({"FLOOR_DOWN", GLFW_KEY_PAGE_DOWN, 0, "navigation"});
 
     // Selection
-    // SELECT_ALL intentionally removed per user feedback
-    registry.registerBinding({DESELECT, GLFW_KEY_ESCAPE, 0, "selection"});
+    registry.registerBinding({"SELECT_ALL", GLFW_KEY_A, GLFW_MOD_CONTROL, "selection"});
+    registry.registerBinding({"DESELECT", GLFW_KEY_ESCAPE, 0, "selection"});
 
     // Search
-    registry.registerBinding({QUICK_SEARCH, GLFW_KEY_F, GLFW_MOD_CONTROL, "search"});
-    registry.registerBinding({ADVANCED_SEARCH, GLFW_KEY_F, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT, "search"});
+    registry.registerBinding({"QUICK_SEARCH", GLFW_KEY_F, GLFW_MOD_CONTROL, "search"});
+    registry.registerBinding({"ADVANCED_SEARCH", GLFW_KEY_F, GLFW_MOD_CONTROL | GLFW_MOD_SHIFT, "search"});
 
     // Map menu
-    registry.registerBinding({EDIT_TOWNS, GLFW_KEY_T, GLFW_MOD_CONTROL, "map"});
-    registry.registerBinding({MAP_PROPERTIES, GLFW_KEY_P, GLFW_MOD_CONTROL, "map"});
+    registry.registerBinding({"EDIT_TOWNS", GLFW_KEY_T, GLFW_MOD_CONTROL, "map"});
+    registry.registerBinding({"MAP_PROPERTIES", GLFW_KEY_P, GLFW_MOD_CONTROL, "map"});
 
     return registry;
 }

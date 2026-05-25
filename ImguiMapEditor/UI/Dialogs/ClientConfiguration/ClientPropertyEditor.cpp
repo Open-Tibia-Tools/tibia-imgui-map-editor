@@ -1,13 +1,17 @@
 #include "UI/Dialogs/ClientConfiguration/ClientPropertyEditor.h"
-#include <IconsFontAwesome6.h>
+
 #include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <cstring>
+#include <filesystem>
 #include <format>
+#include <sstream>
+#include <vector>
+
+#include <IconsFontAwesome6.h>
 #include <imgui.h>
 #include <nfd.hpp>
-#include <sstream>
 
 namespace MapEditor {
 namespace UI {
@@ -48,57 +52,57 @@ public:
   ScopedPropertyColor(const char *property_name,
                       const std::unordered_map<std::string, Domain::PropertyVisualState> *states)
       : states_(states), name_(property_name) {
-    if (!states_)
-      return;
-    auto it = states_->find(name_);
-    if (it == states_->end())
-      return;
-    auto s = it->second;
-    if (s == Domain::PropertyVisualState::Default)
-      return;
-    const ImVec4 bg = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
-    ImVec4 tint = ImVec4(1, 1, 1, 0);
-    if (s == Domain::PropertyVisualState::Pending)
-      tint = kYellow;
-    else if (s == Domain::PropertyVisualState::Undetected)
-      tint = kRed;
-    else if (s == Domain::PropertyVisualState::Saved)
-      tint = kGreen;
-    else
-      return;
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, blend(bg, tint, 0.30f));
-    pushed_ = true;
+    if (states_) {
+      auto it = states_->find(name_);
+      if (it != states_->end()) {
+        switch (it->second) {
+        case Domain::PropertyVisualState::Saved:
+          ImGui::PushStyleColor(ImGuiCol_Text, kGreen);
+          pushed_ = true;
+          break;
+        case Domain::PropertyVisualState::Pending:
+          ImGui::PushStyleColor(ImGuiCol_Text, kYellow);
+          pushed_ = true;
+          break;
+        case Domain::PropertyVisualState::Undetected:
+          ImGui::PushStyleColor(ImGuiCol_Text, kRed);
+          pushed_ = true;
+          break;
+        default:
+          break;
+        }
+      }
+    }
   }
-
   ~ScopedPropertyColor() {
     if (pushed_)
       ImGui::PopStyleColor();
   }
 
 private:
-  const std::unordered_map<std::string, Domain::PropertyVisualState> *states_ = nullptr;
-  const char *name_ = nullptr;
+  const std::unordered_map<std::string, Domain::PropertyVisualState> *states_;
+  std::string name_;
   bool pushed_ = false;
 };
 
-float labelColumn() { return 195.0f; }
+float labelColumn() { return ImGui::GetContentRegionAvail().x * 0.35f; }
 
 } // namespace
 
 void ClientPropertyEditor::setPropertyState(uint32_t version, const char *name,
-                                             Domain::PropertyVisualState state) {
+                                            Domain::PropertyVisualState state) {
   property_states_[version][name] = state;
 }
 
 Domain::PropertyVisualState
 ClientPropertyEditor::getPropertyState(uint32_t version, const char *name) const {
-  auto it = property_states_.find(version);
-  if (it == property_states_.end())
-    return Domain::PropertyVisualState::Default;
-  auto pit = it->second.find(name);
-  if (pit == it->second.end())
-    return Domain::PropertyVisualState::Default;
-  return pit->second;
+  auto vit = property_states_.find(version);
+  if (vit != property_states_.end()) {
+    auto pit = vit->second.find(name);
+    if (pit != vit->second.end())
+      return pit->second;
+  }
+  return Domain::PropertyVisualState::Default;
 }
 
 void ClientPropertyEditor::clearPropertyStates(uint32_t version) {
@@ -106,47 +110,51 @@ void ClientPropertyEditor::clearPropertyStates(uint32_t version) {
 }
 
 void ClientPropertyEditor::markAllPendingAsSaved(uint32_t version) {
-  auto it = property_states_.find(version);
-  if (it == property_states_.end())
-    return;
-  for (auto &[name, state] : it->second) {
-    if (state == Domain::PropertyVisualState::Pending)
-      state = Domain::PropertyVisualState::Saved;
+  auto vit = property_states_.find(version);
+  if (vit != property_states_.end()) {
+    for (auto &pair : vit->second) {
+      if (pair.second == Domain::PropertyVisualState::Pending)
+        pair.second = Domain::PropertyVisualState::Saved;
+    }
   }
 }
 
 void ClientPropertyEditor::syncFromClient(const Domain::ClientVersion &cv) {
-  version_int_ = static_cast<int>(cv.getVersion());
   std::strncpy(name_buf_, cv.getName().c_str(), sizeof(name_buf_) - 1);
-  name_buf_[sizeof(name_buf_) - 1] = '\0';
   std::strncpy(desc_buf_, cv.getDescription().c_str(), sizeof(desc_buf_) - 1);
-  desc_buf_[sizeof(desc_buf_) - 1] = '\0';
-  std::strncpy(data_dir_buf_, cv.getDataDirectory().c_str(), sizeof(data_dir_buf_) - 1);
-  data_dir_buf_[sizeof(data_dir_buf_) - 1] = '\0';
+  std::strncpy(data_dir_buf_, cv.getDataDirectory().c_str(),
+               sizeof(data_dir_buf_) - 1);
   std::strncpy(client_path_buf_, cv.getClientPath().string().c_str(),
                sizeof(client_path_buf_) - 1);
-  client_path_buf_[sizeof(client_path_buf_) - 1] = '\0';
-  std::strncpy(metadata_buf_, cv.getMetadataFile().c_str(), sizeof(metadata_buf_) - 1);
-  metadata_buf_[sizeof(metadata_buf_) - 1] = '\0';
-  std::strncpy(sprites_buf_, cv.getSpritesFile().c_str(), sizeof(sprites_buf_) - 1);
-  sprites_buf_[sizeof(sprites_buf_) - 1] = '\0';
+  std::strncpy(metadata_buf_, cv.getMetadataFile().c_str(),
+               sizeof(metadata_buf_) - 1);
+  std::strncpy(sprites_buf_, cv.getSpritesFile().c_str(),
+               sizeof(sprites_buf_) - 1);
 
-  std::snprintf(dat_sig_buf_, sizeof(dat_sig_buf_), "%08X", cv.getDatSignature());
-  std::snprintf(spr_sig_buf_, sizeof(spr_sig_buf_), "%08X", cv.getSprSignature());
+  std::stringstream ss;
+  ss << std::uppercase << std::hex << cv.getDatSignature();
+  std::strncpy(dat_sig_buf_, ss.str().c_str(), sizeof(dat_sig_buf_) - 1);
 
-  data_source_idx_ = static_cast<int>(cv.getDataSource());
+  ss.str("");
+  ss.clear();
+  ss << std::uppercase << std::hex << cv.getSprSignature();
+  std::strncpy(spr_sig_buf_, ss.str().c_str(), sizeof(spr_sig_buf_) - 1);
 
+  version_int_ = static_cast<int>(cv.getVersion());
   otb_id_int_ = static_cast<int>(cv.getOtbVersion());
   otb_major_int_ = static_cast<int>(cv.getOtbMajor());
 
-  std::string otbm;
-  for (size_t i = 0; i < cv.getMapVersionsSupported().size(); ++i) {
-    if (i > 0)
-      otbm += ", ";
-    otbm += std::to_string(cv.getMapVersionsSupported()[i]);
+  data_source_idx_ = static_cast<int>(cv.getDataSource());
+
+  std::string otbm_str;
+  const auto &otbm = cv.getMapVersionsSupported();
+  for (size_t i = 0; i < otbm.size(); ++i) {
+    otbm_str += std::to_string(otbm[i]);
+    if (i < otbm.size() - 1)
+      otbm_str += ",";
   }
-  std::strncpy(otbm_versions_buf_, otbm.c_str(), sizeof(otbm_versions_buf_) - 1);
-  otbm_versions_buf_[sizeof(otbm_versions_buf_) - 1] = '\0';
+  std::strncpy(otbm_versions_buf_, otbm_str.c_str(),
+               sizeof(otbm_versions_buf_) - 1);
 
   transparent_bool_ = cv.isTransparent();
   extended_bool_ = cv.isExtended();
@@ -156,27 +164,40 @@ void ClientPropertyEditor::syncFromClient(const Domain::ClientVersion &cv) {
 }
 
 void ClientPropertyEditor::syncToClient(Domain::ClientVersion &cv) {
-  uint32_t new_version = static_cast<uint32_t>(std::max(0, version_int_));
-
   cv.setName(name_buf_);
   cv.setDescription(desc_buf_);
   cv.setDataDirectory(data_dir_buf_);
   cv.setClientPath(client_path_buf_);
   cv.setMetadataFile(metadata_buf_);
   cv.setSpritesFile(sprites_buf_);
-  cv.setOtbMajor(static_cast<uint32_t>(std::max(0, otb_major_int_)));
+
+  uint32_t dat_sig = 0, spr_sig = 0;
+  std::stringstream ss;
+  ss << std::hex << dat_sig_buf_;
+  ss >> dat_sig;
+  cv.setDatSignature(dat_sig);
+
+  ss.str("");
+  ss.clear();
+  ss << std::hex << spr_sig_buf_;
+  ss >> spr_sig;
+  cv.setSprSignature(spr_sig);
+
+  cv.setVersion(static_cast<uint32_t>(version_int_));
+  cv.setOtbVersion(static_cast<uint32_t>(otb_id_int_));
+  cv.setOtbMajor(static_cast<uint32_t>(otb_major_int_));
+
+  cv.setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(data_source_idx_));
 
   std::vector<uint32_t> otbm;
-  std::string str(otbm_versions_buf_);
-  std::istringstream iss(str);
+  std::istringstream iss(otbm_versions_buf_);
   std::string tok;
   while (std::getline(iss, tok, ',')) {
     try {
       uint32_t v = static_cast<uint32_t>(std::stoul(tok));
-      if (v >= 1 && v <= 4)
+      if (v >= kOtbmVersionMin && v <= kOtbmVersionMax)
         otbm.push_back(v);
-    } catch (...) {
-    }
+    } catch (...) {}
   }
   cv.setMapVersionsSupported(otbm);
 
@@ -184,151 +205,135 @@ void ClientPropertyEditor::syncToClient(Domain::ClientVersion &cv) {
   cv.setExtended(extended_bool_);
   cv.setFrameDurations(frame_durations_bool_);
   cv.setFrameGroups(frame_groups_bool_);
-
-  if (is_default_bool_ && registry_)
-    registry_->setDefaultVersion(cv.getVersion());
-
-  uint32_t ds = 0, ss = 0;
-  std::istringstream(dat_sig_buf_) >> std::hex >> ds;
-  std::istringstream(spr_sig_buf_) >> std::hex >> ss;
-  cv.setDatSignature(ds);
-  cv.setSprSignature(ss);
-
-  if (cv.getVersion() != new_version)
-    cv.setVersion(new_version);
-
-  cv.setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(
-      std::clamp(data_source_idx_, 0, static_cast<int>(Domain::ItemDataSource::DAT))));
-
-  cv.markDirty();
+  cv.setDefault(is_default_bool_);
 }
 
 void ClientPropertyEditor::applyDetectionResult(
     const Domain::ClientAssetDetectionResult &result) {
-  auto &states = property_states_[active_version_];
-  auto apply = [&](const char *name, bool detected) {
-    states[name] = detected ? Domain::PropertyVisualState::Pending
-                            : Domain::PropertyVisualState::Undetected;
-  };
+  if (result.dat_signature) {
+    std::stringstream ss;
+    ss << std::uppercase << std::hex << *result.dat_signature;
+    std::strncpy(dat_sig_buf_, ss.str().c_str(), sizeof(dat_sig_buf_) - 1);
+    property_states_[active_version_]["datSignature"] =
+        Domain::PropertyVisualState::Saved;
+  }
+
+  if (result.spr_signature) {
+    std::stringstream ss;
+    ss << std::uppercase << std::hex << *result.spr_signature;
+    std::strncpy(spr_sig_buf_, ss.str().c_str(), sizeof(spr_sig_buf_) - 1);
+    property_states_[active_version_]["sprSignature"] =
+        Domain::PropertyVisualState::Saved;
+  }
 
   if (result.metadata_file_name) {
-    std::strncpy(metadata_buf_, result.metadata_file_name->c_str(), sizeof(metadata_buf_) - 1);
-    metadata_buf_[sizeof(metadata_buf_) - 1] = '\0';
+    std::strncpy(metadata_buf_, result.metadata_file_name->c_str(),
+                 sizeof(metadata_buf_) - 1);
+    property_states_[active_version_]["metadataFile"] =
+        Domain::PropertyVisualState::Saved;
   }
-  apply("metadataFile", result.metadata_file_name.has_value());
 
   if (result.sprites_file_name) {
-    std::strncpy(sprites_buf_, result.sprites_file_name->c_str(), sizeof(sprites_buf_) - 1);
-    sprites_buf_[sizeof(sprites_buf_) - 1] = '\0';
+    std::strncpy(sprites_buf_, result.sprites_file_name->c_str(),
+                 sizeof(sprites_buf_) - 1);
+    property_states_[active_version_]["spritesFile"] =
+        Domain::PropertyVisualState::Saved;
   }
-  apply("spritesFile", result.sprites_file_name.has_value());
 
-  if (result.dat_signature)
-    std::snprintf(dat_sig_buf_, sizeof(dat_sig_buf_), "%08X", *result.dat_signature);
-  apply("datSignature", result.dat_signature.has_value());
-
-  if (result.spr_signature)
-    std::snprintf(spr_sig_buf_, sizeof(spr_sig_buf_), "%08X", *result.spr_signature);
-  apply("sprSignature", result.spr_signature.has_value());
-
-  extended_bool_ = false;
-  transparent_bool_ = false;
-  frame_durations_bool_ = false;
-  frame_groups_bool_ = false;
-
-  if (result.transparency)
+  if (result.transparency) {
     transparent_bool_ = *result.transparency;
-  apply("transparency", result.transparency.has_value());
-
-  if (result.extended)
+    property_states_[active_version_]["transparency"] =
+        Domain::PropertyVisualState::Saved;
+  }
+  if (result.extended) {
     extended_bool_ = *result.extended;
-  apply("extended", result.extended.has_value());
-
-  if (result.frame_durations)
+    property_states_[active_version_]["extended"] =
+        Domain::PropertyVisualState::Saved;
+  }
+  if (result.frame_durations) {
     frame_durations_bool_ = *result.frame_durations;
-  apply("frameDurations", result.frame_durations.has_value());
-
-  if (result.frame_groups)
+    property_states_[active_version_]["frameDurations"] =
+        Domain::PropertyVisualState::Saved;
+  }
+  if (result.frame_groups) {
     frame_groups_bool_ = *result.frame_groups;
-  apply("frameGroups", result.frame_groups.has_value());
+    property_states_[active_version_]["frameGroups"] =
+        Domain::PropertyVisualState::Saved;
+  }
 }
 
 void ClientPropertyEditor::render() {
-  if (active_version_ == 0 || !registry_)
+  if (active_version_ == 0 || !registry_) {
+    ImGui::TextDisabled("Select a client version to edit properties");
     return;
-  auto *cv = registry_->getVersion(active_version_);
-  if (!cv)
-    return;
+  }
 
   renderIdentitySection();
+  ImGui::Spacing();
   renderFilesSection();
+  ImGui::Spacing();
   renderCompatibilitySection();
+  ImGui::Spacing();
   renderSignaturesSection();
+  ImGui::Spacing();
   renderFeaturesSection();
 }
 
 void ClientPropertyEditor::renderStatusBar() {
-  if (!registry_)
-    return;
   auto *cv = registry_->getVersion(active_version_);
   if (!cv)
     return;
 
-  ImGui::Spacing();
+  bool valid = cv->validateFiles();
+  const char *statusIcon = valid ? ICON_FA_CIRCLE_CHECK : ICON_FA_TRIANGLE_EXCLAMATION;
+  ImVec4 statusColor = valid ? kGreenStatus : ImVec4(0.9f, 0.4f, 0.3f, 1.0f);
+
   ImGui::Separator();
-
-  ImGui::SetCursorPosX(12);
-  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 3);
-
-  bool dirty = cv->isDirty();
-  ImU32 dot_color = dirty ? IM_COL32(231, 209, 46, 255) : IM_COL32(110, 209, 110, 255);
-  ImGui::GetWindowDrawList()->AddCircleFilled(
-      ImVec2(ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y + 7), 5,
-      dot_color);
-
-  ImGui::SetCursorPosX(24);
-  ImGui::TextColored(kTextMuted, "Status: ");
-  ImGui::SameLine(0, 0);
-  ImVec4 status_col = dirty ? ImVec4(0.9f, 0.7f, 0.2f, 1.0f) : kGreenStatus;
-  ImGui::TextColored(status_col, "%s", cv->getName().c_str());
-  ImGui::SameLine(0, 0);
-  ImGui::TextColored(kTextMuted, "  |  ");
-  ImGui::SameLine(0, 0);
-  ImGui::TextColored(status_col, "%s", dirty ? "Modified" : "Saved");
+  ImGui::Spacing();
+  ImGui::PushStyleColor(ImGuiCol_Text, statusColor);
+  ImGui::Text("%s", statusIcon);
+  ImGui::PopStyleColor();
+  ImGui::SameLine();
+  if (valid) {
+    ImGui::Text("Client configuration is valid and files were found.");
+  } else {
+    ImGui::Text("Required files are missing. Check Paths and Files section.");
+  }
 }
 
 void ClientPropertyEditor::renderIdentitySection() {
   if (!ImGui::TreeNodeEx("Identity", ImGuiTreeNodeFlags_DefaultOpen))
     return;
 
-  ImGui::Text("Item Data Source:");
-  ImGui::SameLine(labelColumn());
-  ImGui::PushItemWidth(200);
-  const char *sources[] = {"Tibia.dat + Tibia.spr + items.otb", "Tibia.dat + Tibia.spr + items.srv", "Tibia.dat + Tibia.spr only (Client IDs)"};
-  if (ImGui::Combo("##datasource", &data_source_idx_, sources, IM_ARRAYSIZE(sources))) {
-    auto *cv = registry_->getVersion(active_version_);
-    if (cv) {
-      cv->setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(
-          std::clamp(data_source_idx_, 0, static_cast<int>(IM_ARRAYSIZE(sources) - 1))));
-      cv->markDirty();
-    }
-  }
-  ImGui::PopItemWidth();
-
   ImGui::Text("Version:");
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(120);
-  if (ImGui::InputInt("##version", &version_int_)) {
+  if (ImGui::InputInt("##version", &version_int_, 0, 0)) {
     version_int_ = std::max(0, version_int_);
-    auto *cv = registry_->getVersion(active_version_);
-    if (cv) {
-      cv->setVersion(static_cast<uint32_t>(version_int_));
-      cv->markDirty();
-    }
+    // Note: Registry doesn't support changing the primary key 'version' easily
+    // We treat this as data only; renaming is handled by the version list
   }
   ImGui::PopItemWidth();
 
-  ImGui::Text("Name:");
+  ImGui::Text("Item Data Source:");
+  ImGui::SameLine(labelColumn());
+  ImGui::PushItemWidth(-1);
+  const char* sources[] = { "OTB (items.otb)", "SRV (items.srv)", "DAT only (No metadata file)" };
+  if (ImGui::Combo("##datasource", &data_source_idx_, sources, IM_ARRAYSIZE(sources))) {
+      auto *cv = registry_->getVersion(active_version_);
+      if (cv) {
+          cv->setDataSource(static_cast<::MapEditor::Domain::ItemDataSource>(data_source_idx_));
+          cv->markDirty();
+      }
+  }
+  if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("OTB: Modern mapping (Server ID -> Client ID)\n"
+                        "SRV: Ancient text mapping (Server ID -> Client ID)\n"
+                        "DAT only: No mapping file (Server ID = Client ID)");
+  }
+  ImGui::PopItemWidth();
+
+  ImGui::Text("Display Name:");
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(-1);
   if (ImGui::InputText("##name", name_buf_, sizeof(name_buf_))) {
@@ -337,6 +342,8 @@ void ClientPropertyEditor::renderIdentitySection() {
       cv->setName(name_buf_);
       cv->markDirty();
     }
+    if (on_change_)
+      on_change_();
   }
   ImGui::PopItemWidth();
 
@@ -446,8 +453,8 @@ void ClientPropertyEditor::renderAutoDetectedFileInputs() {
          [&](Domain::ClientVersion &cv) { cv.setSpritesFile(sprites_buf_); });
 
   auto *cv = registry_->getVersion(active_version_);
-  if (cv && cv->getDataSource() != Domain::ItemDataSource::DAT) {
-    const char *fileName = (cv->getDataSource() == Domain::ItemDataSource::SRV) ? "items.srv" : "items.otb";
+  if (cv && cv->getDataSource() != ::MapEditor::Domain::ItemDataSource::DAT) {
+    const char *fileName = (cv->getDataSource() == ::MapEditor::Domain::ItemDataSource::SRV) ? "items.srv" : "items.otb";
     ImGui::Text("%s:", fileName);
     ImGui::SameLine(labelColumn());
     std::string otb_display;

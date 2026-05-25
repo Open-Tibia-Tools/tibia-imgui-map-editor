@@ -308,17 +308,5 @@ void MinimapRenderer::screenToWorld(int screen_x, int screen_y,
       static_cast<int32_t>(screen_y * tiles_per_pixel + tiles_per_pixel * 0.5f);
 }
 
-void MinimapRenderer::worldToScreen(int32_t world_x, int32_t world_y,
-                                    int &screen_x, int &screen_y) const {
-  float tiles_per_pixel = getTilesPerPixel();
-  if (tiles_per_pixel <= 0.0f) {
-    screen_x = 0;
-    screen_y = 0;
-    return;
-  }
-  screen_x = static_cast<int>((world_x - view_bounds_.min_x - tiles_per_pixel * 0.5f) / tiles_per_pixel);
-  screen_y = static_cast<int>((world_y - view_bounds_.min_y - tiles_per_pixel * 0.5f) / tiles_per_pixel);
-}
-
 } // namespace Rendering
 } // namespace MapEditor

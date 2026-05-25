@@ -28,13 +28,6 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release
 ```
 
-For a faster local optimized build on Windows, prefer the preset:
-
-```powershell
-cmake --preset x64-Release-Fast
-cmake --build --preset build-release-fast
-```
-
 ### Linux/macOS
 
 ```bash
@@ -47,19 +40,6 @@ cmake -S . -B build \
 
 cmake --build build
 ```
-
-For a faster local optimized build, enable the fast preset or pass the equivalent cache variables:
-
-```bash
-cmake -S . -B build \
-    -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DTME_ENABLE_ARCH_OPTIMIZATIONS=ON
-
-cmake --build build
-```
-
-`TME_UNITY_BUILD` remains available as an opt-in compile-time experiment, but it is not enabled by the fast presets because some existing translation units are not unity-safe yet.
 
 ---
 
