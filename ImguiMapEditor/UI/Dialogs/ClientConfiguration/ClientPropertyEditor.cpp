@@ -141,9 +141,9 @@ void ClientPropertyEditor::syncFromClient(const Domain::ClientVersion &cv) {
   std::strncpy(client_path_buf_, cv.getClientPath().string().c_str(),
                sizeof(client_path_buf_) - 1);
   client_path_buf_[sizeof(client_path_buf_) - 1] = '\0';
-  std::strncpy(metadata_buf_, cv.getMetadataFile().c_str(), sizeof(metadata_buf_) - 1);
+  std::strncpy(metadata_buf_, (cv.getClientPath() / cv.getMetadataFile()).string().c_str(), sizeof(metadata_buf_) - 1);
   metadata_buf_[sizeof(metadata_buf_) - 1] = '\0';
-  std::strncpy(sprites_buf_, cv.getSpritesFile().c_str(), sizeof(sprites_buf_) - 1);
+  std::strncpy(sprites_buf_, (cv.getClientPath() / cv.getSpritesFile()).string().c_str(), sizeof(sprites_buf_) - 1);
   sprites_buf_[sizeof(sprites_buf_) - 1] = '\0';
   std::strncpy(items_db_buf_, cv.getCustomItemsDbPath().string().c_str(),
                sizeof(items_db_buf_) - 1);
@@ -180,8 +180,8 @@ void ClientPropertyEditor::syncToClient(Domain::ClientVersion &cv) {
   cv.setDescription(desc_buf_);
   cv.setDataDirectory(data_dir_buf_);
   cv.setClientPath(client_path_buf_);
-  cv.setMetadataFile(metadata_buf_);
-  cv.setSpritesFile(sprites_buf_);
+  cv.setMetadataFile(std::filesystem::path(metadata_buf_).filename().string());
+  cv.setSpritesFile(std::filesystem::path(sprites_buf_).filename().string());
   cv.setOtbMajor(static_cast<uint32_t>(std::max(0, otb_major_int_)));
 
   std::vector<uint32_t> otbm;
@@ -325,6 +325,7 @@ void ClientPropertyEditor::renderIdentitySection() {
     return;
 
   auto *cv = registry_->getVersion(active_version_);
+  const auto &states = property_states_[active_version_];
 
   ImGui::Text("Item Data Source:");
   ImGui::SameLine(labelColumn());
@@ -424,11 +425,15 @@ void ClientPropertyEditor::renderIdentitySection() {
   ImGui::Text("Name:");
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(-1);
-  if (ImGui::InputText("##name", name_buf_, sizeof(name_buf_))) {
-    auto *cver = registry_->getVersion(active_version_);
-    if (cver) {
-      cver->setName(name_buf_);
-      cver->markDirty();
+  {
+    ScopedPropertyColor sc("name", &states);
+    if (ImGui::InputText("##name", name_buf_, sizeof(name_buf_))) {
+      auto *cver = registry_->getVersion(active_version_);
+      if (cver) {
+        cver->setName(name_buf_);
+        cver->markDirty();
+        property_states_[active_version_]["name"] = Domain::PropertyVisualState::Pending;
+      }
     }
   }
   ImGui::PopItemWidth();
@@ -436,11 +441,15 @@ void ClientPropertyEditor::renderIdentitySection() {
   ImGui::Text("Description:");
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(-1);
-  if (ImGui::InputText("##desc", desc_buf_, sizeof(desc_buf_))) {
-    auto *cver = registry_->getVersion(active_version_);
-    if (cver) {
-      cver->setDescription(desc_buf_);
-      cver->markDirty();
+  {
+    ScopedPropertyColor sc("desc", &states);
+    if (ImGui::InputText("##desc", desc_buf_, sizeof(desc_buf_))) {
+      auto *cver = registry_->getVersion(active_version_);
+      if (cver) {
+        cver->setDescription(desc_buf_);
+        cver->markDirty();
+        property_states_[active_version_]["desc"] = Domain::PropertyVisualState::Pending;
+      }
     }
   }
   ImGui::PopItemWidth();
@@ -453,18 +462,23 @@ void ClientPropertyEditor::renderFilesSection() {
     return;
 
   auto *cv = registry_->getVersion(active_version_);
+  const auto &states = property_states_[active_version_];
 
   // Client Path
   ImGui::Text("Client Path:");
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
-  if (ImGui::InputText("##clientpath", client_path_buf_, sizeof(client_path_buf_))) {
-    if (cv) {
-      cv->setClientPath(client_path_buf_);
-      cv->markDirty();
+  {
+    ScopedPropertyColor sc("clientPath", &states);
+    if (ImGui::InputText("##clientpath", client_path_buf_, sizeof(client_path_buf_))) {
+      if (cv) {
+        cv->setClientPath(client_path_buf_);
+        cv->markDirty();
+        property_states_[active_version_]["clientPath"] = Domain::PropertyVisualState::Pending;
+      }
+      if (on_change_)
+        on_change_();
     }
-    if (on_change_)
-      on_change_();
   }
   if (ImGui::IsItemHovered())
     ImGui::SetTooltip("Folder containing Tibia.dat and Tibia.spr");
@@ -497,10 +511,14 @@ void ClientPropertyEditor::renderFilesSection() {
   ImGui::Text("Data Directory:");
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
-  if (ImGui::InputText("##datadir", data_dir_buf_, sizeof(data_dir_buf_))) {
-    if (cv) {
-      cv->setDataDirectory(data_dir_buf_);
-      cv->markDirty();
+  {
+    ScopedPropertyColor sc("dataDir", &states);
+    if (ImGui::InputText("##datadir", data_dir_buf_, sizeof(data_dir_buf_))) {
+      if (cv) {
+        cv->setDataDirectory(data_dir_buf_);
+        cv->markDirty();
+        property_states_[active_version_]["dataDir"] = Domain::PropertyVisualState::Pending;
+      }
     }
   }
   if (ImGui::IsItemHovered())
@@ -515,6 +533,7 @@ void ClientPropertyEditor::renderFilesSection() {
       if (cv) {
         cv->setDataDirectory(outPath.get());
         cv->markDirty();
+        property_states_[active_version_]["dataDir"] = Domain::PropertyVisualState::Pending;
       }
     }
   }
@@ -523,10 +542,14 @@ void ClientPropertyEditor::renderFilesSection() {
   ImGui::Text("Metadata File:");
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
-  if (ImGui::InputText("##metadata", metadata_buf_, sizeof(metadata_buf_))) {
-    if (cv) {
-      cv->setMetadataFile(metadata_buf_);
-      cv->markDirty();
+  {
+    ScopedPropertyColor sc("metadata", &states);
+    if (ImGui::InputText("##metadata", metadata_buf_, sizeof(metadata_buf_))) {
+      if (cv) {
+        cv->setMetadataFile(std::filesystem::path(metadata_buf_).filename().string());
+        cv->markDirty();
+        property_states_[active_version_]["metadata"] = Domain::PropertyVisualState::Pending;
+      }
     }
   }
   if (ImGui::IsItemHovered())
@@ -537,6 +560,8 @@ void ClientPropertyEditor::renderFilesSection() {
     NFD::UniquePath outPath;
     if (NFD::OpenDialog(outPath, nullptr, 0) == NFD_OKAY) {
       std::filesystem::path selectedPath(outPath.get());
+      std::strncpy(metadata_buf_, selectedPath.string().c_str(), sizeof(metadata_buf_) - 1);
+      metadata_buf_[sizeof(metadata_buf_) - 1] = '\0';
       if (cv) {
         auto parent = selectedPath.parent_path();
         if (!parent.empty() && parent != cv->getClientPath()) {
@@ -545,9 +570,8 @@ void ClientPropertyEditor::renderFilesSection() {
           client_path_buf_[sizeof(client_path_buf_) - 1] = '\0';
         }
         cv->setMetadataFile(selectedPath.filename().string());
-        std::strncpy(metadata_buf_, selectedPath.filename().string().c_str(), sizeof(metadata_buf_) - 1);
-        metadata_buf_[sizeof(metadata_buf_) - 1] = '\0';
         cv->markDirty();
+        property_states_[active_version_]["metadata"] = Domain::PropertyVisualState::Pending;
       }
       if (on_change_)
         on_change_();
@@ -558,10 +582,14 @@ void ClientPropertyEditor::renderFilesSection() {
   ImGui::Text("Sprites File:");
   ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
-  if (ImGui::InputText("##sprites", sprites_buf_, sizeof(sprites_buf_))) {
-    if (cv) {
-      cv->setSpritesFile(sprites_buf_);
-      cv->markDirty();
+  {
+    ScopedPropertyColor sc("sprites", &states);
+    if (ImGui::InputText("##sprites", sprites_buf_, sizeof(sprites_buf_))) {
+      if (cv) {
+        cv->setSpritesFile(std::filesystem::path(sprites_buf_).filename().string());
+        cv->markDirty();
+        property_states_[active_version_]["sprites"] = Domain::PropertyVisualState::Pending;
+      }
     }
   }
   if (ImGui::IsItemHovered())
@@ -572,6 +600,8 @@ void ClientPropertyEditor::renderFilesSection() {
     NFD::UniquePath outPath;
     if (NFD::OpenDialog(outPath, nullptr, 0) == NFD_OKAY) {
       std::filesystem::path selectedPath(outPath.get());
+      std::strncpy(sprites_buf_, selectedPath.string().c_str(), sizeof(sprites_buf_) - 1);
+      sprites_buf_[sizeof(sprites_buf_) - 1] = '\0';
       if (cv) {
         auto parent = selectedPath.parent_path();
         if (!parent.empty() && parent != cv->getClientPath()) {
@@ -580,9 +610,8 @@ void ClientPropertyEditor::renderFilesSection() {
           client_path_buf_[sizeof(client_path_buf_) - 1] = '\0';
         }
         cv->setSpritesFile(selectedPath.filename().string());
-        std::strncpy(sprites_buf_, selectedPath.filename().string().c_str(), sizeof(sprites_buf_) - 1);
-        sprites_buf_[sizeof(sprites_buf_) - 1] = '\0';
         cv->markDirty();
+        property_states_[active_version_]["sprites"] = Domain::PropertyVisualState::Pending;
       }
       if (on_change_)
         on_change_();
@@ -594,35 +623,33 @@ void ClientPropertyEditor::renderFilesSection() {
     ImGui::Text("Items Database:");
     ImGui::SameLine(labelColumn());
     bool is_dat_source = (data_source_idx_ == 2);
-    if (is_dat_source) {
-      ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
-      ImGui::TextColored(kTextMuted, "N/A - Using client IDs from DAT");
-      ImGui::PopStyleVar();
-    } else {
-      std::string items_path;
-      if (cv) items_path = cv->getItemMetadataPath().string();
-      ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
-      ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.13f, 0.15f, 1.0f));
-      ImGui::InputText("##itemsdb", items_path.data(), items_path.size(),
-                       ImGuiInputTextFlags_ReadOnly);
-      ImGui::PopStyleColor();
-      if (ImGui::IsItemHovered() && !items_path.empty())
-        ImGui::SetTooltip("%s", items_path.c_str());
-      ImGui::PopItemWidth();
-      ImGui::SameLine();
-      if (ImGui::Button(ICON_FA_FOLDER_OPEN "##itemsdbbrowse", ImVec2(28, 0))) {
-        NFD::UniquePath outPath;
-        if (NFD::OpenDialog(outPath, nullptr, 0) == NFD_OKAY) {
-          std::string selected(outPath.get());
-          std::strncpy(items_db_buf_, selected.c_str(), sizeof(items_db_buf_) - 1);
-          items_db_buf_[sizeof(items_db_buf_) - 1] = '\0';
-          if (cv) {
-            cv->setCustomItemsDbPath(std::filesystem::path(selected));
-            cv->markDirty();
-          }
+    if (is_dat_source)
+      ImGui::BeginDisabled();
+    std::string items_path;
+    if (cv) items_path = cv->getItemMetadataPath().string();
+    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.13f, 0.15f, 1.0f));
+    ImGui::InputText("##itemsdb", items_path.data(), items_path.size(),
+                     ImGuiInputTextFlags_ReadOnly);
+    ImGui::PopStyleColor();
+    if (ImGui::IsItemHovered() && !items_path.empty())
+      ImGui::SetTooltip("%s", items_path.c_str());
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+    if (ImGui::Button(ICON_FA_FOLDER_OPEN "##itemsdbbrowse", ImVec2(28, 0))) {
+      NFD::UniquePath outPath;
+      if (NFD::OpenDialog(outPath, nullptr, 0) == NFD_OKAY) {
+        std::string selected(outPath.get());
+        std::strncpy(items_db_buf_, selected.c_str(), sizeof(items_db_buf_) - 1);
+        items_db_buf_[sizeof(items_db_buf_) - 1] = '\0';
+        if (cv) {
+          cv->setCustomItemsDbPath(std::filesystem::path(selected));
+          cv->markDirty();
         }
       }
     }
+    if (is_dat_source)
+      ImGui::EndDisabled();
   }
 
   ImGui::TreePop();
@@ -632,58 +659,70 @@ void ClientPropertyEditor::renderCompatibilitySection() {
   if (!ImGui::TreeNodeEx("Compatibility", ImGuiTreeNodeFlags_DefaultOpen))
     return;
 
+  const auto &states = property_states_[active_version_];
+
   char otb_id_buf[16], otb_major_buf[16];
   std::snprintf(otb_id_buf, sizeof(otb_id_buf), "%d", otb_id_int_);
   std::snprintf(otb_major_buf, sizeof(otb_major_buf), "%d", otb_major_int_);
 
   ImGui::Text("OTB ID:");
-  ImGui::SameLine();
-  ImGui::PushItemWidth(55);
-  if (ImGui::InputText("##otbid", otb_id_buf, sizeof(otb_id_buf),
-                       ImGuiInputTextFlags_CharsDecimal)) {
-    otb_id_int_ = std::max(0, std::atoi(otb_id_buf));
-    auto *cv = registry_->getVersion(active_version_);
-    if (cv) {
-      cv->markDirty();
-      cv->setOtbVersion(static_cast<uint32_t>(otb_id_int_));
-    }
-  }
-  ImGui::PopItemWidth();
-
-  ImGui::SameLine();
-  ImGui::Text("Major:");
-  ImGui::SameLine();
-  ImGui::PushItemWidth(55);
-  if (ImGui::InputText("##otbmajor", otb_major_buf, sizeof(otb_major_buf),
-                       ImGuiInputTextFlags_CharsDecimal)) {
-    otb_major_int_ = std::max(0, std::atoi(otb_major_buf));
-    auto *cv = registry_->getVersion(active_version_);
-    if (cv) {
-      cv->markDirty();
-      cv->setOtbMajor(static_cast<uint32_t>(otb_major_int_));
-    }
-  }
-  ImGui::PopItemWidth();
-
-  ImGui::SameLine();
-  ImGui::Text("OTBM:");
-  ImGui::SameLine();
+  ImGui::SameLine(labelColumn());
   ImGui::PushItemWidth(80);
-  if (ImGui::InputText("##otbmver", otbm_versions_buf_, sizeof(otbm_versions_buf_))) {
-    auto *cv = registry_->getVersion(active_version_);
-    if (cv) {
-      cv->markDirty();
-      std::vector<uint32_t> otbm;
-      std::istringstream iss(otbm_versions_buf_);
-      std::string tok;
-      while (std::getline(iss, tok, ',')) {
-        try {
-          uint32_t v = static_cast<uint32_t>(std::stoul(tok));
-          if (v >= kOtbmVersionMin && v <= kOtbmVersionMax)
-            otbm.push_back(v);
-        } catch (...) {}
+  {
+    ScopedPropertyColor sc("otbId", &states);
+    if (ImGui::InputText("##otbid", otb_id_buf, sizeof(otb_id_buf),
+                         ImGuiInputTextFlags_CharsDecimal)) {
+      otb_id_int_ = std::max(0, std::atoi(otb_id_buf));
+      auto *cv = registry_->getVersion(active_version_);
+      if (cv) {
+        cv->markDirty();
+        cv->setOtbVersion(static_cast<uint32_t>(otb_id_int_));
+        property_states_[active_version_]["otbId"] = Domain::PropertyVisualState::Pending;
       }
-      cv->setMapVersionsSupported(otbm);
+    }
+  }
+  ImGui::PopItemWidth();
+
+  ImGui::Text("Major:");
+  ImGui::SameLine(labelColumn());
+  ImGui::PushItemWidth(80);
+  {
+    ScopedPropertyColor sc("otbMajor", &states);
+    if (ImGui::InputText("##otbmajor", otb_major_buf, sizeof(otb_major_buf),
+                         ImGuiInputTextFlags_CharsDecimal)) {
+      otb_major_int_ = std::max(0, std::atoi(otb_major_buf));
+      auto *cv = registry_->getVersion(active_version_);
+      if (cv) {
+        cv->markDirty();
+        cv->setOtbMajor(static_cast<uint32_t>(otb_major_int_));
+        property_states_[active_version_]["otbMajor"] = Domain::PropertyVisualState::Pending;
+      }
+    }
+  }
+  ImGui::PopItemWidth();
+
+  ImGui::Text("OTBM:");
+  ImGui::SameLine(labelColumn());
+  ImGui::PushItemWidth(80);
+  {
+    ScopedPropertyColor sc("otbmVersions", &states);
+    if (ImGui::InputText("##otbmver", otbm_versions_buf_, sizeof(otbm_versions_buf_))) {
+      auto *cv = registry_->getVersion(active_version_);
+      if (cv) {
+        cv->markDirty();
+        std::vector<uint32_t> otbm;
+        std::istringstream iss(otbm_versions_buf_);
+        std::string tok;
+        while (std::getline(iss, tok, ',')) {
+          try {
+            uint32_t v = static_cast<uint32_t>(std::stoul(tok));
+            if (v >= kOtbmVersionMin && v <= kOtbmVersionMax)
+              otbm.push_back(v);
+          } catch (...) {}
+        }
+        cv->setMapVersionsSupported(otbm);
+        property_states_[active_version_]["otbmVersions"] = Domain::PropertyVisualState::Pending;
+      }
     }
   }
   ImGui::PopItemWidth();

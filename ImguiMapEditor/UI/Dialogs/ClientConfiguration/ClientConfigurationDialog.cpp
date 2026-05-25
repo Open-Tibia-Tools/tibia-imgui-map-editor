@@ -540,12 +540,15 @@ void ClientConfigurationDialog::renderLeftSidebar() {
 
   ImGui::Separator();
 
-  ImGui::Columns(3, "##ver_cols3", false);
+  ImGui::Columns(4, "##ver_cols4", false);
   ImGui::SetColumnWidth(0, 170);
-  ImGui::SetColumnWidth(1, 70);
+  ImGui::SetColumnWidth(1, 55);
+  ImGui::SetColumnWidth(2, 55);
   ImGui::TextColored(kTextMuted, "Name");
   ImGui::NextColumn();
   ImGui::TextColored(kTextMuted, "Ver");
+  ImGui::NextColumn();
+  ImGui::TextColored(kTextMuted, "Type");
   ImGui::NextColumn();
   ImGui::TextColored(kTextMuted, "Cfg");
   ImGui::NextColumn();
@@ -584,16 +587,20 @@ void ClientConfigurationDialog::renderVersionList() {
       continue;
 
     bool sel = (active_version_ == ver_num);
+    bool dirty = cv->isDirty();
     if (sel) {
       ImGui::PushStyleColor(ImGuiCol_Header, kBlueAccent);
       ImGui::PushStyleColor(ImGuiCol_HeaderHovered, kBlueHover);
+    } else if (dirty) {
+      ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.50f, 0.42f, 0.14f, 1.0f));
     }
 
     ImGui::PushID(static_cast<int>(ver_num));
 
-    ImGui::Columns(3, "##verlist_cols3", false);
+    ImGui::Columns(4, "##verlist_cols4", false);
     ImGui::SetColumnWidth(0, 170);
-    ImGui::SetColumnWidth(1, 70);
+    ImGui::SetColumnWidth(1, 55);
+    ImGui::SetColumnWidth(2, 55);
 
     std::string name_display = cv->getName();
     if (cv->isDirty())
@@ -616,6 +623,15 @@ void ClientConfigurationDialog::renderVersionList() {
     ImGui::TextColored(kTextMuted, "%u", cv->getVersion());
 
     ImGui::NextColumn();
+    const char* type_str = "???";
+    switch (cv->getDataSource()) {
+      case Domain::ItemDataSource::OTB: type_str = "OTB"; break;
+      case Domain::ItemDataSource::SRV: type_str = "SRV"; break;
+      case Domain::ItemDataSource::DAT: type_str = "DAT"; break;
+    }
+    ImGui::TextColored(kTextMuted, "%s", type_str);
+
+    ImGui::NextColumn();
     bool configured = !cv->getClientPath().empty();
     if (configured) {
       ImGui::TextColored(kGreenStatus, ICON_FA_CHECK);
@@ -627,6 +643,8 @@ void ClientConfigurationDialog::renderVersionList() {
 
     if (sel)
       ImGui::PopStyleColor(2);
+    else if (dirty)
+      ImGui::PopStyleColor();
   }
   ImGui::EndChild();
 }
@@ -653,24 +671,59 @@ void ClientConfigurationDialog::renderFooterStatus() {
   ImGui::BeginChild("##footer", ImVec2(0, footer_h), ImGuiChildFlags_None);
   ImGui::SetCursorPosY(8);
 
-  float btn_x = ImGui::GetWindowWidth() - 300;
+  float btn_x = ImGui::GetWindowWidth() - 310;
   ImGui::SameLine(btn_x);
+
+  if (ImGui::Button(ICON_FA_FLOPPY_DISK " Apply", ImVec2(90, 28))) {
+    if (saveAll())
+      populateVersionData();
+  }
+
+  ImGui::SameLine();
 
   ImGui::PushStyleColor(ImGuiCol_Button, kBlueAccent);
   ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kBlueHover);
-  if (ImGui::Button("Save", ImVec2(80, 28))) {
-    if (saveAll())
+  if (ImGui::Button(ICON_FA_CHECK " Save", ImVec2(90, 28))) {
+    if (saveAll()) {
       populateVersionData();
+      is_open_ = false;
+    }
   }
   ImGui::PopStyleColor(2);
 
   ImGui::SameLine();
-  if (ImGui::Button("Discard", ImVec2(80, 28)))
-    discardChanges();
+  if (ImGui::Button(ICON_FA_XMARK " Close", ImVec2(90, 28))) {
+    bool has_dirty = false;
+    if (registry_) {
+      for (const auto &[num, _] : registry_->getVersionsMap()) {
+        if (auto *cv = registry_->getVersion(num)) {
+          if (cv->isDirty()) { has_dirty = true; break; }
+        }
+      }
+    }
+    if (has_dirty) {
+      ImGui::OpenPopup("Unsaved Changes");
+    } else {
+      is_open_ = false;
+    }
+  }
 
-  ImGui::SameLine();
-  if (ImGui::Button("Close", ImVec2(80, 28)))
-    is_open_ = false;
+  if (ImGui::BeginPopupModal("Unsaved Changes", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::TextUnformatted(ICON_FA_TRIANGLE_EXCLAMATION " You have unsaved changes.");
+    ImGui::TextUnformatted("Discard them and close?");
+    ImGui::Spacing();
+    if (ImGui::Button("Discard && Close", ImVec2(140, 0))) {
+      discardChanges();
+      is_open_ = false;
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel", ImVec2(80, 0))) {
+      ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+  }
 
   ImGui::EndChild();
 }
