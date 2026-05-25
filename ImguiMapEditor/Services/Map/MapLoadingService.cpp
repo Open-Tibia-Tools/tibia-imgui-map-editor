@@ -264,6 +264,10 @@ MapLoadingResult MapLoadingService::loadSecMapWithExistingClientData(
     Services::ClientDataService *existing_client_data,
     Services::SpriteManager *existing_sprite_manager) {
   if (!existing_client_data || !existing_sprite_manager) {
+    spdlog::error("loadSecMapWithExistingClientData failed: "
+                  "existing_client_data={}, existing_sprite_manager={}",
+                  static_cast<const void*>(existing_client_data),
+                  static_cast<const void*>(existing_sprite_manager));
     MapLoadingResult result;
     result.error = "Existing client data and sprite manager are required";
     return result;
@@ -276,7 +280,7 @@ MapLoadingResult MapLoadingService::loadSecMapWithExistingClientData(
   if (result.success) {
     Domain::ChunkedMap::MapVersion map_version;
     map_version.otbm_version = 1;
-    map_version.client_version = 0;
+    map_version.client_version = existing_client_data->getClientVersion();
     map_version.items_major_version = 0;
     map_version.items_minor_version = 0;
     result.map->setVersion(map_version);

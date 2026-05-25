@@ -129,7 +129,7 @@ void MenuBar::renderRecentFilesSubmenu() {
       ImGui::PushID(i++);
       if (ImGui::MenuItem(filename.c_str())) {
         if (on_open_recent_)
-          on_open_recent_(entry.path);
+          on_open_recent_(entry.path, entry.client_index);
       }
       if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("%s", full_path.c_str());

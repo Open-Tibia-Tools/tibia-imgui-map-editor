@@ -300,6 +300,16 @@ void StartupController::handleClientAutoMatch(
     // CRITICAL: Items Major and Minor MUST match. OTBM version mismatch is just
     // a warning.
     const auto &map_info = dialog_.getSelectedMapInfo();
+
+    // SEC maps don't use OTB — OTBM items-version compatibility is irrelevant
+    if (is_sec) {
+      client_info.status = "Compatible (SEC)";
+      dialog_.setClientInfo(client_info);
+      dialog_.setSignatureMismatch(false, "");
+      dialog_.setLoadEnabled(true);
+      spdlog::info("Client auto-matched for SEC: version {}, status: {}",
+                   version_num, client_info.status);
+    } else {
     bool otbm_match = (client_info.otbm_version == map_info.otbm_version);
     bool major_match =
         (client_info.items_major_version == map_info.items_major_version);
@@ -337,6 +347,8 @@ void StartupController::handleClientAutoMatch(
     spdlog::info(
         "Client auto-matched: version {}, items compatible: {}, status: {}",
         version_num, items_compatible, client_info.status);
+    }
+
   } else {
     // No match - show warning
     client_info.version = 0;

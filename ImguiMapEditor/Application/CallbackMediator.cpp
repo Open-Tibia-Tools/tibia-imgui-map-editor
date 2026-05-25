@@ -319,8 +319,8 @@ void CallbackMediator::wireMenuCallbacks(Context &ctx) {
 
   // Recent files
   ctx.menu_bar->setRecentFilesService(ctx.recent);
-  ctx.menu_bar->setOpenRecentCallback([ctx](const std::filesystem::path &path) {
-    ctx.map_operations->handleOpenRecentMap(path.string(), 0);
+  ctx.menu_bar->setOpenRecentCallback([ctx](const std::filesystem::path &path, uint32_t index) {
+    ctx.map_operations->handleOpenRecentMap(path.string(), index);
   });
 
   // Map menu

@@ -212,13 +212,17 @@ void MapOperationHandler::handleSaveAllMaps() {
 
 void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
                                                uint32_t index) {
-   pending_map_path_ = path;
-   current_client_index_ = index;
+  pending_map_path_ = path;
 
   if (std::filesystem::is_directory(path)) {
     handleOpenSecMapDirect(path, index);
     return;
   }
+
+  if (index == 0) {
+    index = current_client_index_;
+  }
+  current_client_index_ = index;
 
   auto *client_version = versions_.getVersion(index);
   if (client_version && client_version->validateFiles()) {
@@ -336,7 +340,7 @@ void MapOperationHandler::handleOpenSecMapDirect(
 
   if (result.success) {
     config_.addRecentFile(sec_folder.string());
-    recent_locations_.addRecentMap(sec_folder, index);
+    recent_locations_.addRecentMap(sec_folder, current_client_index_);
     transferNewResources(std::move(result));
   } else {
     notify(NotificationType::Error, "Failed to load SEC map: " + result.error);
@@ -354,14 +358,11 @@ void MapOperationHandler::handleOpenSecMapFromMenu(
       index = cv->getIndex();
       break;
     }
-    if (index == 0 || cv->getIndex() < index) {
-      index = cv->getIndex();
-    }
   }
   if (index > 0) {
     handleOpenSecMapDirect(folder, index);
   } else {
-    notify(NotificationType::Warning,
+    notify(NotificationType::Error,
            "No SRV client version found for SEC map");
   }
 }
@@ -387,7 +388,7 @@ void MapOperationHandler::loadMapFromPath(const std::filesystem::path &path,
 
   if (result.success) {
     config_.addRecentFile(path.string());
-    recent_locations_.addRecentMap(path, index);
+    recent_locations_.addRecentMap(path, current_client_index_);
     transferNewResources(std::move(result));
   }
 }
