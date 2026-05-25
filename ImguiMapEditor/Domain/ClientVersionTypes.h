@@ -8,6 +8,9 @@
 namespace MapEditor {
 namespace Domain {
 
+constexpr uint32_t kOtbmVersionMin = 1;
+constexpr uint32_t kOtbmVersionMax = 4;
+
 enum class DatFormat : uint8_t {
   Unknown,
   Format74,

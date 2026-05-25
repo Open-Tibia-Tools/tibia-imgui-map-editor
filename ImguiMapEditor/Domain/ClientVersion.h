@@ -136,8 +136,8 @@ private:
   std::filesystem::path client_path_;
   std::string data_directory_;
   std::string description_;
-  std::string metadata_file_ = "Tibia.dat";
-  std::string sprites_file_ = "Tibia.spr";
+  std::string metadata_file_;
+  std::string sprites_file_;
   ItemDataSource data_source_ = ItemDataSource::OTB;
   bool is_default_ = false;
   DatFormat dat_format_ = DatFormat::Unknown;

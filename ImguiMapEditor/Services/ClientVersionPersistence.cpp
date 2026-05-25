@@ -117,8 +117,8 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
     version.setDefault(is_default);
 
     version.setClientPath(client.value("clientPath", ""));
-    version.setMetadataFile(client.value("metadataFile", "Tibia.dat"));
-    version.setSpritesFile(client.value("spritesFile", "Tibia.spr"));
+    version.setMetadataFile(client.value("metadataFile", ""));
+    version.setSpritesFile(client.value("spritesFile", ""));
     version.setCustomItemsDbPath(client.value("itemsDbPath", ""));
 
     std::string source_str = client.value("itemDataSource", "OTB");

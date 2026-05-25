@@ -17,9 +17,6 @@ namespace Presentation {
 
 namespace {
 
-constexpr uint32_t kOtbmVersionMin = 1;
-constexpr uint32_t kOtbmVersionMax = 4;
-
 constexpr const char* kAutoProps[] = {
     "metadataFile", "spritesFile", "datSignature", "sprSignature",
     "transparency", "extended",  "frameDurations", "frameGroups",
@@ -397,7 +394,7 @@ void ClientConfigurationController::syncToClient(Domain::ClientVersion& cv) {
     while (std::getline(iss, tok, ',')) {
         try {
             uint32_t v = static_cast<uint32_t>(std::stoul(tok));
-            if (v >= kOtbmVersionMin && v <= kOtbmVersionMax) otbm.push_back(v);
+            if (v >= Domain::kOtbmVersionMin && v <= Domain::kOtbmVersionMax) otbm.push_back(v);
         } catch (...) {}
     }
     cv.setMapVersionsSupported(otbm);
