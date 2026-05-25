@@ -145,7 +145,7 @@ void ClientPropertyEditor::syncFromClient(const Domain::ClientVersion &cv) {
   metadata_buf_[sizeof(metadata_buf_) - 1] = '\0';
   std::strncpy(sprites_buf_, cv.getSprPath().string().c_str(), sizeof(sprites_buf_) - 1);
   sprites_buf_[sizeof(sprites_buf_) - 1] = '\0';
-  std::strncpy(items_db_buf_, cv.getCustomItemsDbPath().string().c_str(),
+  std::strncpy(items_db_buf_, cv.getItemMetadataPath().string().c_str(),
                sizeof(items_db_buf_) - 1);
   items_db_buf_[sizeof(items_db_buf_) - 1] = '\0';
 
@@ -344,6 +344,8 @@ void ClientPropertyEditor::renderIdentitySection() {
     if (cv) {
       cv->setDataSource(Domain::ItemDataSource::OTB);
       cv->markDirty();
+      std::strncpy(items_db_buf_, cv->getItemMetadataPath().string().c_str(), sizeof(items_db_buf_) - 1);
+      items_db_buf_[sizeof(items_db_buf_) - 1] = '\0';
     }
   }
   if (is_otb) ImGui::PopStyleColor(2);
@@ -358,6 +360,8 @@ void ClientPropertyEditor::renderIdentitySection() {
     if (cv) {
       cv->setDataSource(Domain::ItemDataSource::SRV);
       cv->markDirty();
+      std::strncpy(items_db_buf_, cv->getItemMetadataPath().string().c_str(), sizeof(items_db_buf_) - 1);
+      items_db_buf_[sizeof(items_db_buf_) - 1] = '\0';
     }
   }
   if (is_srv) ImGui::PopStyleColor(2);
@@ -372,6 +376,8 @@ void ClientPropertyEditor::renderIdentitySection() {
     if (cv) {
       cv->setDataSource(Domain::ItemDataSource::DAT);
       cv->markDirty();
+      std::strncpy(items_db_buf_, cv->getItemMetadataPath().string().c_str(), sizeof(items_db_buf_) - 1);
+      items_db_buf_[sizeof(items_db_buf_) - 1] = '\0';
     }
   }
   if (is_dat) ImGui::PopStyleColor(2);
@@ -476,8 +482,6 @@ void ClientPropertyEditor::renderFilesSection() {
         cv->markDirty();
         property_states_[active_version_]["clientPath"] = Domain::PropertyVisualState::Pending;
       }
-      if (on_change_)
-        on_change_();
     }
   }
   if (ImGui::IsItemHovered())
@@ -494,14 +498,34 @@ void ClientPropertyEditor::renderFilesSection() {
   if (ImGui::Button(ICON_FA_FOLDER_OPEN "##browse", ImVec2(28, 0))) {
     NFD::UniquePath outPath;
     if (NFD::PickFolder(outPath) == NFD_OKAY) {
-      std::strncpy(client_path_buf_, outPath.get(), sizeof(client_path_buf_) - 1);
+      std::filesystem::path client_path(outPath.get());
+      std::strncpy(client_path_buf_, client_path.string().c_str(), sizeof(client_path_buf_) - 1);
       client_path_buf_[sizeof(client_path_buf_) - 1] = '\0';
       if (cv) {
-        cv->setClientPath(outPath.get());
+        cv->setClientPath(client_path);
         cv->markDirty();
+        auto_filling_ = true;
+        // Auto-detect derived paths from client folder (full absolute paths)
+        auto dat = (client_path / "Tibia.dat").string();
+        auto spr = (client_path / "Tibia.spr").string();
+        auto items = cv->getItemMetadataPath().string();
+        std::strncpy(metadata_buf_, dat.c_str(), sizeof(metadata_buf_) - 1);
+        metadata_buf_[sizeof(metadata_buf_) - 1] = '\0';
+        cv->setMetadataFile(dat);
+        std::strncpy(sprites_buf_, spr.c_str(), sizeof(sprites_buf_) - 1);
+        sprites_buf_[sizeof(sprites_buf_) - 1] = '\0';
+        cv->setSpritesFile(spr);
+        std::strncpy(items_db_buf_, items.c_str(), sizeof(items_db_buf_) - 1);
+        items_db_buf_[sizeof(items_db_buf_) - 1] = '\0';
+        cv->setCustomItemsDbPath(std::filesystem::path(items));
       }
+      property_states_[active_version_]["clientPath"] = Domain::PropertyVisualState::Pending;
+      property_states_[active_version_]["metadataFile"] = Domain::PropertyVisualState::Pending;
+      property_states_[active_version_]["spritesFile"] = Domain::PropertyVisualState::Pending;
+      property_states_[active_version_]["itemsDb"] = Domain::PropertyVisualState::Pending;
       if (on_change_)
         on_change_();
+      auto_filling_ = false;
     }
   }
   if (path_empty)
@@ -549,6 +573,11 @@ void ClientPropertyEditor::renderFilesSection() {
         cv->setMetadataFile(metadata_buf_);
         cv->markDirty();
         property_states_[active_version_]["metadataFile"] = Domain::PropertyVisualState::Pending;
+        if (!auto_filling_) {
+          client_path_buf_[0] = '\0';
+          cv->setClientPath("");
+          property_states_[active_version_]["clientPath"] = Domain::PropertyVisualState::Pending;
+        }
       }
     }
   }
@@ -563,15 +592,12 @@ void ClientPropertyEditor::renderFilesSection() {
       std::strncpy(metadata_buf_, selectedPath.string().c_str(), sizeof(metadata_buf_) - 1);
       metadata_buf_[sizeof(metadata_buf_) - 1] = '\0';
       if (cv) {
-        auto parent = selectedPath.parent_path();
-        if (!parent.empty() && parent != cv->getClientPath()) {
-          cv->setClientPath(parent);
-          std::strncpy(client_path_buf_, parent.string().c_str(), sizeof(client_path_buf_) - 1);
-          client_path_buf_[sizeof(client_path_buf_) - 1] = '\0';
-        }
         cv->setMetadataFile(selectedPath.string());
         cv->markDirty();
         property_states_[active_version_]["metadataFile"] = Domain::PropertyVisualState::Pending;
+        client_path_buf_[0] = '\0';
+        cv->setClientPath("");
+        property_states_[active_version_]["clientPath"] = Domain::PropertyVisualState::Pending;
       }
       if (on_change_)
         on_change_();
@@ -589,6 +615,11 @@ void ClientPropertyEditor::renderFilesSection() {
         cv->setSpritesFile(sprites_buf_);
         cv->markDirty();
         property_states_[active_version_]["spritesFile"] = Domain::PropertyVisualState::Pending;
+        if (!auto_filling_) {
+          client_path_buf_[0] = '\0';
+          cv->setClientPath("");
+          property_states_[active_version_]["clientPath"] = Domain::PropertyVisualState::Pending;
+        }
       }
     }
   }
@@ -603,15 +634,15 @@ void ClientPropertyEditor::renderFilesSection() {
       std::strncpy(sprites_buf_, selectedPath.string().c_str(), sizeof(sprites_buf_) - 1);
       sprites_buf_[sizeof(sprites_buf_) - 1] = '\0';
       if (cv) {
-        auto parent = selectedPath.parent_path();
-        if (!parent.empty() && parent != cv->getClientPath()) {
-          cv->setClientPath(parent);
-          std::strncpy(client_path_buf_, parent.string().c_str(), sizeof(client_path_buf_) - 1);
-          client_path_buf_[sizeof(client_path_buf_) - 1] = '\0';
-        }
         cv->setSpritesFile(selectedPath.string());
         cv->markDirty();
         property_states_[active_version_]["spritesFile"] = Domain::PropertyVisualState::Pending;
+        // Update client path to the parent dir of the selected file
+        auto parent = selectedPath.parent_path();
+        cv->setClientPath(parent);
+        std::strncpy(client_path_buf_, parent.string().c_str(), sizeof(client_path_buf_) - 1);
+        client_path_buf_[sizeof(client_path_buf_) - 1] = '\0';
+        property_states_[active_version_]["clientPath"] = Domain::PropertyVisualState::Pending;
       }
       if (on_change_)
         on_change_();
@@ -619,26 +650,38 @@ void ClientPropertyEditor::renderFilesSection() {
   }
 
   // Items Database
+  ImGui::Text("Items Database:");
+  ImGui::SameLine(labelColumn());
+  ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
   {
-    ImGui::Text("Items Database:");
-    ImGui::SameLine(labelColumn());
-    bool is_dat_source = (data_source_idx_ == 2);
-    if (is_dat_source)
+    bool is_dat = (data_source_idx_ == 2);
+    if (is_dat)
       ImGui::BeginDisabled();
-    std::string items_path;
-    if (cv) items_path = cv->getItemMetadataPath().string();
-    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.12f, 0.13f, 0.15f, 1.0f));
-    if (items_path.empty()) {
-      ImGui::TextDisabled("(not set)");
-    } else {
-      ImGui::TextUnformatted(items_path.c_str());
-      if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("%s", items_path.c_str());
+    ScopedPropertyColor sc("itemsDb", &states);
+    ImGuiInputTextFlags flags = is_dat ? ImGuiInputTextFlags_ReadOnly : ImGuiInputTextFlags_None;
+    if (ImGui::InputText("##itemsdb", items_db_buf_, sizeof(items_db_buf_), flags)) {
+      if (cv) {
+        cv->setCustomItemsDbPath(std::filesystem::path(items_db_buf_));
+        cv->markDirty();
+        property_states_[active_version_]["itemsDb"] = Domain::PropertyVisualState::Pending;
+        if (!auto_filling_) {
+          client_path_buf_[0] = '\0';
+          cv->setClientPath("");
+          property_states_[active_version_]["clientPath"] = Domain::PropertyVisualState::Pending;
+        }
+      }
     }
-    ImGui::PopStyleColor();
-    ImGui::PopItemWidth();
-    ImGui::SameLine();
+    if (ImGui::IsItemHovered())
+      ImGui::SetTooltip("Custom items database path (leave empty to use default)");
+    if (is_dat)
+      ImGui::EndDisabled();
+  }
+  ImGui::PopItemWidth();
+  ImGui::SameLine();
+  {
+    bool is_dat = (data_source_idx_ == 2);
+    if (is_dat)
+      ImGui::BeginDisabled();
     if (ImGui::Button(ICON_FA_FOLDER_OPEN "##itemsdbbrowse", ImVec2(28, 0))) {
       NFD::UniquePath outPath;
       if (NFD::OpenDialog(outPath, nullptr, 0) == NFD_OKAY) {
@@ -648,10 +691,14 @@ void ClientPropertyEditor::renderFilesSection() {
         if (cv) {
           cv->setCustomItemsDbPath(std::filesystem::path(selected));
           cv->markDirty();
+          property_states_[active_version_]["itemsDb"] = Domain::PropertyVisualState::Pending;
+          client_path_buf_[0] = '\0';
+          cv->setClientPath("");
+          property_states_[active_version_]["clientPath"] = Domain::PropertyVisualState::Pending;
         }
       }
     }
-    if (is_dat_source)
+    if (is_dat)
       ImGui::EndDisabled();
   }
 

@@ -72,6 +72,7 @@ private:
   bool frame_durations_bool_ = false;
   bool frame_groups_bool_ = false;
   bool is_default_bool_ = false;
+  bool auto_filling_ = false;
 };
 
 } // namespace UI
