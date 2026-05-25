@@ -17,7 +17,6 @@ MainWindow::MainWindow(Services::ViewSettings &view_settings,
       menu_bar_(menu_bar), tab_manager_(tab_manager) {
   // Initialize modal dialogs with registry reference
   new_map_dialog_.initialize(&version_registry_);
-  open_sec_dialog_.initialize(&version_registry_);
 }
 
 void MainWindow::openPropertiesDialog(Domain::Item *item) {
@@ -233,7 +232,6 @@ void MainWindow::renderEditor(Domain::ChunkedMap *current_map,
 
   // Render Editor-state modal dialogs
   new_map_dialog_.render();
-  open_sec_dialog_.render();
 }
 
 void MainWindow::showNewMapDialog() {
@@ -243,15 +241,6 @@ void MainWindow::showNewMapDialog() {
     }
   });
   new_map_dialog_.show();
-}
-
-void MainWindow::showOpenSecDialog() {
-  open_sec_dialog_.setOnConfirm([this](const std::filesystem::path& folder, uint32_t version) {
-    if (open_sec_callback_) {
-      open_sec_callback_(folder, version);
-    }
-  });
-  open_sec_dialog_.show();
 }
 
 } // namespace Presentation

@@ -99,6 +99,15 @@ public:
       Services::SpriteManager *existing_sprite_manager);
 
   /**
+   * Load SEC format map using existing client data.
+   * Use this when loading a second SEC map after client data is already loaded.
+   */
+  MapLoadingResult loadSecMapWithExistingClientData(
+      const std::filesystem::path &directory,
+      Services::ClientDataService *existing_client_data,
+      Services::SpriteManager *existing_sprite_manager);
+
+  /**
    * Create a new empty map.
    * @param config New map configuration
    * @param current_client_index Client index to use
@@ -128,6 +137,9 @@ public:
 
 private:
   Domain::Position findCameraCenter() const;
+
+  MapLoadingResult loadSecMapCore(const std::filesystem::path &directory,
+                                  Services::ClientDataService &client_data);
 
   bool tryLoadCreatures(const std::filesystem::path &map_dir,
                         const std::filesystem::path &client_path);

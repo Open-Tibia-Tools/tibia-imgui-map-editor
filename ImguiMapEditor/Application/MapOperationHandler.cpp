@@ -215,6 +215,11 @@ void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
    pending_map_path_ = path;
    current_client_index_ = index;
 
+  if (std::filesystem::is_directory(path)) {
+    handleOpenSecMapDirect(path, index);
+    return;
+  }
+
   auto *client_version = versions_.getVersion(index);
   if (client_version && client_version->validateFiles()) {
     Utils::ScopedFlag loading(is_loading_);
@@ -308,12 +313,45 @@ void MapOperationHandler::handleOpenSecMapDirect(
 
   Utils::ScopedFlag loading(is_loading_);
 
-  auto result = loading_service_->loadSecMap(sec_folder, current_client_index_);
+  Services::MapLoadingResult result;
+  if (existing_client_data_ && existing_sprite_manager_) {
+    // Reuse existing client data — no reload needed
+    spdlog::info("[MapOperationHandler] Loading SEC map with existing client data");
+    result = loading_service_->loadSecMapWithExistingClientData(
+        sec_folder, existing_client_data_, existing_sprite_manager_);
+  } else {
+    result = loading_service_->loadSecMap(sec_folder, current_client_index_);
+  }
 
   if (result.success) {
+    recent_locations_.addRecentMap(sec_folder, index);
     transferNewResources(std::move(result));
   } else {
     notify(NotificationType::Error, "Failed to load SEC map: " + result.error);
+  }
+}
+
+void MapOperationHandler::handleOpenSecMapFromMenu(
+    const std::filesystem::path &folder) {
+  uint32_t index = getCurrentVersion();
+  if (index == 0) {
+    for (const auto* cv : versions_.getAllVersions()) {
+      if (cv->getDataSource() != Domain::ItemDataSource::SRV)
+        continue;
+      if (cv->validateFiles()) {
+        index = cv->getIndex();
+        break;
+      }
+      if (index == 0 || cv->getIndex() < index) {
+        index = cv->getIndex();
+      }
+    }
+  }
+  if (index > 0) {
+    handleOpenSecMapDirect(folder, index);
+  } else {
+    notify(NotificationType::Warning,
+           "No SRV client version found for SEC map");
   }
 }
 
@@ -338,6 +376,7 @@ void MapOperationHandler::loadMapFromPath(const std::filesystem::path &path,
 
   if (result.success) {
     config_.addRecentFile(path.string());
+    recent_locations_.addRecentMap(path, index);
     transferNewResources(std::move(result));
   }
 }

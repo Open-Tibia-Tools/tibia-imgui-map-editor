@@ -163,11 +163,9 @@ inline constexpr float PROJECT_DIALOG_H = 480.0f;
 inline constexpr float PROJECT_DIALOG_OPEN_W = 900.0f;
 inline constexpr float PROJECT_DIALOG_OPEN_H = 520.0f;
 
-// Modal dialog dimensions (NewMap, OpenSecMap)
+// Modal dialog dimensions (NewMap)
 inline constexpr float NEW_MAP_DIALOG_W = 500.0f;
 inline constexpr float NEW_MAP_DIALOG_H = 400.0f;
-inline constexpr float OPEN_SEC_DIALOG_W = 550.0f;
-inline constexpr float OPEN_SEC_DIALOG_H = 300.0f;
 inline constexpr float MODAL_BUTTON_W = 120.0f;
 
 // Action button dimensions

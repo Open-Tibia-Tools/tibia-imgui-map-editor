@@ -271,7 +271,6 @@ set(UI_SOURCES
     UI/Dialogs/Startup/SelectedMapPanel.cpp
     UI/Dialogs/Startup/StartupDialog.cpp
     UI/Dialogs/NewMapDialog.cpp
-    UI/Dialogs/OpenSecDialog.cpp
     UI/Dialogs/UnsavedChangesModal.cpp
     UI/Dialogs/MapCompatibilityPopup.cpp
     UI/Map/MapContextMenu.cpp
@@ -280,7 +279,6 @@ set(UI_SOURCES
     UI/Map/MapViewCamera.cpp
     UI/Map/SelectionMenu.cpp
     UI/Panels/NewMapPanel.cpp
-    UI/Panels/OpenSecPanel.cpp
     UI/Panels/BrushSizePanel.cpp
     UI/PreferencesDialog.cpp
     UI/Ribbon/Panels/BrushesPanel.cpp

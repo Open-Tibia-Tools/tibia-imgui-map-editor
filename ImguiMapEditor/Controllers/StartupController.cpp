@@ -44,8 +44,7 @@ void StartupController::update() {
     break;
 
   case UI::StartupDialog::Action::BrowseSecMap:
-    // Show SEC map modal in StartupDialog
-    dialog_.showSecMapModal();
+    handleBrowseSecMap();
     break;
 
   case UI::StartupDialog::Action::NewMap:
@@ -54,10 +53,6 @@ void StartupController::update() {
 
   case UI::StartupDialog::Action::NewMapConfirmed:
     handleNewMapConfirmed(result.new_map_config);
-    break;
-
-  case UI::StartupDialog::Action::OpenSecMapConfirmed:
-    handleOpenSecMapConfirmed(result.sec_map_folder, result.sec_map_version);
     break;
 
   case UI::StartupDialog::Action::ClientConfiguration:
@@ -91,7 +86,13 @@ std::vector<UI::RecentMapEntry> StartupController::getRecentMaps() const {
 
     UI::RecentMapEntry entry;
     entry.path = path;
-    entry.filename = path.filename().string();
+
+    bool is_directory = std::filesystem::is_directory(path);
+    if (is_directory) {
+      entry.filename = std::format("..\\{}\\sec", path.filename().string());
+    } else {
+      entry.filename = path.filename().string();
+    }
     entry.exists = std::filesystem::exists(path);
 
     // Get last modified time
@@ -196,8 +197,17 @@ void StartupController::handleMapSelection(const std::filesystem::path &path,
       spdlog::warn("Failed to read OTBM header: {}", otbm_result.error);
     }
   } else if (std::filesystem::is_directory(path)) {
-    // .sec folder - no OTBM metadata available
-    spdlog::info("Directory selected (SEC map): {}", path.string());
+    // SEC folder - no OTBM metadata available
+    map_info.name = std::format("..\\{}\\sec", path.filename().string());
+    map_info.description = ".SEC map file folder.";
+    map_info.valid = true;
+    map_info.width = 0;
+    map_info.height = 0;
+    map_info.client_version = 0;
+    map_info.otbm_version = 0;
+    map_info.items_major_version = 0;
+    map_info.items_minor_version = 0;
+    spdlog::info("SEC map directory selected: {}", path.string());
   }
 
   dialog_.setSelectedMapInfo(map_info);
@@ -216,7 +226,9 @@ void StartupController::handleClientAutoMatch(
   // Primary method: Use OTBM header's OTB Minor version (= otbId =
   // ClientVersionID) This is the RME-compatible approach
   const auto &map_info = dialog_.getSelectedMapInfo();
-  if (map_info.valid && map_info.items_minor_version > 0) {
+  bool is_sec = std::filesystem::is_directory(map_path);
+
+  if (map_info.valid && map_info.items_minor_version > 0 && !is_sec) {
     uint32_t otb_minor = map_info.items_minor_version;
     uint32_t items_major = map_info.items_major_version;
     matched_version = registry_.findBestMatch(otb_minor, items_major);
@@ -228,8 +240,24 @@ void StartupController::handleClientAutoMatch(
     }
   }
 
-  // Fallback: Try to detect client version from signatures in map folder
-  if (!matched_version) {
+  // SEC map: find best SRV client by scanning only SRV data source clients
+  if (!matched_version && is_sec) {
+    for (const auto* cv : registry_.getAllVersions()) {
+      if (cv->getDataSource() == Domain::ItemDataSource::SRV &&
+          !cv->getClientPath().empty()) {
+        if (!matched_version || cv->getIndex() < matched_version->getIndex()) {
+          matched_version = cv;
+        }
+      }
+    }
+    if (matched_version) {
+      matched_client_index_ = matched_version->getIndex();
+      spdlog::info("SEC map matched SRV client index {}", matched_client_index_);
+    }
+  }
+
+  // Fallback: signature detection (skip for SEC — not applicable)
+  if (!matched_version && !is_sec) {
     auto parent_path = map_path.parent_path();
     uint32_t detected_version =
         Services::ClientSignatureDetector::detectFromFolder(
@@ -410,6 +438,7 @@ void StartupController::handleBrowseMap() {
 
     // Select the map
     handleMapSelection(path, 0);
+    recent_locations_.addRecentMap(path, matched_client_index_);
   }
 }
 
@@ -435,13 +464,35 @@ void StartupController::handleBrowseSecMap() {
       // Add to recent files
       config_.addRecentFile(path.string());
 
-      // Select the map
-      handleMapSelection(path, 0);
+      // Select and set SEC-specific info
+      selectSECMapFolder(path);
+      recent_locations_.addRecentMap(path, matched_client_index_);
     } else {
       spdlog::warn("Selected folder does not contain .sec files: {}",
                    path.string());
     }
   }
+}
+
+void StartupController::selectSECMapFolder(const std::filesystem::path &folder) {
+  selected_map_path_ = folder;
+
+  UI::SelectedMapInfo map_info;
+  map_info.name = std::format("..\\{}\\sec", folder.filename().string());
+  map_info.valid = true;
+  map_info.width = 0;
+  map_info.height = 0;
+  map_info.client_version = 0;
+  map_info.description = ".SEC map file folder.";
+  map_info.otbm_version = 0;
+  map_info.items_major_version = 0;
+  map_info.items_minor_version = 0;
+  map_info.created = "";
+
+  dialog_.setSelectedMapInfo(map_info);
+
+  // Attempt client auto-match for SRV clients only
+  handleClientAutoMatch(folder);
 }
 
 void StartupController::handleNewMapFlow() {
@@ -460,23 +511,15 @@ void StartupController::handleNewMapConfirmed(const UI::NewMapPanel::State& conf
                                config.map_height, config.selected_client_index);
 }
 
-void StartupController::handleOpenSecMapConfirmed(
-    const std::filesystem::path& folder, uint32_t version) {
-  spdlog::info("Opening SEC map: {} version {}", folder.string(), version);
-  
-  // Resolve version to index
-  auto* client_ver = registry_.findBestByVersion(version);
-  uint32_t index = client_ver ? client_ver->getIndex() : 0;
-  
-  // Load SEC map directly via MapOperationHandler
-  map_ops_.handleOpenSecMapDirect(folder, index);
-}
-
 void StartupController::handleLoadMap() {
   spdlog::info("Loading map: {}", selected_map_path_.string());
 
-  // Load via MapOperationHandler - now loads directly, no ProjectConfig state needed
-  map_ops_.handleOpenRecentMap(selected_map_path_, matched_client_index_);
+  if (std::filesystem::is_directory(selected_map_path_)) {
+    // SEC map directory — load via loadSecMap
+    map_ops_.handleOpenSecMapDirect(selected_map_path_, matched_client_index_);
+  } else {
+    map_ops_.handleOpenRecentMap(selected_map_path_, matched_client_index_);
+  }
 }
 
 void StartupController::handleClientConfiguration() {

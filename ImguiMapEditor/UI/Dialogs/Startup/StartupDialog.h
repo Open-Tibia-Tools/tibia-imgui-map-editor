@@ -12,7 +12,6 @@ class ConfigService;
 } // namespace MapEditor::Services
 #include "UI/Dialogs/ClientConfiguration/ClientConfigurationDialog.h"
 #include "UI/Dialogs/NewMapDialog.h"
-#include "UI/Dialogs/OpenSecDialog.h"
 #include "UI/DTOs/ClientInfo.h"
 #include "UI/DTOs/RecentMapEntry.h"
 #include "UI/DTOs/SelectedMapInfo.h"
@@ -47,7 +46,6 @@ public:
     BrowseSecMap,
     NewMap,           // Open new map modal
     NewMapConfirmed,  // New map modal confirmed - create map
-    OpenSecMapConfirmed,  // SEC map modal confirmed - load SEC map
     ClientConfiguration,
     Preferences,
     LoadMap,
@@ -61,9 +59,6 @@ public:
     int selected_index = -1;
     // For NewMapConfirmed action
     NewMapPanel::State new_map_config;
-    // For OpenSecMapConfirmed action
-    std::filesystem::path sec_map_folder;
-    uint32_t sec_map_version = 0;
   };
 
   StartupDialog() = default;
@@ -97,7 +92,6 @@ public:
 
   // === Modal control ===
   void showNewMapModal() { show_new_map_modal_ = true; }
-  void showSecMapModal() { show_sec_map_modal_ = true; }
 
   // === State queries ===
   bool isIgnoreSignatures() const { return ignore_signatures_; }
@@ -134,13 +128,11 @@ private:
 
   // Modal trigger flags (dialogs manage their own state)
   bool show_new_map_modal_ = false;
-  bool show_sec_map_modal_ = false;
 
   Result pending_result_;
 
   // === Sub-components (using standalone dialogs for DRY) ===
   NewMapDialog new_map_dialog_;
-  OpenSecDialog open_sec_dialog_;
   ClientConfigurationDialog client_config_dialog_;
 
   // === Extracted Panel Components ===

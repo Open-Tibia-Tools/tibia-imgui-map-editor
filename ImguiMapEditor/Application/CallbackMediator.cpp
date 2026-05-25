@@ -6,6 +6,7 @@
 #include "Controllers/MapInputController.h"
 #include "Controllers/SearchController.h"
 #include "Core/Config.h"
+#include "Domain/ClientVersionTypes.h"
 #include "MapOperationHandler.h"
 #include "MapTabManager.h"
 #include "Platform/GlfwWindow.h"
@@ -36,6 +37,7 @@
 #include "UI/Windows/BrowseTile/BrowseTileWindow.h"
 #include "UI/Windows/IngameBoxWindow.h"
 #include "UI/Windows/MinimapWindow.h"
+#include <nfd.hpp>
 #include <spdlog/spdlog.h>
 
 namespace MapEditor {
@@ -282,9 +284,6 @@ void CallbackMediator::wireMapOperationCallbacks(Context &ctx) {
       ctx.map_operations->handleNewMapDirect(config.map_name, config.map_width,
                                              config.map_height, config.selected_client_index);
     });
-    ctx.main_window->setOpenSecMapCallback([ctx](const std::filesystem::path& folder, uint32_t index) {
-      ctx.map_operations->handleOpenSecMapDirect(folder, index);
-    });
   }
 }
 
@@ -294,8 +293,12 @@ void CallbackMediator::wireMenuCallbacks(Context &ctx) {
       [ctx]() { if (ctx.main_window) ctx.main_window->showNewMapDialog(); });
   ctx.menu_bar->setOpenMapCallback(
       [ctx]() { ctx.map_operations->handleOpenMap(); });
-  ctx.menu_bar->setOpenSecMapCallback(
-      [ctx]() { if (ctx.main_window) ctx.main_window->showOpenSecDialog(); });
+  ctx.menu_bar->setOpenSecMapCallback([ctx]() {
+    NFD::UniquePath outPath;
+    if (NFD::PickFolder(outPath) == NFD_OKAY) {
+      ctx.map_operations->handleOpenSecMapFromMenu(outPath.get());
+    }
+  });
   ctx.menu_bar->setSaveMapCallback(
       [ctx]() { ctx.map_operations->handleSaveMap(); });
   ctx.menu_bar->setSaveAsMapCallback(
