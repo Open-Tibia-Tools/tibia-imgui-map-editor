@@ -25,6 +25,9 @@ void AvailableClientsPanel::render() {
       if (!client)
         continue;
 
+      if (client->getMetadataFile().empty() || client->getSpritesFile().empty())
+        continue;
+
       total_count++;
       uint32_t index = client->getIndex();
       bool is_selected = (selected_client_index_ == index);
@@ -57,23 +60,18 @@ void AvailableClientsPanel::render() {
 
       ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6.0f);
 
-      ImGui::TextColored(kTextMuted, "%u", index);
-      ImGui::SameLine(50);
-      ImGui::TextColored(kGreenStatus, "%s", client->getName().c_str());
-      ImGui::SameLine(190);
       ImGui::TextColored(kTextMuted, "%u", client->getVersion());
+      ImGui::SameLine(80);
+      ImGui::TextColored(kGreenStatus, "%s", client->getName().c_str());
 
-      ImGui::SameLine(240);
+      ImGui::SameLine();
       const char* type_str = "???";
       switch (client->getDataSource()) {
         case Domain::ItemDataSource::OTB: type_str = "OTB"; break;
         case Domain::ItemDataSource::SRV: type_str = "SRV"; break;
         case Domain::ItemDataSource::DAT: type_str = "DAT"; break;
       }
-      ImGui::TextColored(kTextMuted, "%s", type_str);
-
-      ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
-      ImGui::TextColored(kGreenStatus, ICON_FA_CHECK);
+      ImGui::TextColored(kTextMuted, "| %s", type_str);
 
       ImGui::Unindent(8.0f);
       ImGui::SetCursorPosY(ImGui::GetCursorPosY() + item_size.y - 28);

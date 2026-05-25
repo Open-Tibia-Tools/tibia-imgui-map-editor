@@ -466,10 +466,14 @@ void ClientConfigurationController::autoDetectFromClientPath(
     if (auto* cv = registry_->getVersion(active_version_)) {
         cv->setMetadataFile((clientPath / "Tibia.dat").string());
         cv->setSpritesFile((clientPath / "Tibia.spr").string());
-        auto items_path = cv->getItemMetadataPath().string();
-        if (!items_path.empty()) {
-            cpy(items_db_buf_, sizeof(items_db_buf_), items_path);
-            cv->setCustomItemsDbPath(items_path);
+        for (const auto& name : {"items.otb", "items.srv"}) {
+            auto test_path = clientPath / name;
+            if (std::filesystem::exists(test_path)) {
+                auto path_str = test_path.string();
+                cpy(items_db_buf_, sizeof(items_db_buf_), path_str);
+                cv->setCustomItemsDbPath(test_path);
+                break;
+            }
         }
     }
     auto_filling_ = false;
