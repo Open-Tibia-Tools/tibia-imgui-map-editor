@@ -3,6 +3,7 @@
 #include "IO/Otbm/OtbmReader.h"
 #include "Services/ClientSignatureDetector.h"
 #include <chrono>
+#include <cctype>
 #include <iomanip>
 #include <nfd.hpp>
 #include <spdlog/spdlog.h>
@@ -451,10 +452,12 @@ void StartupController::handleBrowseSecMap() {
   if (result == NFD_OKAY) {
     std::filesystem::path path(outPath.get());
 
-    // Validate .sec folder (should contain .sec files)
+    // Validate .sec folder (should contain .sec files — case-insensitive)
     bool has_sec_files = false;
     for (const auto &entry : std::filesystem::directory_iterator(path)) {
-      if (entry.path().extension() == ".sec") {
+      std::string ext = entry.path().extension().string();
+      for (auto& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+      if (ext == ".sec") {
         has_sec_files = true;
         break;
       }

@@ -314,16 +314,28 @@ void MapOperationHandler::handleOpenSecMapDirect(
   Utils::ScopedFlag loading(is_loading_);
 
   Services::MapLoadingResult result;
-  if (existing_client_data_ && existing_sprite_manager_) {
-    // Reuse existing client data — no reload needed
+  if (existing_client_data_ && existing_sprite_manager_
+      && existing_client_data_->hasServerIdSupport()) {
+    // Reuse existing SRV-compatible client data — no reload needed
     spdlog::info("[MapOperationHandler] Loading SEC map with existing client data");
     result = loading_service_->loadSecMapWithExistingClientData(
         sec_folder, existing_client_data_, existing_sprite_manager_);
   } else {
+    // SEC maps require SRV client data — auto-match if no valid index provided
+    if (current_client_index_ == 0) {
+      for (const auto* cv : versions_.getAllVersions()) {
+        if (cv->getDataSource() == Domain::ItemDataSource::SRV
+            && cv->validateFiles()) {
+          current_client_index_ = cv->getIndex();
+          break;
+        }
+      }
+    }
     result = loading_service_->loadSecMap(sec_folder, current_client_index_);
   }
 
   if (result.success) {
+    config_.addRecentFile(sec_folder.string());
     recent_locations_.addRecentMap(sec_folder, index);
     transferNewResources(std::move(result));
   } else {
@@ -333,18 +345,17 @@ void MapOperationHandler::handleOpenSecMapDirect(
 
 void MapOperationHandler::handleOpenSecMapFromMenu(
     const std::filesystem::path &folder) {
-  uint32_t index = getCurrentVersion();
-  if (index == 0) {
-    for (const auto* cv : versions_.getAllVersions()) {
-      if (cv->getDataSource() != Domain::ItemDataSource::SRV)
-        continue;
-      if (cv->validateFiles()) {
-        index = cv->getIndex();
-        break;
-      }
-      if (index == 0 || cv->getIndex() < index) {
-        index = cv->getIndex();
-      }
+  // SEC maps require SRV client data — always auto-match regardless of current state
+  uint32_t index = 0;
+  for (const auto* cv : versions_.getAllVersions()) {
+    if (cv->getDataSource() != Domain::ItemDataSource::SRV)
+      continue;
+    if (cv->validateFiles()) {
+      index = cv->getIndex();
+      break;
+    }
+    if (index == 0 || cv->getIndex() < index) {
+      index = cv->getIndex();
     }
   }
   if (index > 0) {
