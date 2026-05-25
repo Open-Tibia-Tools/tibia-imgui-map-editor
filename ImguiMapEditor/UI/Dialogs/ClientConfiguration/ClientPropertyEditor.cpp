@@ -646,7 +646,11 @@ void ClientPropertyEditor::renderFeaturesSection() {
         if (ImGui::Checkbox("Set as Default", eb.isDefault)) {
             if (auto* cv = registry_->getVersion(active_version_)) {
                 cv->setDefault(*eb.isDefault);
-                if (*eb.isDefault && registry_) registry_->setDefaultVersion(cv->getIndex());
+                if (*eb.isDefault && registry_) {
+                    registry_->setDefaultVersion(cv->getIndex());
+                } else if (registry_ && registry_->getDefaultVersion() == cv->getIndex()) {
+                    registry_->setDefaultVersion(0);
+                }
                 cv->markDirty();
             }
         }

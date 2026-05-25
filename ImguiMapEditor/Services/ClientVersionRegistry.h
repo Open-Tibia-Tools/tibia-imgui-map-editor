@@ -17,8 +17,8 @@ public:
 
   bool loadDefaults(const ConfigService &config);
 
-  Domain::ClientVersion *getVersion(uint32_t version_number);
-  const Domain::ClientVersion *getVersion(uint32_t version_number) const;
+  Domain::ClientVersion *getVersion(uint32_t index);
+  const Domain::ClientVersion *getVersion(uint32_t index) const;
 
   const Domain::ClientVersion *findBestMatch(uint32_t otb_minor, uint32_t items_major) const;
   const Domain::ClientVersion *findBestByVersion(uint32_t version) const;
@@ -27,12 +27,12 @@ public:
 
   bool hasAnyValidPaths() const;
 
-  void setDefaultVersion(uint32_t version_number);
+  void setDefaultVersion(uint32_t index);
   uint32_t getDefaultVersion() const { return default_version_; }
 
   bool addClient(const Domain::ClientVersion &version);
-  bool updateClient(uint32_t version_number, const Domain::ClientVersion &updated);
-  bool removeClient(uint32_t version_number);
+  bool updateClient(uint32_t index, const Domain::ClientVersion &updated);
+  bool removeClient(uint32_t index);
 
   const std::filesystem::path &getJsonPath() const { return clients_json_path_; }
   const std::filesystem::path &getConfigPath() const { return config_json_path_; }
@@ -51,8 +51,8 @@ public:
   size_t getVersionCount() const { return versions_.size(); }
   bool isEmpty() const { return versions_.empty(); }
 
-  void backupVersion(uint32_t version_number);
-  void restoreVersion(uint32_t version_number);
+  void backupVersion(uint32_t index);
+  void restoreVersion(uint32_t index);
 
 private:
   std::map<uint32_t, Domain::ClientVersion> versions_;

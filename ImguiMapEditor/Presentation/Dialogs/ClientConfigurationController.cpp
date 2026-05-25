@@ -478,6 +478,7 @@ void ClientConfigurationController::autoDetectFromClientPath(
                 break;
             }
         }
+        cv->markDirty();
     }
     auto_filling_ = false;
 }

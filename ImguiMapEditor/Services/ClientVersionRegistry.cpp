@@ -45,14 +45,14 @@ bool ClientVersionRegistry::loadDefaults(const ConfigService &config) {
 }
 
 Domain::ClientVersion *
-ClientVersionRegistry::getVersion(uint32_t version_number) {
-  auto it = versions_.find(version_number);
+ClientVersionRegistry::getVersion(uint32_t index) {
+  auto it = versions_.find(index);
   return it != versions_.end() ? &it->second : nullptr;
 }
 
 const Domain::ClientVersion *
-ClientVersionRegistry::getVersion(uint32_t version_number) const {
-  auto it = versions_.find(version_number);
+ClientVersionRegistry::getVersion(uint32_t index) const {
+  auto it = versions_.find(index);
   return it != versions_.end() ? &it->second : nullptr;
 }
 
@@ -101,13 +101,13 @@ bool ClientVersionRegistry::hasAnyValidPaths() const {
   return false;
 }
 
-void ClientVersionRegistry::setDefaultVersion(uint32_t version_number) {
+void ClientVersionRegistry::setDefaultVersion(uint32_t index) {
   for (auto &[num, version] : versions_) {
     version.setDefault(false);
   }
 
-  default_version_ = version_number;
-  if (auto *version = getVersion(version_number)) {
+  default_version_ = index;
+  if (auto *version = getVersion(index)) {
     version->setDefault(true);
   }
 }
@@ -123,46 +123,46 @@ bool ClientVersionRegistry::addClient(const Domain::ClientVersion &version) {
   return true;
 }
 
-bool ClientVersionRegistry::updateClient(uint32_t version_number,
+bool ClientVersionRegistry::updateClient(uint32_t index,
                                          const Domain::ClientVersion &updated) {
-  auto it = versions_.find(version_number);
+  auto it = versions_.find(index);
   if (it == versions_.end()) {
-    spdlog::warn("Cannot update client with index {}: not found", version_number);
+    spdlog::warn("Cannot update client with index {}: not found", index);
     return false;
   }
 
   it->second = updated;
-  it->second.setIndex(version_number);
+  it->second.setIndex(index);
 
-  spdlog::info("Updated client with index {}", version_number);
+  spdlog::info("Updated client with index {}", index);
   return true;
 }
 
-bool ClientVersionRegistry::removeClient(uint32_t version_number) {
-  auto it = versions_.find(version_number);
+bool ClientVersionRegistry::removeClient(uint32_t index) {
+  auto it = versions_.find(index);
   if (it == versions_.end()) {
-    spdlog::warn("Cannot remove client with index {}: not found", version_number);
+    spdlog::warn("Cannot remove client with index {}: not found", index);
     return false;
   }
 
-  if (default_version_ == version_number) {
+  if (default_version_ == index) {
     default_version_ = 0;
   }
 
   versions_.erase(it);
-  spdlog::info("Removed client with index {}", version_number);
+  spdlog::info("Removed client with index {}", index);
   return true;
 }
 
-void ClientVersionRegistry::backupVersion(uint32_t version_number) {
-  auto it = versions_.find(version_number);
+void ClientVersionRegistry::backupVersion(uint32_t index) {
+  auto it = versions_.find(index);
   if (it != versions_.end()) {
     it->second.backup();
   }
 }
 
-void ClientVersionRegistry::restoreVersion(uint32_t version_number) {
-  auto it = versions_.find(version_number);
+void ClientVersionRegistry::restoreVersion(uint32_t index) {
+  auto it = versions_.find(index);
   if (it != versions_.end()) {
     it->second.restore();
     it->second.clearDirty();
