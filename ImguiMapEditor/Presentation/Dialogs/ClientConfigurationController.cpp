@@ -62,13 +62,13 @@ void ClientConfigurationController::open(Services::ClientVersionRegistry& regist
     auto config_path = std::filesystem::current_path() / "data" / "clients_saved.json";
     registry_->setConfigPath(config_path);
 
-    auto [versions, default_ver] = Services::ClientVersionPersistence::loadFromJson(config_path);
-    for (auto& [index, cv] : versions) {
+    auto [indexs, default_ver] = Services::ClientVersionPersistence::loadFromJson(config_path);
+    for (auto& [index, cv] : indexs) {
         if (!registry_->getVersion(index))
             registry_->addClient(cv);
     }
-    if (!versions.empty())
-        registry_->setNextIndex(versions.rbegin()->first);
+    if (!indexs.empty())
+        registry_->setNextIndex(indexs.rbegin()->first);
 
     if (registry_->getDefaultVersion() > 0)
         active_client_index_ = registry_->getDefaultVersion();
@@ -89,11 +89,11 @@ void ClientConfigurationController::close() { is_open_ = false; }
 
 // === Selection ===
 
-void ClientConfigurationController::selectClient(uint32_t version) {
-    if (version == active_client_index_) return;
-    active_client_index_ = version;
-    if (version == 0) return;
-    if (auto* cv = registry_->getVersion(version)) {
+void ClientConfigurationController::selectClient(uint32_t index) {
+    if (index == active_client_index_) return;
+    active_client_index_ = index;
+    if (index == 0) return;
+    if (auto* cv = registry_->getVersion(index)) {
         cv->backup();
         syncFromClient(*cv);
     }
@@ -165,12 +165,12 @@ void ClientConfigurationController::duplicateClient(uint32_t from_index) {
     selectClient(new_index);
 }
 
-void ClientConfigurationController::deleteClient(uint32_t version) {
-    if (version == 0) return;
-    pending_deleted_.insert(version);
-    clearPropertyStates(version);
+void ClientConfigurationController::deleteClient(uint32_t index) {
+    if (index == 0) return;
+    pending_deleted_.insert(index);
+    clearPropertyStates(index);
     populateVersionData();
-    if (active_client_index_ == version) {
+    if (active_client_index_ == index) {
         active_client_index_ = 0;
         if (!filtered_versions_.empty())
             selectClient(filtered_versions_[0]);
@@ -183,16 +183,16 @@ bool ClientConfigurationController::saveAll() {
     if (!registry_) return false;
     if (!validateBeforeSave()) return false;
 
-    auto versions = registry_->getVersionsMap();
+    auto indexs = registry_->getVersionsMap();
     uint32_t default_ver = registry_->getDefaultVersion();
 
     for (auto index : pending_deleted_) {
-        versions.erase(index);
+        indexs.erase(index);
         if (default_ver == index) default_ver = 0;
     }
 
     if (!Services::ClientVersionPersistence::saveToJson(
-            registry_->getConfigPath(), versions, default_ver)) {
+            registry_->getConfigPath(), indexs, default_ver)) {
         spdlog::error("Failed to save clients_saved.json");
         return false;
     }
@@ -309,35 +309,35 @@ void ClientConfigurationController::setSearchFilter(const std::string& filter) {
 
 // === Property state tracking ===
 
-void ClientConfigurationController::setPropertyState(uint32_t version, const char* name,
+void ClientConfigurationController::setPropertyState(uint32_t index, const char* name,
                                                      Domain::PropertyVisualState state) {
-    property_states_[version][name] = state;
+    property_states_[index][name] = state;
 }
 
 Domain::PropertyVisualState
-ClientConfigurationController::getPropertyState(uint32_t version, const char* name) const {
-    auto it = property_states_.find(version);
+ClientConfigurationController::getPropertyState(uint32_t index, const char* name) const {
+    auto it = property_states_.find(index);
     if (it == property_states_.end()) return Domain::PropertyVisualState::Default;
     auto pit = it->second.find(name);
     if (pit == it->second.end()) return Domain::PropertyVisualState::Default;
     return pit->second;
 }
 
-void ClientConfigurationController::clearPropertyStates(uint32_t version) {
-    property_states_.erase(version);
+void ClientConfigurationController::clearPropertyStates(uint32_t index) {
+    property_states_.erase(index);
 }
 
-void ClientConfigurationController::markAllPendingAsSaved(uint32_t version) {
-    auto it = property_states_.find(version);
+void ClientConfigurationController::markAllPendingAsSaved(uint32_t index) {
+    auto it = property_states_.find(index);
     if (it == property_states_.end()) return;
     for (auto& [name, state] : it->second)
         if (state == Domain::PropertyVisualState::Pending) state = Domain::PropertyVisualState::Saved;
 }
 
 const std::unordered_map<std::string, Domain::PropertyVisualState>&
-ClientConfigurationController::getStates(uint32_t version) const {
+ClientConfigurationController::getStates(uint32_t index) const {
     static const std::unordered_map<std::string, Domain::PropertyVisualState> kEmpty;
-    auto it = property_states_.find(version);
+    auto it = property_states_.find(index);
     return it != property_states_.end() ? it->second : kEmpty;
 }
 

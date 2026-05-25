@@ -32,12 +32,12 @@ public:
 
     // === Selection ===
     uint32_t activeVersion() const { return active_client_index_; }
-    void selectClient(uint32_t version);
+    void selectClient(uint32_t index);
 
     // === CRUD ===
     void addClient();
     void duplicateClient();
-    void deleteClient(uint32_t version);
+    void deleteClient(uint32_t index);
     void duplicateClient(uint32_t from_index);
 
     // === Persistence ===
@@ -60,12 +60,12 @@ public:
     void setSearchFilter(const std::string& filter);
 
     // === Property state tracking ===
-    void setPropertyState(uint32_t version, const char* name, Domain::PropertyVisualState state);
-    Domain::PropertyVisualState getPropertyState(uint32_t version, const char* name) const;
-    void clearPropertyStates(uint32_t version);
-    void markAllPendingAsSaved(uint32_t version);
+    void setPropertyState(uint32_t index, const char* name, Domain::PropertyVisualState state);
+    Domain::PropertyVisualState getPropertyState(uint32_t index, const char* name) const;
+    void clearPropertyStates(uint32_t index);
+    void markAllPendingAsSaved(uint32_t index);
     const std::unordered_map<std::string, Domain::PropertyVisualState>&
-    getStates(uint32_t version) const;
+    getStates(uint32_t index) const;
 
     // === Sync (buffer ↔ domain) ===
     void syncFromClient(const Domain::ClientVersion& cv);

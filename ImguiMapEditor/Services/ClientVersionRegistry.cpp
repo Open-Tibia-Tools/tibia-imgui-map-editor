@@ -29,7 +29,7 @@ bool ClientVersionRegistry::loadDefaults(const ConfigService &config) {
     if (std::filesystem::exists(path)) {
       auto data = ClientVersionPersistence::loadFromJson(path);
       versions_ = std::move(data.first);
-      default_version_ = data.second;
+      default_index_ = data.second;
       clients_json_path_ = path;
       if (!versions_.empty()) {
           setNextIndex(versions_.rbegin()->first);
@@ -106,7 +106,7 @@ void ClientVersionRegistry::setDefaultVersion(uint32_t index) {
     version.setDefault(false);
   }
 
-  default_version_ = index;
+  default_index_ = index;
   if (auto *version = getVersion(index)) {
     version->setDefault(true);
   }
@@ -145,8 +145,8 @@ bool ClientVersionRegistry::removeClient(uint32_t index) {
     return false;
   }
 
-  if (default_version_ == index) {
-    default_version_ = 0;
+  if (default_index_ == index) {
+    default_index_ = 0;
   }
 
   versions_.erase(it);

@@ -12,18 +12,18 @@ namespace Services {
 std::pair<std::map<uint32_t, Domain::ClientVersion>, uint32_t>
 ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
   std::map<uint32_t, Domain::ClientVersion> versions;
-  uint32_t default_version = 0;
+  uint32_t default_index = 0;
 
   if (!std::filesystem::exists(path)) {
     spdlog::error("Failed to load {}: file not found at {}",
                   path.filename().string(), path.string());
-    return {versions, default_version};
+    return {versions, default_index};
   }
 
   std::ifstream file(path);
   if (!file.is_open()) {
     spdlog::error("Failed to open {}: {}", path.filename().string(), path.string());
-    return {versions, default_version};
+    return {versions, default_index};
   }
 
   nlohmann::json json;
@@ -31,12 +31,12 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
     json = nlohmann::json::parse(file);
   } catch (const nlohmann::json::parse_error &e) {
     spdlog::error("Failed to parse {}: {}", path.filename().string(), e.what());
-    return {versions, default_version};
+    return {versions, default_index};
   }
 
   if (!json.contains("clients") || !json["clients"].is_array()) {
     spdlog::error("Invalid {} structure: missing 'clients' array", path.filename().string());
-    return {versions, default_version};
+    return {versions, default_index};
   }
 
   for (const auto &client : json["clients"]) {
@@ -139,7 +139,7 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
     version.setFrameGroups(client.value("frameGroups", false));
 
     if (is_default) {
-      default_version = index;
+      default_index = index;
     }
 
     if (versions.find(index) == versions.end()) {
@@ -149,7 +149,7 @@ ClientVersionPersistence::loadFromJson(const std::filesystem::path &path) {
 
   spdlog::info("Loaded {} client versions from {}",
                 versions.size(), path.string());
-  return {versions, default_version};
+  return {versions, default_index};
 }
 
 bool ClientVersionPersistence::saveToJson(

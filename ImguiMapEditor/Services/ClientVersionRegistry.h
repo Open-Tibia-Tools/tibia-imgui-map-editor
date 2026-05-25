@@ -28,15 +28,7 @@ public:
   bool hasAnyValidPaths() const;
 
   void setDefaultVersion(uint32_t index);
-  uint32_t getDefaultVersion() const { return default_version_; }
-
-  bool addClient(const Domain::ClientVersion &version);
-  bool updateClient(uint32_t index, const Domain::ClientVersion &updated);
-  bool removeClient(uint32_t index);
-
-  const std::filesystem::path &getJsonPath() const { return clients_json_path_; }
-  const std::filesystem::path &getConfigPath() const { return config_json_path_; }
-  void setConfigPath(const std::filesystem::path &p) { config_json_path_ = p; }
+  uint32_t getDefaultVersion() const { return default_index_; }
 
   uint32_t nextIndex() { return ++next_index_; }
   void setNextIndex(uint32_t index) { if (index >= next_index_) next_index_ = index; }
@@ -54,9 +46,17 @@ public:
   void backupVersion(uint32_t index);
   void restoreVersion(uint32_t index);
 
+  bool addClient(const Domain::ClientVersion &version);
+  bool updateClient(uint32_t index, const Domain::ClientVersion &updated);
+  bool removeClient(uint32_t index);
+
+  const std::filesystem::path &getJsonPath() const { return clients_json_path_; }
+  const std::filesystem::path &getConfigPath() const { return config_json_path_; }
+  void setConfigPath(const std::filesystem::path &p) { config_json_path_ = p; }
+
 private:
   std::map<uint32_t, Domain::ClientVersion> versions_;
-  uint32_t default_version_ = 0;
+  uint32_t default_index_ = 0;
   uint32_t next_index_ = 0;
   std::filesystem::path clients_json_path_;
   std::filesystem::path config_json_path_;
