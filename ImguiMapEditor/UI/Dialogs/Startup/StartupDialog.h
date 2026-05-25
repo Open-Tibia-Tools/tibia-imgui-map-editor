@@ -57,7 +57,7 @@ public:
   struct Result {
     Action action = Action::None;
     std::filesystem::path selected_path;
-    uint32_t selected_version = 0;
+    uint32_t selected_client_index = 0;
     int selected_index = -1;
     // For NewMapConfirmed action
     NewMapPanel::State new_map_config;

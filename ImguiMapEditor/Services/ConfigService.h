@@ -48,12 +48,6 @@ public:
     void remove(const std::string& key);
     
     // Common settings shortcuts
-    std::string getLastClientVersion() const;
-    void setLastClientVersion(const std::string& version);
-    
-    std::filesystem::path getClientPath(uint32_t version) const;
-    void setClientPath(uint32_t version, const std::filesystem::path& path);
-    
     std::vector<std::string> getRecentFiles() const;
     void addRecentFile(const std::string& path);
     void clearRecentFiles();

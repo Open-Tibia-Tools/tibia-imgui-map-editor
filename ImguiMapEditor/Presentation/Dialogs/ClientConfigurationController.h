@@ -36,10 +36,9 @@ public:
 
     // === CRUD ===
     void addClient();
-    void addClientWithVersion(const std::string& name, uint32_t version);
     void duplicateClient();
     void deleteClient(uint32_t version);
-    void duplicateClient(uint32_t from_version);
+    void duplicateClient(uint32_t from_index);
 
     // === Persistence ===
     bool saveAll();
@@ -54,14 +53,7 @@ public:
     // === Asset detection ===
     void runAssetDetection();
 
-    // === Filter / grouping ===
-    struct VersionGroup {
-        int major;
-        std::string label;
-        bool visible = true;
-        std::vector<uint32_t> versions;
-    };
-    const std::vector<VersionGroup>& versionGroups() const { return version_groups_; }
+    // === Filter ===
     const std::vector<uint32_t>& filteredVersions() const { return filtered_versions_; }
 
     void populateVersionData();
@@ -118,8 +110,6 @@ public:
     EditableBuffers getEditableBuffers();
 
 private:
-    static std::string buildGroupLabel(int major);
-    int getMajorGroup(uint32_t version) const;
     bool matchesFilter(const Domain::ClientVersion& ver) const;
     bool validateBeforeSave();
 
@@ -128,11 +118,9 @@ private:
     bool is_open_ = false;
 
     uint32_t active_version_ = 0;
-    int active_tab_ = 0;
     std::string search_filter_;
     char search_buf_[128] = {};
 
-    std::vector<VersionGroup> version_groups_;
     std::vector<uint32_t> filtered_versions_;
     std::unordered_set<uint32_t> pending_deleted_;
     std::unordered_set<uint32_t> pending_created_;

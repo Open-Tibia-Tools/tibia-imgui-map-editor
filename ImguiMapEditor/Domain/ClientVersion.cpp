@@ -2,28 +2,13 @@
 namespace MapEditor {
 namespace Domain {
 
-ClientVersion::ClientVersion(uint32_t id, uint32_t version, const std::string& name, uint32_t otb_version)
-    : id_(id)
+ClientVersion::ClientVersion(uint32_t index, uint32_t version, const std::string &name,
+                             uint32_t otb_version)
+    : index_(index)
     , version_(version)
     , name_(name)
     , otb_version_(otb_version)
 {
-}
-
-std::filesystem::path ClientVersion::getDatPath() const {
-    if (metadata_file_.empty()) return {};
-    std::filesystem::path p(metadata_file_);
-    if (p.is_absolute()) return p;
-    if (client_path_.empty()) return {};
-    return client_path_ / p;
-}
-
-std::filesystem::path ClientVersion::getSprPath() const {
-    if (sprites_file_.empty()) return {};
-    std::filesystem::path p(sprites_file_);
-    if (p.is_absolute()) return p;
-    if (client_path_.empty()) return {};
-    return client_path_ / p;
 }
 
 std::filesystem::path ClientVersion::getItemMetadataPath() const {
@@ -45,21 +30,11 @@ std::filesystem::path ClientVersion::getItemMetadataPath() const {
 }
 
 bool ClientVersion::hasValidPaths() const {
-    if (client_path_.empty()) {
-        return false;
-    }
-    return std::filesystem::exists(client_path_);
+    return std::filesystem::exists(metadata_file_);
 }
 
 bool ClientVersion::validateFiles() const {
-    if (!hasValidPaths()) {
-        return false;
-    }
-    
-    auto dat_path = getDatPath();
-    auto spr_path = getSprPath();
-    
-    if (!std::filesystem::exists(dat_path) || !std::filesystem::exists(spr_path)) {
+    if (!std::filesystem::exists(metadata_file_) || !std::filesystem::exists(sprites_file_)) {
         return false;
     }
 
@@ -86,7 +61,6 @@ bool ClientVersion::validateFiles() const {
 
 void ClientVersion::backup() {
     backup_data_ = BackupData{
-        id_,
         version_,
         name_,
         otb_version_,
@@ -100,7 +74,6 @@ void ClientVersion::backup() {
         metadata_file_,
         sprites_file_,
         data_source_,
-        visible_,
         is_default_,
         transparency_,
         extended_,
@@ -112,7 +85,6 @@ void ClientVersion::backup() {
 }
 
 void ClientVersion::restore() {
-    id_ = backup_data_.id;
     version_ = backup_data_.version;
     name_ = backup_data_.name;
     otb_version_ = backup_data_.otb_version;
@@ -126,7 +98,6 @@ void ClientVersion::restore() {
     metadata_file_ = backup_data_.metadata_file;
     sprites_file_ = backup_data_.sprites_file;
     data_source_ = backup_data_.data_source;
-    visible_ = backup_data_.visible;
     is_default_ = backup_data_.is_default;
     transparency_ = backup_data_.transparency;
     extended_ = backup_data_.extended;

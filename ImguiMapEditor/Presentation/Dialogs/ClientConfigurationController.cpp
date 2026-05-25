@@ -9,8 +9,6 @@
 #include <cctype>
 #include <cstring>
 #include <format>
-#include <map>
-#include <set>
 #include <sstream>
 #include <spdlog/spdlog.h>
 
@@ -40,12 +38,16 @@ std::string toLower(std::string s) {
     return s;
 }
 
-} // namespace
-
-std::string ClientConfigurationController::buildGroupLabel(int major) {
-    if (major >= 1000) return std::format("{}.{}", major, 0);
-    return std::format("{}.x", major);
+std::string dataSourceToString(Domain::ItemDataSource ds) {
+    switch (ds) {
+        case Domain::ItemDataSource::OTB: return "OTB";
+        case Domain::ItemDataSource::SRV: return "SRV";
+        case Domain::ItemDataSource::DAT: return "DAT";
+        default: return "Unknown";
+    }
 }
+
+} // namespace
 
 // === Session lifecycle ===
 
@@ -55,51 +57,28 @@ void ClientConfigurationController::open(Services::ClientVersionRegistry& regist
     config_ = &config;
     is_open_ = true;
     active_version_ = 0;
-    active_tab_ = 0;
     search_buf_[0] = '\0';
     search_filter_.clear();
     pending_deleted_.clear();
     pending_created_.clear();
 
-    // Load templates from shipped clients.json
-    auto templates = Services::ClientVersionPersistence::loadTemplatesFromJson(
-        registry_->getJsonPath());
-    registry_->loadTemplates(templates);
-
-    // Load configured clients and merge into existing registry
-    auto config_path = std::filesystem::current_path() / "data" / "configured_clients.json";
+    auto config_path = std::filesystem::current_path() / "data" / "clients_saved.json";
     registry_->setConfigPath(config_path);
 
-    auto data = Services::ClientVersionPersistence::loadFromJson(config_path);
-    for (auto& [id, cv] : data.versions) {
-        if (!registry_->getVersion(id))
+    auto [versions, default_ver] = Services::ClientVersionPersistence::loadFromJson(config_path);
+    for (auto& [index, cv] : versions) {
+        if (!registry_->getVersion(index))
             registry_->addClient(cv);
     }
-    if (!data.versions.empty())
-        registry_->setNextId(data.versions.rbegin()->first);
+    if (!versions.empty())
+        registry_->setNextIndex(versions.rbegin()->first);
 
     if (registry_->getDefaultVersion() > 0)
         active_version_ = registry_->getDefaultVersion();
     else if (!registry_->getVersionsMap().empty())
         active_version_ = registry_->getVersionsMap().begin()->first;
 
-    version_groups_.clear();
-    std::map<int, std::vector<uint32_t>> grouped;
-    for (const auto& [id, cv] : registry_->getVersionsMap())
-        grouped[getMajorGroup(cv.getVersion())].push_back(id);
-    for (auto& [major, vers] : grouped) {
-        std::sort(vers.begin(), vers.end());
-        version_groups_.push_back({major, buildGroupLabel(major), true, std::move(vers)});
-    }
-    std::sort(version_groups_.begin(), version_groups_.end(),
-              [](const VersionGroup& a, const VersionGroup& b) { return a.major < b.major; });
-
     populateVersionData();
-
-    int def_group = getMajorGroup(active_version_);
-    for (size_t i = 0; i < version_groups_.size(); ++i) {
-        if (version_groups_[i].major == def_group) { active_tab_ = static_cast<int>(i); break; }
-    }
 
     if (active_version_ != 0) {
         if (auto* cv = registry_->getVersion(active_version_)) {
@@ -126,59 +105,44 @@ void ClientConfigurationController::selectClient(uint32_t version) {
 // === CRUD ===
 
 void ClientConfigurationController::addClient() {
-    addClientWithVersion("New Client", 0);
-}
-
-void ClientConfigurationController::addClientWithVersion(const std::string& name, uint32_t version) {
-    std::string new_name = name;
+    std::string new_name = "New Client";
     int counter = 1;
-    if (name == "New Client") {
-        // Auto-uniquify only for default name
-        for (bool unique = false; !unique;) {
-            unique = true;
-            for (const auto& [num, ver] : registry_->getVersionsMap()) {
-                if (ver.getName() == new_name) {
-                    new_name = "New Client " + std::to_string(counter++);
-                    unique = false;
-                    break;
-                }
+    for (bool unique = false; !unique;) {
+        unique = true;
+        for (const auto& [num, ver] : registry_->getVersionsMap()) {
+            if (ver.getName() == new_name) {
+                new_name = "New Client " + std::to_string(counter++);
+                unique = false;
+                break;
             }
         }
     }
 
-    uint32_t new_version = version > 0 ? version : 0;
-
-    uint32_t new_id = registry_->nextId();
-    uint32_t new_ver = version > 0 ? version : 1;  // default to 1, not 0
-
-    Domain::ClientVersion cv(new_id, new_ver, new_name, 0);
-    cv.setDataDirectory(std::format("data/{}", new_ver));
-    cv.setMetadataFile("Tibia.dat");
-    cv.setMetadataFile("Tibia.dat");
-    cv.setSpritesFile("Tibia.spr");
-    cv.setOtbMajor(3);
+    uint32_t new_index = registry_->nextIndex();
+    Domain::ClientVersion cv(new_index, 0, new_name, 0);
+    cv.setDataSource(Domain::ItemDataSource::OTB);
     cv.markDirty();
 
     registry_->addClient(cv);
-    registry_->backupVersion(new_id);
-    pending_created_.insert(new_id);
+    registry_->backupVersion(new_index);
+    pending_created_.insert(new_index);
     populateVersionData();
-    selectClient(new_id);
+    selectClient(new_index);
 }
 
 void ClientConfigurationController::duplicateClient() {
     duplicateClient(active_version_);
 }
 
-void ClientConfigurationController::duplicateClient(uint32_t from_version) {
-    if (from_version == 0) return;
-    auto* src = registry_->getVersion(from_version);
+void ClientConfigurationController::duplicateClient(uint32_t from_index) {
+    if (from_index == 0) return;
+    auto* src = registry_->getVersion(from_index);
     if (!src) return;
 
     std::string new_name = src->getName() + " (Copy)";
-    uint32_t new_id = registry_->nextId();
+    uint32_t new_index = registry_->nextIndex();
 
-    Domain::ClientVersion clone(new_id, src->getVersion(), new_name, src->getOtbVersion());
+    Domain::ClientVersion clone(new_index, src->getVersion(), new_name, src->getOtbVersion());
     clone.setDescription(src->getDescription());
     clone.setDataDirectory(src->getDataDirectory());
     clone.setClientPath(src->getClientPath());
@@ -197,10 +161,10 @@ void ClientConfigurationController::duplicateClient(uint32_t from_version) {
     clone.markDirty();
 
     registry_->addClient(clone);
-    registry_->backupVersion(new_id);
-    pending_created_.insert(new_id);
+    registry_->backupVersion(new_index);
+    pending_created_.insert(new_index);
     populateVersionData();
-    selectClient(new_id);
+    selectClient(new_index);
 }
 
 void ClientConfigurationController::deleteClient(uint32_t version) {
@@ -221,28 +185,22 @@ bool ClientConfigurationController::saveAll() {
     if (!registry_) return false;
     if (!validateBeforeSave()) return false;
 
-    // Build payload from current registry state before mutating
-    Services::ClientVersionsData data;
-    data.versions = registry_->getVersionsMap();
-    data.otb_to_version = registry_->getOtbMapping();
-    data.default_version = registry_->getDefaultVersion();
+    auto versions = registry_->getVersionsMap();
+    uint32_t default_ver = registry_->getDefaultVersion();
 
-    // Filter out pending deletions from the payload
-    for (auto id : pending_deleted_) {
-        data.versions.erase(id);
-        std::erase_if(data.otb_to_version, [id](const auto& p) { return p.second == id; });
-        if (data.default_version == id) data.default_version = 0;
+    for (auto index : pending_deleted_) {
+        versions.erase(index);
+        if (default_ver == index) default_ver = 0;
     }
 
-    // Only modify registry if persistence succeeds
-    if (!Services::ClientVersionPersistence::saveToJson(registry_->getConfigPath(), data)) {
-        spdlog::error("Failed to save configured_clients.json");
+    if (!Services::ClientVersionPersistence::saveToJson(
+            registry_->getConfigPath(), versions, default_ver)) {
+        spdlog::error("Failed to save clients_saved.json");
         return false;
     }
 
-    // Persistence succeeded — now apply changes to live registry
-    for (auto id : pending_deleted_)
-        registry_->removeClient(id);
+    for (auto index : pending_deleted_)
+        registry_->removeClient(index);
 
     for (const auto& [num, _] : registry_->getVersionsMap())
         if (auto* cv = registry_->getVersion(num)) cv->clearDirty();
@@ -251,10 +209,11 @@ bool ClientConfigurationController::saveAll() {
 
     pending_deleted_.clear();
     pending_created_.clear();
-    if (config_) {
-        registry_->savePathsToConfig(*config_);
-        config_->save();
-    }
+
+    auto old_path = std::filesystem::current_path() / "data" / "configured_clients.json";
+    if (std::filesystem::exists(old_path))
+        std::filesystem::remove(old_path);
+
     return true;
 }
 
@@ -291,16 +250,11 @@ bool ClientConfigurationController::hasDirty() const {
 }
 
 bool ClientConfigurationController::validateBeforeSave() {
-    std::unordered_set<std::string> fingerprints;
-    for (const auto& [id, cv] : registry_->getVersionsMap()) {
-        if (pending_deleted_.count(id)) continue;
-        if (cv.getVersion() == 0) {
-            validation_error_ = std::format("Client '{}' (id {}) has no version set.", cv.getName(), id);
-            return false;
-        }
-        auto fp = std::format("{}_{}", cv.getVersion(), cv.getName());
-        if (!fingerprints.insert(fp).second) {
-            validation_error_ = std::format("Duplicate client: version {} with name '{}'.", cv.getVersion(), cv.getName());
+    std::unordered_set<std::string> names;
+    for (const auto& [index, cv] : registry_->getVersionsMap()) {
+        if (pending_deleted_.count(index)) continue;
+        if (!names.insert(cv.getName()).second) {
+            validation_error_ = std::format("Duplicate client name: '{}'.", cv.getName());
             return false;
         }
     }
@@ -327,59 +281,23 @@ void ClientConfigurationController::runAssetDetection() {
 
 // === Filter / grouping ===
 
-int ClientConfigurationController::getMajorGroup(uint32_t version) const {
-    if (version >= 10000) return static_cast<int>(version) / 1000;
-    if (version >= 100) return static_cast<int>(version) / 100;
-    return static_cast<int>(version) / 10;
-}
-
 bool ClientConfigurationController::matchesFilter(const Domain::ClientVersion& ver) const {
     if (search_filter_.empty()) return true;
-    std::string haystack = std::to_string(ver.getVersion()) + " " + toLower(ver.getName()) +
-                           " " + toLower(ver.getDescription()) + " " +
-                           std::to_string(ver.getOtbVersion());
+    std::string haystack = std::to_string(ver.getIndex()) + " " +
+        toLower(ver.getName()) + " " + std::to_string(ver.getVersion()) + " " +
+        toLower(ver.getDescription()) + " " +
+        toLower(dataSourceToString(ver.getDataSource()));
     return haystack.find(search_filter_) != std::string::npos;
 }
 
 void ClientConfigurationController::populateVersionData() {
-    std::set<int> existing_groups;
-    for (const auto& grp : version_groups_) existing_groups.insert(grp.major);
-    for (auto& grp : version_groups_) grp.versions.clear();
-
-    std::map<int, std::vector<uint32_t>> all_by_major;
-    for (const auto& [id, cv] : registry_->getVersionsMap()) {
-        if (pending_deleted_.count(id)) continue;
+    filtered_versions_.clear();
+    for (const auto& [index, cv] : registry_->getVersionsMap()) {
+        if (pending_deleted_.count(index)) continue;
         if (!matchesFilter(cv)) continue;
-        all_by_major[getMajorGroup(cv.getVersion())].push_back(id);
+        filtered_versions_.push_back(index);
     }
-
-    for (const auto& [major, vers] : all_by_major) {
-        if (existing_groups.count(major)) continue;
-        version_groups_.push_back({major, buildGroupLabel(major), true, vers});
-    }
-
-    std::sort(version_groups_.begin(), version_groups_.end(),
-              [](const VersionGroup& a, const VersionGroup& b) { return a.major < b.major; });
-
-    for (auto& grp : version_groups_) {
-        auto it = all_by_major.find(grp.major);
-        if (it != all_by_major.end()) {
-            grp.versions = std::move(it->second);
-            std::sort(grp.versions.begin(), grp.versions.end());
-        }
-    }
-
-    if (!version_groups_.empty()) {
-        if (active_tab_ >= static_cast<int>(version_groups_.size())) active_tab_ = 0;
-        filtered_versions_.clear();
-        for (const auto& grp : version_groups_) {
-            if (!grp.visible) continue;
-            for (auto v : grp.versions) filtered_versions_.push_back(v);
-        }
-    } else {
-        filtered_versions_.clear();
-        active_tab_ = 0;
-    }
+    std::sort(filtered_versions_.begin(), filtered_versions_.end());
 }
 
 void ClientConfigurationController::setSearchFilter(const std::string& filter) {
@@ -542,22 +460,17 @@ void ClientConfigurationController::autoDetectFromClientPath(
     auto cpy = [](char* dst, size_t sz, const std::string& src) {
         std::strncpy(dst, src.c_str(), sz - 1); dst[sz - 1] = '\0';
     };
-    auto dat = (clientPath / "Tibia.dat").string();
-    auto spr = (clientPath / "Tibia.spr").string();
-    auto items = [&]() -> std::string {
-        if (!registry_) return {};
-        auto* cv = registry_->getVersion(active_version_);
-        return cv ? cv->getItemMetadataPath().string() : std::string{};
-    }();
-
-    cpy(metadata_buf_, sizeof(metadata_buf_), dat);
-    cpy(sprites_buf_, sizeof(sprites_buf_), spr);
-    cpy(items_db_buf_, sizeof(items_db_buf_), items);
+    cpy(metadata_buf_, sizeof(metadata_buf_), (clientPath / "Tibia.dat").string());
+    cpy(sprites_buf_, sizeof(sprites_buf_), (clientPath / "Tibia.spr").string());
 
     if (auto* cv = registry_->getVersion(active_version_)) {
-        cv->setMetadataFile(dat);
-        cv->setSpritesFile(spr);
-        cv->setCustomItemsDbPath(std::filesystem::path(items));
+        cv->setMetadataFile((clientPath / "Tibia.dat").string());
+        cv->setSpritesFile((clientPath / "Tibia.spr").string());
+        auto items_path = cv->getItemMetadataPath().string();
+        if (!items_path.empty()) {
+            cpy(items_db_buf_, sizeof(items_db_buf_), items_path);
+            cv->setCustomItemsDbPath(items_path);
+        }
     }
     auto_filling_ = false;
 }

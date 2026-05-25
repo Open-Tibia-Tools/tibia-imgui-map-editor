@@ -29,9 +29,9 @@ void StartupDialog::initialize(Services::ClientVersionRegistry *registry,
 
   // Wire up extracted panel components
   available_clients_panel_.setRegistry(registry);
-  available_clients_panel_.setSelectionCallback([this](uint32_t version) {
+  available_clients_panel_.setSelectionCallback([this](uint32_t index) {
     pending_result_.action = Action::SelectClient;
-    pending_result_.selected_version = version;
+    pending_result_.selected_client_index = index;
   });
 
   recent_maps_panel_.setSelectionCallback(
@@ -39,7 +39,7 @@ void StartupDialog::initialize(Services::ClientVersionRegistry *registry,
         selected_recent_index_ = index;
         pending_result_.action = Action::SelectRecentMap;
         pending_result_.selected_path = entry.path;
-        pending_result_.selected_version = entry.detected_version;
+        pending_result_.selected_client_index = entry.detected_version;
         pending_result_.selected_index = index;
       });
 
@@ -334,8 +334,14 @@ void StartupDialog::renderClientInfoPanel() {
 
 void StartupDialog::renderRecentClientsPanel(
     const std::vector<uint32_t> &clients) {
-  // Sync state and delegate to extracted component
-  available_clients_panel_.setSelectedVersion(client_info_.version);
+  // Resolve version to index for the selected client
+  uint32_t index = 0;
+  if (registry_ && client_info_.version > 0) {
+    if (auto* cv = registry_->findBestByVersion(client_info_.version)) {
+      index = cv->getIndex();
+    }
+  }
+  available_clients_panel_.setSelectedIndex(index);
   available_clients_panel_.render();
 }
 

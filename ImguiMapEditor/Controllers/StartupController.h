@@ -66,7 +66,7 @@ private:
   // === Flow handlers ===
   void handleMapSelection(const std::filesystem::path &path, int index);
   void handleClientAutoMatch(const std::filesystem::path &map_path);
-  void handleClientSelection(uint32_t version);
+  void handleClientSelection(uint32_t index);
   void handleBrowseMap();
   void handleBrowseSecMap();
   void handleNewMapFlow();
@@ -86,7 +86,7 @@ private:
 
   // === State ===
   std::filesystem::path selected_map_path_;
-  uint32_t matched_client_version_ = 0;
+  uint32_t matched_client_index_ = 0;
   bool exit_requested_ = false;
 
   // === Callbacks ===

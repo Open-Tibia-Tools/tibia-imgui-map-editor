@@ -3,22 +3,19 @@
 #include "Domain/ClientVersionTypes.h"
 #include <filesystem>
 #include <map>
+#include <utility>
 #include <vector>
 
 namespace MapEditor {
 namespace Services {
 
-struct ClientVersionsData {
-  std::map<uint32_t, Domain::ClientVersion> versions;
-  std::map<uint32_t, uint32_t> otb_to_version;
-  uint32_t default_version = 0;
-};
-
 class ClientVersionPersistence {
 public:
-  static ClientVersionsData loadFromJson(const std::filesystem::path &path);
+  static std::pair<std::map<uint32_t, Domain::ClientVersion>, uint32_t>
+  loadFromJson(const std::filesystem::path &path);
   static bool saveToJson(const std::filesystem::path &path,
-                         const ClientVersionsData &data);
+                         const std::map<uint32_t, Domain::ClientVersion> &versions,
+                         uint32_t default_index);
 
   static std::vector<Domain::ClientTemplate> loadTemplatesFromJson(
       const std::filesystem::path &path);

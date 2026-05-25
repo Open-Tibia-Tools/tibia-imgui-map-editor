@@ -207,9 +207,6 @@ void ClientPropertyEditor::renderIdentitySection() {
                 *eb.versionInt = static_cast<int>(tpl.version);
                 if (cv) {
                     cv->setVersion(tpl.version);
-                    cv->setName(tpl.name);
-                    std::strncpy(eb.name, tpl.name.c_str(), eb.nameSize - 1);
-                    eb.name[eb.nameSize - 1] = '\0';
                     cv->setDataSource(tpl.data_source);
                     *eb.dataSourceIdx = static_cast<int>(tpl.data_source);
                     cv->setOtbVersion(tpl.otb_id);
@@ -217,6 +214,13 @@ void ClientPropertyEditor::renderIdentitySection() {
                     cv->setOtbMajor(tpl.otb_major);
                     *eb.otbMajor = static_cast<int>(tpl.otb_major);
                     cv->setMapVersionsSupported(tpl.otbm_versions);
+                    std::string otbm_str;
+                    for (size_t j = 0; j < tpl.otbm_versions.size(); ++j) {
+                        if (j > 0) otbm_str += ", ";
+                        otbm_str += std::to_string(tpl.otbm_versions[j]);
+                    }
+                    std::strncpy(eb.otbmVersions, otbm_str.c_str(), eb.otbmVersionsSize - 1);
+                    eb.otbmVersions[eb.otbmVersionsSize - 1] = '\0';
                     cv->setDatSignature(tpl.dat_signature);
                     std::snprintf(eb.datSig, eb.datSigSize, "%08X", tpl.dat_signature);
                     cv->setSprSignature(tpl.spr_signature);
@@ -229,7 +233,7 @@ void ClientPropertyEditor::renderIdentitySection() {
                     *eb.extended = tpl.extended;
                     *eb.frameDurations = tpl.frame_durations;
                     *eb.frameGroups = tpl.frame_groups;
-                    std::string dd = std::format("data/{}", tpl.version);
+                    auto dd = (std::filesystem::path("data") / std::to_string(tpl.version)).string();
                     cv->setDataDirectory(dd);
                     std::strncpy(eb.dataDir, dd.c_str(), eb.dataDirSize - 1);
                     eb.dataDir[eb.dataDirSize - 1] = '\0';
@@ -266,7 +270,14 @@ void ClientPropertyEditor::renderIdentitySection() {
         if (ImGui::Button("OK", ImVec2(100, 0))) {
             int v = std::atoi(new_ver_buf);
             if (v > 0 && new_name_buf[0]) {
-                controller_->addClientWithVersion(new_name_buf, static_cast<uint32_t>(v));
+                controller_->addClient();
+                auto eb = controller_->getEditableBuffers();
+                std::strncpy(eb.name, new_name_buf, eb.nameSize - 1);
+                eb.name[eb.nameSize - 1] = '\0';
+                *eb.versionInt = v;
+                if (auto* cv = controller_->registry()->getVersion(controller_->activeVersion())) {
+                    controller_->syncToClient(*cv);
+                }
                 new_name_buf[0] = '\0';
                 new_ver_buf[0] = '\0';
                 ImGui::CloseCurrentPopup();
@@ -291,11 +302,6 @@ void ClientPropertyEditor::renderIdentitySection() {
     renderTextField("Description:", "##desc", "desc", eb.desc, eb.descSize, states, nullptr,
                     [&]() { cv->setDescription(eb.desc); cv->markDirty(); controller_->setPropertyState(active_version_, "desc", Domain::PropertyVisualState::Pending); });
 
-    ImGui::Spacing();
-    ImGui::TextUnformatted("ID:");
-    ImGui::SameLine(labelColumn());
-    if (cv) ImGui::TextDisabled("%u", cv->getId());
-
     ImGui::TreePop();
 }
 
@@ -317,18 +323,30 @@ void ClientPropertyEditor::renderClientPathField() {
     auto eb = controller_->getEditableBuffers();
     const auto& states = controller_->getStates(active_version_);
 
+    bool pathStale = std::filesystem::path(eb.metadata).parent_path().string() != std::string(eb.clientPath);
+
     ImGui::TextUnformatted("Client Path:");
     ImGui::SameLine(labelColumn());
     ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 36);
     {
+        if (pathStale) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+        }
         ScopedPropertyColor sc("clientPath", &states);
         if (ImGui::InputText("##clientpath", eb.clientPath, eb.clientPathSize)) {
             cv->setClientPath(eb.clientPath);
             cv->markDirty();
             controller_->setPropertyState(active_version_, "clientPath", Domain::PropertyVisualState::Pending);
         }
+        if (pathStale) ImGui::PopStyleColor(2);
     }
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Folder containing Tibia.dat and Tibia.spr");
+    if (ImGui::IsItemHovered()) {
+        if (pathStale)
+            ImGui::SetTooltip("File path diverged from client folder.");
+        else
+            ImGui::SetTooltip("Folder containing Tibia.dat and Tibia.spr");
+    }
     ImGui::PopItemWidth();
     ImGui::SameLine();
     bool path_empty = (eb.clientPath[0] == '\0');
@@ -390,7 +408,7 @@ void ClientPropertyEditor::renderMetadataFileField() {
 
     renderPathField("Metadata File:", "##metadata", "metadataFile",
                     eb.metadata, eb.metadataSize, states,
-                    "File name of the DAT (.dat) file",
+                    "Full absolute path to the DAT (.dat) file",
                     false, false, ICON_FA_FOLDER_OPEN "##metabrowse",
                     [&]() {
                         NFD::UniquePath outPath;
@@ -420,7 +438,7 @@ void ClientPropertyEditor::renderSpritesFileField() {
 
     renderPathField("Sprites File:", "##sprites", "spritesFile",
                     eb.sprites, eb.spritesSize, states,
-                    "File name of the SPR (.spr) file",
+                    "Full absolute path to the SPR (.spr) file",
                     false, false, ICON_FA_FOLDER_OPEN "##sprbrowse",
                     [&]() {
                         NFD::UniquePath outPath;
@@ -451,7 +469,7 @@ void ClientPropertyEditor::renderItemsDatabaseField() {
 
     renderPathField("Items Database:", "##itemsdb", "itemsDb",
                     eb.itemsDb, eb.itemsDbSize, states,
-                    "Custom items database path (leave empty to use default)",
+                    "Full absolute path to a custom items database (leave empty to use default)",
                     is_dat, is_dat, ICON_FA_FOLDER_OPEN "##itemsdbbrowse",
                     [&]() {
                         if (is_dat) return;

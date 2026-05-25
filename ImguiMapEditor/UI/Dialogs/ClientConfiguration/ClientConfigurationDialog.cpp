@@ -156,37 +156,14 @@ void ClientConfigurationDialog::renderBody() {
 void ClientConfigurationDialog::renderLeftSidebar() {
     ImGui::BeginChild("##leftbar", ImVec2(350, 0), ImGuiChildFlags_Borders);
 
-    auto& groups = controller_->versionGroups();
-    if (!groups.empty()) {
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 3.0f));
-        for (size_t i = 0; i < groups.size(); ++i) {
-            if (i > 0 && i % 5 != 0) ImGui::SameLine();
-            auto& grp = groups[i];
-            if (grp.visible) {
-                ImGui::PushStyleColor(ImGuiCol_Button, kBlueAccent);
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kBlueHover);
-            }
-            if (ImGui::Button(grp.label.c_str(), ImVec2(50, 0))) {
-                // Toggle visibility of this group
-                auto& ctrl = *controller_;
-                auto& g = const_cast<Presentation::ClientConfigurationController::VersionGroup&>(grp);
-                g.visible = !g.visible;
-                ctrl.populateVersionData();
-            }
-            if (grp.visible) ImGui::PopStyleColor(2);
-        }
-        ImGui::PopStyleVar();
-    }
-
     ImGui::Separator();
 
-    ImGui::Columns(5, "##ver_cols5", false);
-    ImGui::SetColumnWidth(0, 130); ImGui::SetColumnWidth(1, 35); ImGui::SetColumnWidth(2, 45); ImGui::SetColumnWidth(3, 45);
-    ImGui::TextColored(kTextMuted, "Name"); ImGui::NextColumn();
-    ImGui::TextColored(kTextMuted, "ID");   ImGui::NextColumn();
-    ImGui::TextColored(kTextMuted, "Ver");  ImGui::NextColumn();
-    ImGui::TextColored(kTextMuted, "Type"); ImGui::NextColumn();
-    ImGui::TextColored(kTextMuted, "Cfg");  ImGui::NextColumn();
+    ImGui::Columns(4, "##ver_cols4", false);
+    ImGui::SetColumnWidth(0, 40); ImGui::SetColumnWidth(1, 150); ImGui::SetColumnWidth(2, 60); ImGui::SetColumnWidth(3, 60);
+    ImGui::TextColored(kTextMuted, "Index");   ImGui::NextColumn();
+    ImGui::TextColored(kTextMuted, "Name");    ImGui::NextColumn();
+    ImGui::TextColored(kTextMuted, "Version"); ImGui::NextColumn();
+    ImGui::TextColored(kTextMuted, "Type");    ImGui::NextColumn();
     ImGui::Columns(1);
     ImGui::Separator();
 
@@ -224,8 +201,11 @@ void ClientConfigurationDialog::renderVersionList() {
         }
 
         ImGui::PushID(static_cast<int>(ver_num));
-        ImGui::Columns(5, "##verlist_cols5", false);
-        ImGui::SetColumnWidth(0, 130); ImGui::SetColumnWidth(1, 35); ImGui::SetColumnWidth(2, 45); ImGui::SetColumnWidth(3, 45);
+        ImGui::Columns(4, "##verlist_cols4", false);
+        ImGui::SetColumnWidth(0, 40); ImGui::SetColumnWidth(1, 150); ImGui::SetColumnWidth(2, 60); ImGui::SetColumnWidth(3, 60);
+
+        ImGui::TextColored(kTextMuted, "%u", cv->getIndex());
+        ImGui::NextColumn();
 
         std::string name_display = cv->getName();
         if (dirty) name_display += " *";
@@ -242,9 +222,6 @@ void ClientConfigurationDialog::renderVersionList() {
         }
 
         ImGui::NextColumn();
-        ImGui::TextColored(kTextMuted, "%u", cv->getId());
-
-        ImGui::NextColumn();
         ImGui::TextColored(kTextMuted, "%u", cv->getVersion());
 
         ImGui::NextColumn();
@@ -255,10 +232,6 @@ void ClientConfigurationDialog::renderVersionList() {
             case Domain::ItemDataSource::DAT: type_str = "DAT"; break;
         }
         ImGui::TextColored(kTextMuted, "%s", type_str);
-
-        ImGui::NextColumn();
-        if (!cv->getClientPath().empty())
-            ImGui::TextColored(kGreenStatus, ICON_FA_CHECK);
 
         ImGui::Columns(1);
         ImGui::PopID();
@@ -281,15 +254,19 @@ void ClientConfigurationDialog::renderRightPanel() {
     } else {
         editor_->setActiveVersion(controller_->activeVersion());
         editor_->render();
-        editor_->renderStatusBar();
     }
 
     ImGui::EndChild();
 }
 
 void ClientConfigurationDialog::renderFooterStatus() {
-    ImGui::BeginChild("##footer", ImVec2(0, 42.0f), ImGuiChildFlags_None);
+    ImGui::BeginChild("##footer", ImVec2(0, 56.0f), ImGuiChildFlags_None);
     ImGui::SetCursorPosY(8);
+
+    if (controller_->activeVersion() != 0) {
+        editor_->setActiveVersion(controller_->activeVersion());
+        editor_->renderStatusBar();
+    }
 
     float btn_x = ImGui::GetWindowWidth() - 310;
     ImGui::SameLine(btn_x);

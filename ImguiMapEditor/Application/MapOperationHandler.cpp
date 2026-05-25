@@ -211,21 +211,21 @@ void MapOperationHandler::handleSaveAllMaps() {
 }
 
 void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
-                                              uint32_t version) {
-  pending_map_path_ = path;
-  current_version_ = version;
+                                               uint32_t index) {
+   pending_map_path_ = path;
+   current_client_index_ = index;
 
-  auto *client_version = versions_.getVersion(version);
+  auto *client_version = versions_.getVersion(index);
   if (client_version && client_version->validateFiles()) {
     Utils::ScopedFlag loading(is_loading_);
-    loadMapFromPath(path, version);
+    loadMapFromPath(path, index);
   } else {
     std::string reason;
     if (!client_version) {
-      reason = "Client version " + std::to_string(version) + " not found.";
+      reason = "Client version " + std::to_string(index) + " not found.";
     } else if (client_version->getClientPath().empty()) {
       reason = "No client path configured for version " +
-               std::to_string(version) + ".";
+               std::to_string(index) + ".";
     } else if (!std::filesystem::exists(client_version->getClientPath())) {
       reason = "Client path does not exist:\n" +
                client_version->getClientPath().string();
@@ -265,7 +265,7 @@ void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
                 "\nPlease add missing files or configure the correct client path.";
     }
     notify(NotificationType::Error,
-           "Client version " + std::to_string(version) +
+           "Client version " + std::to_string(index) +
                " not configured.\n" + reason);
   }
 }
@@ -274,12 +274,12 @@ void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
 // longer used
 
 void MapOperationHandler::handleNewMapDirect(const std::string &map_name,
-                                             uint16_t width, uint16_t height,
-                                             uint32_t client_version) {
-  spdlog::info("Creating new map directly: {} ({}x{}) version {}", map_name,
-               width, height, client_version);
+                                              uint16_t width, uint16_t height,
+                                              uint32_t client_index) {
+  spdlog::info("Creating new map directly: {} ({}x{}) index {}", map_name,
+               width, height, client_index);
 
-  current_version_ = client_version;
+  current_client_index_ = client_index;
   pending_map_path_.clear();
 
   Utils::ScopedFlag loading(is_loading_);
@@ -289,7 +289,7 @@ void MapOperationHandler::handleNewMapDirect(const std::string &map_name,
   map_config.map_width = width;
   map_config.map_height = height;
 
-  auto result = loading_service_->createNewMap(map_config, client_version);
+  auto result = loading_service_->createNewMap(map_config, client_index);
 
   if (result.success) {
     transferNewResources(std::move(result));
@@ -299,16 +299,16 @@ void MapOperationHandler::handleNewMapDirect(const std::string &map_name,
 }
 
 void MapOperationHandler::handleOpenSecMapDirect(
-    const std::filesystem::path &sec_folder, uint32_t client_version) {
-  spdlog::info("Opening SEC map directly: {} version {}", sec_folder.string(),
-               client_version);
+    const std::filesystem::path &sec_folder, uint32_t index) {
+  spdlog::info("Opening SEC map directly: {} index {}", sec_folder.string(),
+               index);
 
-  current_version_ = client_version;
+  current_client_index_ = index;
   pending_map_path_ = sec_folder;
 
   Utils::ScopedFlag loading(is_loading_);
 
-  auto result = loading_service_->loadSecMap(sec_folder, client_version);
+  auto result = loading_service_->loadSecMap(sec_folder, current_client_index_);
 
   if (result.success) {
     transferNewResources(std::move(result));
@@ -318,7 +318,7 @@ void MapOperationHandler::handleOpenSecMapDirect(
 }
 
 void MapOperationHandler::loadMapFromPath(const std::filesystem::path &path,
-                                          uint32_t version) {
+                                          uint32_t index) {
   Services::MapLoadingResult result;
 
   if (existing_client_data_ && existing_sprite_manager_) {
@@ -329,7 +329,7 @@ void MapOperationHandler::loadMapFromPath(const std::filesystem::path &path,
   } else {
     // First map load - create new client data
     spdlog::info("[MapOperationHandler] Loading map with new client data");
-    result = loading_service_->loadMap(path, version, path);
+    result = loading_service_->loadMap(path, current_client_index_, path);
   }
 
   if (result.success) {
@@ -410,7 +410,7 @@ void MapOperationHandler::handleSecondMapOpen(
     spdlog::info("Map is compatible, loading directly");
     config_.addRecentFile(path.string());
     Utils::ScopedFlag loading(is_loading_);
-    loadMapFromPath(path, current_version_);
+    loadMapFromPath(path, current_client_index_);
   } else {
     // Incompatible -> show compatibility popup
     spdlog::warn("Map is incompatible: {}", compat.error_message);
@@ -434,7 +434,7 @@ MapOperationHandler::checkMapCompatibility(uint32_t map_items_major,
   }
 
   // Get current client version info
-  auto *client_version = versions_.getVersion(current_version_);
+  auto *client_version = versions_.getVersion(current_client_index_);
   if (!client_version) {
     result.compatible = false;
     result.error_message = "Current client version not found";
@@ -448,7 +448,7 @@ MapOperationHandler::checkMapCompatibility(uint32_t map_items_major,
   result.map_items_minor = map_items_minor;
   result.client_items_major = client_items_major;
   result.client_items_minor = client_items_minor;
-  result.client_version = current_version_;
+  result.client_version = current_client_index_;
 
   // Check compatibility - items major and minor must match
   bool major_match = (client_items_major == map_items_major);
@@ -470,11 +470,11 @@ MapOperationHandler::checkMapCompatibility(uint32_t map_items_major,
 }
 
 void MapOperationHandler::requestDeferredMapLoad(
-    const std::filesystem::path &path, uint32_t version) {
+    const std::filesystem::path &path, uint32_t index) {
   spdlog::info("Deferring map load to next frame: {}", path.string());
   deferred_load_pending_ = true;
   deferred_load_path_ = path;
-  deferred_load_version_ = version;
+  deferred_load_index_ = index;
 }
 
 void MapOperationHandler::processPendingMapLoad() {
@@ -487,7 +487,7 @@ void MapOperationHandler::processPendingMapLoad() {
   deferred_load_pending_ = false;
 
   // Now safe to load - we're outside the render frame
-  handleOpenRecentMap(deferred_load_path_, deferred_load_version_);
+  handleOpenRecentMap(deferred_load_path_, deferred_load_index_);
 }
 
 } // namespace AppLogic

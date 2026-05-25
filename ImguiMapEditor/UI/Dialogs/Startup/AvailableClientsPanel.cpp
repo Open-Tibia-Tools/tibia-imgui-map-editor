@@ -7,7 +7,6 @@ namespace MapEditor {
 namespace UI {
 
 void AvailableClientsPanel::render() {
-  // Panel header
   ImGui::TextColored(ImVec4(0.85f, 0.88f, 0.92f, 1.0f), "Available Clients");
   ImGui::Spacing();
   ImGui::Separator();
@@ -19,40 +18,19 @@ void AvailableClientsPanel::render() {
   if (registry_) {
     auto all_versions = registry_->getAllVersions();
 
-    // Sort: configured clients first (by version ascending),
-    // then unconfigured clients (by version ascending)
-    std::sort(
-        all_versions.begin(), all_versions.end(),
-        [](const Domain::ClientVersion *a, const Domain::ClientVersion *b) {
-          bool a_has_path = !a->getClientPath().empty();
-          bool b_has_path = !b->getClientPath().empty();
-
-          // Configured clients come first
-          if (a_has_path != b_has_path) {
-            return a_has_path > b_has_path;
-          }
-          // Within same group, sort by version ascending (lowest first)
-          return a->getVersion() < b->getVersion();
-        });
+    constexpr ImVec4 kGreenStatus = ImVec4(0.43f, 0.82f, 0.43f, 1.0f);
+    constexpr ImVec4 kTextMuted    = ImVec4(0.67f, 0.70f, 0.75f, 1.0f);
 
     for (const auto *client : all_versions) {
       if (!client)
         continue;
 
       total_count++;
-      uint32_t version = client->getVersion();
-      bool is_selected = (selected_version_ == version);
-      bool has_path = !client->getClientPath().empty();
+      uint32_t index = client->getIndex();
+      bool is_selected = (selected_client_index_ == index);
 
-      // Color scheme based on path availability
-      const ImVec4 configured_color(0.3f, 0.85f, 0.5f, 1.0f);    // Green
-      const ImVec4 not_configured_color(0.9f, 0.4f, 0.4f, 1.0f); // Red
+      ImGui::PushID(static_cast<int>(index));
 
-      const float item_height = 48.0f;
-
-      ImGui::PushID(static_cast<int>(version));
-
-      // Style for selected/hover
       if (is_selected) {
         ImGui::PushStyleColor(ImGuiCol_Header,
                               ImVec4(0.25f, 0.45f, 0.70f, 0.9f));
@@ -65,52 +43,43 @@ void AvailableClientsPanel::render() {
                               ImVec4(0.22f, 0.25f, 0.30f, 0.8f));
       }
 
-      ImVec2 item_size = ImVec2(ImGui::GetContentRegionAvail().x, item_height);
+      ImVec2 item_size = ImVec2(ImGui::GetContentRegionAvail().x, 32.0f);
 
       if (ImGui::Selectable("##ClientEntry", is_selected, 0, item_size)) {
-        selected_version_ = version;
+        selected_client_index_ = index;
         if (on_selection_) {
-          on_selection_(version);
+          on_selection_(index);
         }
       }
 
-      // Draw content over the selectable
-      ImGui::SetCursorPosY(ImGui::GetCursorPosY() - item_height);
+      ImGui::SetCursorPosY(ImGui::GetCursorPosY() - item_size.y);
       ImGui::Indent(8.0f);
 
-      // Computer icon - colored based on path status
-      ImGui::BeginGroup();
-      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 12.0f);
-      ImGui::PushStyleColor(ImGuiCol_Text,
-                            has_path ? configured_color : not_configured_color);
-      ImGui::Text(ICON_FA_COMPUTER);
-      ImGui::PopStyleColor();
-      ImGui::EndGroup();
+      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6.0f);
 
-      ImGui::SameLine();
+      ImGui::TextColored(kTextMuted, "%u", index);
+      ImGui::SameLine(50);
+      ImGui::TextColored(kGreenStatus, "%s", client->getName().c_str());
+      ImGui::SameLine(190);
+      ImGui::TextColored(kTextMuted, "%u", client->getVersion());
 
-      // Client name and description
-      ImGui::BeginGroup();
-      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
-      // Name colored based on path status
-      ImGui::TextColored(has_path ? configured_color : not_configured_color,
-                         "Tibia Client %s", client->getName().c_str());
-      const auto &desc = client->getDescription();
-      if (has_path) {
-        ImGui::TextColored(ImVec4(0.55f, 0.58f, 0.62f, 1.0f), "%s",
-                           desc.empty() ? "-" : desc.c_str());
-      } else {
-        ImGui::TextColored(ImVec4(0.6f, 0.35f, 0.35f, 1.0f),
-                           "(Not configured)");
+      ImGui::SameLine(240);
+      const char* type_str = "???";
+      switch (client->getDataSource()) {
+        case Domain::ItemDataSource::OTB: type_str = "OTB"; break;
+        case Domain::ItemDataSource::SRV: type_str = "SRV"; break;
+        case Domain::ItemDataSource::DAT: type_str = "DAT"; break;
       }
-      ImGui::EndGroup();
+      ImGui::TextColored(kTextMuted, "%s", type_str);
+
+      ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
+      ImGui::TextColored(kGreenStatus, ICON_FA_CHECK);
 
       ImGui::Unindent(8.0f);
-      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + item_height - 44);
+      ImGui::SetCursorPosY(ImGui::GetCursorPosY() + item_size.y - 28);
 
       ImGui::PopStyleColor(2);
       ImGui::PopID();
-      ImGui::Spacing();
     }
   }
 

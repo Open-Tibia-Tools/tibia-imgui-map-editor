@@ -5,7 +5,7 @@
 namespace MapEditor {
 namespace Services {
 
-void RecentLocationsService::addRecentMap(const std::filesystem::path& path, uint32_t version) {
+void RecentLocationsService::addRecentMap(const std::filesystem::path& path, uint32_t index) {
     // Remove existing entry for same path
     recent_maps_.erase(
         std::remove_if(recent_maps_.begin(), recent_maps_.end(),
@@ -15,7 +15,7 @@ void RecentLocationsService::addRecentMap(const std::filesystem::path& path, uin
     // Add new entry at front
     RecentEntry entry;
     entry.path = path;
-    entry.client_version = version;
+    entry.client_index = index;
     entry.last_used = std::chrono::system_clock::now();
     recent_maps_.insert(recent_maps_.begin(), entry);
     
@@ -25,7 +25,7 @@ void RecentLocationsService::addRecentMap(const std::filesystem::path& path, uin
     }
 }
 
-void RecentLocationsService::addRecentClient(const std::filesystem::path& path, uint32_t version) {
+void RecentLocationsService::addRecentClient(const std::filesystem::path& path, uint32_t index) {
     // Remove existing entry for same path
     recent_clients_.erase(
         std::remove_if(recent_clients_.begin(), recent_clients_.end(),
@@ -35,7 +35,7 @@ void RecentLocationsService::addRecentClient(const std::filesystem::path& path, 
     // Add new entry at front
     RecentEntry entry;
     entry.path = path;
-    entry.client_version = version;
+    entry.client_index = index;
     entry.last_used = std::chrono::system_clock::now();
     recent_clients_.insert(recent_clients_.begin(), entry);
     
@@ -52,10 +52,10 @@ void RecentLocationsService::loadFromConfig(const ConfigService& config) {
     // Load recent maps
     auto maps_json = config.get<std::vector<nlohmann::json>>("recent_maps", {});
     for (const auto& entry : maps_json) {
-        if (entry.contains("path") && entry.contains("version")) {
+        if (entry.contains("path") && entry.contains("client_index")) {
             RecentEntry e;
             e.path = entry["path"].get<std::string>();
-            e.client_version = entry["version"].get<uint32_t>();
+            e.client_index = entry["client_index"].get<uint32_t>();
             if (entry.contains("timestamp")) {
                 e.last_used = std::chrono::system_clock::from_time_t(
                     entry["timestamp"].get<int64_t>());
@@ -69,10 +69,10 @@ void RecentLocationsService::loadFromConfig(const ConfigService& config) {
     // Load recent clients
     auto clients_json = config.get<std::vector<nlohmann::json>>("recent_clients", {});
     for (const auto& entry : clients_json) {
-        if (entry.contains("path") && entry.contains("version")) {
+        if (entry.contains("path") && entry.contains("client_index")) {
             RecentEntry e;
             e.path = entry["path"].get<std::string>();
-            e.client_version = entry["version"].get<uint32_t>();
+            e.client_index = entry["client_index"].get<uint32_t>();
             if (entry.contains("timestamp")) {
                 e.last_used = std::chrono::system_clock::from_time_t(
                     entry["timestamp"].get<int64_t>());
@@ -84,7 +84,7 @@ void RecentLocationsService::loadFromConfig(const ConfigService& config) {
     }
     
     // Load default client
-    default_client_version_ = config.get<uint32_t>("default_client_version", 0);
+    default_client_index_ = config.get<uint32_t>("default_client_index", 0);
 }
 
 void RecentLocationsService::saveToConfig(ConfigService& config) const {
@@ -93,7 +93,7 @@ void RecentLocationsService::saveToConfig(ConfigService& config) const {
     for (const auto& e : recent_maps_) {
         nlohmann::json entry;
         entry["path"] = e.path.string();
-        entry["version"] = e.client_version;
+        entry["client_index"] = e.client_index;
         entry["timestamp"] = std::chrono::system_clock::to_time_t(e.last_used);
         maps_json.push_back(entry);
     }
@@ -104,14 +104,14 @@ void RecentLocationsService::saveToConfig(ConfigService& config) const {
     for (const auto& e : recent_clients_) {
         nlohmann::json entry;
         entry["path"] = e.path.string();
-        entry["version"] = e.client_version;
+        entry["client_index"] = e.client_index;
         entry["timestamp"] = std::chrono::system_clock::to_time_t(e.last_used);
         clients_json.push_back(entry);
     }
     config.set("recent_clients", clients_json);
     
     // Save default client
-    config.set("default_client_version", default_client_version_);
+    config.set("default_client_index", default_client_index_);
 }
 
 } // namespace Services

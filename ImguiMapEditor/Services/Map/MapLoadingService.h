@@ -76,12 +76,12 @@ public:
   /**
    * Load an existing map from file.
    * @param path Path to OTBM file
-   * @param current_version Client version (0 for auto-detect)
+   * @param current_client_index Client index (0 for auto-detect)
    * @param pending_path Optional pending map path for client file discovery
    * @return Load result with success/error and camera center
    */
   MapLoadingResult loadMap(const std::filesystem::path &path,
-                           uint32_t &current_version,
+                           uint32_t &current_client_index,
                            const std::filesystem::path &pending_path = {});
 
   /**
@@ -101,30 +101,30 @@ public:
   /**
    * Create a new empty map.
    * @param config New map configuration
-   * @param current_version Client version to use
+   * @param current_client_index Client index to use
    * @return Load result with success/error
    */
   MapLoadingResult createNewMap(const NewMapConfig &config,
-                                uint32_t current_version);
+                                uint32_t current_client_index);
 
   /**
-   * Load client data (OTB, DAT, SPR) for the specified version.
-   * @param client_version Version to load
+   * Load client data (OTB, DAT, SPR) for the specified client index.
+   * @param client_index Client index to load
    * @param pending_path Optional path for client file discovery
    * @return true if successful
    */
-  bool loadClientData(uint32_t client_version,
+  bool loadClientData(uint32_t client_index,
                       const std::filesystem::path &pending_path,
                       std::optional<Domain::ItemDataSource> source_override = std::nullopt);
 
   /**
    * Load SEC format map from directory.
    * @param directory Folder containing *.sec files
-   * @param current_version Client version (must match items.srv)
+   * @param current_client_index Client index (must match items.srv)
    * @return Load result
    */
   MapLoadingResult loadSecMap(const std::filesystem::path &directory,
-                              uint32_t current_version);
+                              uint32_t current_client_index);
 
 private:
   Domain::Position findCameraCenter() const;

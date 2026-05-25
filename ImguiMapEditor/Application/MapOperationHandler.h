@@ -74,21 +74,21 @@ public:
   void handleSaveMap();     // Saves current map
   void handleSaveAsMap();   // Save as dialog
   void handleSaveAllMaps(); // Saves all open maps
-  void handleOpenRecentMap(const std::filesystem::path &path, uint32_t version);
+  void handleOpenRecentMap(const std::filesystem::path &path, uint32_t index);
 
   /**
    * Create a new map directly.
    * Called from StartupController after NewMap modal is confirmed.
    */
   void handleNewMapDirect(const std::string &map_name, uint16_t width,
-                          uint16_t height, uint32_t client_version);
+                           uint16_t height, uint32_t client_index);
 
   /**
    * Open a SEC map directly.
    * Called from StartupController after OpenSecMap modal is confirmed.
    */
   void handleOpenSecMapDirect(const std::filesystem::path &sec_folder,
-                              uint32_t client_version);
+                               uint32_t index);
 
   // ID conversion operations
   void handleConvertToServerId();
@@ -108,7 +108,7 @@ public:
   const std::filesystem::path &getPendingMapPath() const {
     return pending_map_path_;
   }
-  uint32_t getCurrentVersion() const { return current_version_; }
+  uint32_t getCurrentVersion() const { return current_client_index_; }
 
   // State accessor
   bool isLoading() const { return is_loading_; }
@@ -129,12 +129,12 @@ public:
 
   // Deferred map loading (to avoid mid-frame state changes)
   void requestDeferredMapLoad(const std::filesystem::path &path,
-                              uint32_t version);
+                               uint32_t index);
   void processPendingMapLoad();
   bool hasPendingMapLoad() const { return deferred_load_pending_; }
 
 private:
-  void loadMapFromPath(const std::filesystem::path &path, uint32_t version);
+  void loadMapFromPath(const std::filesystem::path &path, uint32_t index);
   void transferNewResources(Services::MapLoadingResult result);
   void performSave(EditorSession &session,
                    const std::filesystem::path &save_path, bool is_save_as);
@@ -154,7 +154,7 @@ private:
 
   // State
   std::filesystem::path pending_map_path_;
-  uint32_t current_version_ = 0;
+  uint32_t current_client_index_ = 0;
   bool is_loading_ = false;
 
   // Existing resources (not owned, for reuse check)
@@ -170,7 +170,7 @@ private:
   // Deferred map load state (to avoid mid-frame state changes)
   bool deferred_load_pending_ = false;
   std::filesystem::path deferred_load_path_;
-  uint32_t deferred_load_version_ = 0;
+  uint32_t deferred_load_index_ = 0;
 
   // Callbacks
   MapLoadedCallback on_map_loaded_;

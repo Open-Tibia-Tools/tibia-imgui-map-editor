@@ -16,12 +16,12 @@ namespace Domain {
 class ClientVersion {
 public:
   ClientVersion() = default;
-  ClientVersion(uint32_t id, uint32_t version, const std::string &name,
+  ClientVersion(uint32_t index, uint32_t version, const std::string &name,
                 uint32_t otb_version);
 
-  // Unique identifier (auto-assigned, immutable after construction)
-  uint32_t getId() const { return id_; }
-  void setId(uint32_t id) { id_ = id; }
+  // Unique index (auto-assigned, immutable after construction)
+  uint32_t getIndex() const { return index_; }
+  void setIndex(uint32_t index) { index_ = index; }
 
   // Version identifiers
   uint32_t getVersion() const { return version_; }
@@ -98,18 +98,14 @@ public:
   }
   bool supportsFrameGroups() const { return frame_groups_ || version_ >= 1057; }
 
-  // Path helpers (use configurable metadata/sprites file names)
-  std::filesystem::path getDatPath() const;
-  std::filesystem::path getSprPath() const;
+  // Path helpers (return stored paths directly)
+  std::filesystem::path getDatPath() const { return metadata_file_; }
+  std::filesystem::path getSprPath() const { return sprites_file_; }
   std::filesystem::path getItemMetadataPath() const;
 
   // Validation
   bool hasValidPaths() const;
   bool validateFiles() const;
-
-  // Visibility (some versions are internal/deprecated)
-  bool isVisible() const { return visible_; }
-  void setVisible(bool visible) { visible_ = visible; }
 
   // Default client flag
   bool isDefault() const { return is_default_; }
@@ -129,7 +125,7 @@ public:
   void restore();
 
 private:
-  uint32_t id_ = 0;
+  uint32_t index_ = 0;
   uint32_t version_ = 0;
   std::string name_;
   uint32_t otb_version_ = 0;
@@ -143,7 +139,6 @@ private:
   std::string metadata_file_ = "Tibia.dat";
   std::string sprites_file_ = "Tibia.spr";
   ItemDataSource data_source_ = ItemDataSource::OTB;
-  bool visible_ = true;
   bool is_default_ = false;
   DatFormat dat_format_ = DatFormat::Unknown;
   bool transparency_ = false;
@@ -154,7 +149,6 @@ private:
   std::filesystem::path custom_items_db_path_;
 
   struct BackupData {
-    uint32_t id;
     uint32_t version;
     std::string name;
     uint32_t otb_version;
@@ -168,7 +162,6 @@ private:
     std::string metadata_file;
     std::string sprites_file;
     ItemDataSource data_source;
-    bool visible;
     bool is_default;
     bool transparency;
     bool extended;

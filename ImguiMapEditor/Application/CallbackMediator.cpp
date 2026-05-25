@@ -280,10 +280,10 @@ void CallbackMediator::wireMapOperationCallbacks(Context &ctx) {
   if (ctx.main_window) {
     ctx.main_window->setNewMapCallback([ctx](const UI::NewMapPanel::State& config) {
       ctx.map_operations->handleNewMapDirect(config.map_name, config.map_width,
-                                             config.map_height, config.selected_version);
+                                             config.map_height, config.selected_client_index);
     });
-    ctx.main_window->setOpenSecMapCallback([ctx](const std::filesystem::path& folder, uint32_t version) {
-      ctx.map_operations->handleOpenSecMapDirect(folder, version);
+    ctx.main_window->setOpenSecMapCallback([ctx](const std::filesystem::path& folder, uint32_t index) {
+      ctx.map_operations->handleOpenSecMapDirect(folder, index);
     });
   }
 }
