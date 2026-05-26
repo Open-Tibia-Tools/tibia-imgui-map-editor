@@ -325,12 +325,15 @@ void MapOperationHandler::handleOpenSecMapDirect(
     result = loading_service_->loadSecMapWithExistingClientData(
         sec_folder, existing_client_data_, existing_sprite_manager_);
   } else {
-    // SEC maps require SRV client data — auto-match if no valid index provided
-    if (current_client_index_ == 0) {
-      for (const auto* cv : versions_.getAllVersions()) {
-        if (cv->getDataSource() == Domain::ItemDataSource::SRV
-            && cv->validateFiles()) {
-          current_client_index_ = cv->getIndex();
+    // SEC maps require SRV client data — validate and auto-match if needed
+    const auto* cv = versions_.getVersion(current_client_index_);
+    if (current_client_index_ == 0 || !cv
+        || cv->getDataSource() != Domain::ItemDataSource::SRV) {
+      current_client_index_ = 0;
+      for (const auto* cv2 : versions_.getAllVersions()) {
+        if (cv2->getDataSource() == Domain::ItemDataSource::SRV
+            && cv2->validateFiles()) {
+          current_client_index_ = cv2->getIndex();
           break;
         }
       }

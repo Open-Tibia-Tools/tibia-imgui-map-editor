@@ -88,13 +88,15 @@ std::vector<UI::RecentMapEntry> StartupController::getRecentMaps() const {
     UI::RecentMapEntry entry;
     entry.path = path;
 
-    bool is_directory = std::filesystem::is_directory(path);
+    std::error_code ec;
+    auto status = std::filesystem::status(path, ec);
+    bool is_directory = std::filesystem::is_directory(status);
     if (is_directory) {
       entry.filename = std::format("..\\{}\\sec", path.filename().string());
     } else {
       entry.filename = path.filename().string();
     }
-    entry.exists = std::filesystem::exists(path);
+    entry.exists = std::filesystem::exists(status);
 
     // Get last modified time
     if (entry.exists) {
@@ -224,10 +226,10 @@ void StartupController::handleClientAutoMatch(
   UI::ClientInfo client_info;
   const Domain::ClientVersion *matched_version = nullptr;
 
-  // Primary method: Use OTBM header's OTB Minor version (= otbId =
-  // ClientVersionID) This is the RME-compatible approach
-  const auto &map_info = dialog_.getSelectedMapInfo();
+  matched_client_index_ = 0;
   bool is_sec = std::filesystem::is_directory(map_path);
+
+  const auto &map_info = dialog_.getSelectedMapInfo();
 
   if (map_info.valid && map_info.items_minor_version > 0 && !is_sec) {
     uint32_t otb_minor = map_info.items_minor_version;
@@ -466,7 +468,8 @@ void StartupController::handleBrowseSecMap() {
 
     // Validate .sec folder (should contain .sec files — case-insensitive)
     bool has_sec_files = false;
-    for (const auto &entry : std::filesystem::directory_iterator(path)) {
+    std::error_code ec;
+    for (const auto &entry : std::filesystem::directory_iterator(path, ec)) {
       std::string ext = entry.path().extension().string();
       for (auto& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
       if (ext == ".sec") {
@@ -485,6 +488,12 @@ void StartupController::handleBrowseSecMap() {
     } else {
       spdlog::warn("Selected folder does not contain .sec files: {}",
                    path.string());
+
+      UI::SelectedMapInfo map_info;
+      map_info.name = path.filename().string();
+      map_info.valid = false;
+      map_info.description = "No .sec files found in this folder.";
+      dialog_.setSelectedMapInfo(map_info);
     }
   }
 }
@@ -529,12 +538,7 @@ void StartupController::handleNewMapConfirmed(const UI::NewMapPanel::State& conf
 void StartupController::handleLoadMap() {
   spdlog::info("Loading map: {}", selected_map_path_.string());
 
-  if (std::filesystem::is_directory(selected_map_path_)) {
-    // SEC map directory — load via loadSecMap
-    map_ops_.handleOpenSecMapDirect(selected_map_path_, matched_client_index_);
-  } else {
-    map_ops_.handleOpenRecentMap(selected_map_path_, matched_client_index_);
-  }
+  map_ops_.handleOpenRecentMap(selected_map_path_, matched_client_index_);
 }
 
 void StartupController::handleClientConfiguration() {
