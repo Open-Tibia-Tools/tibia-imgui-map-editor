@@ -502,8 +502,8 @@ void PreferencesDialog::renderOtbmTab() {
     }
 
     // ---- Footer ----
-    float btn_width = 90.0f;
-    float btn_area_width = btn_width * 2 + style.ItemSpacing.x;
+    float btn_width = 120.0f;
+    float btn_area_width = btn_width * 3 + style.ItemSpacing.x * 2;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12, 8));
     ImGui::BeginChild("##otbm_footer", ImVec2(0, 0),
@@ -517,9 +517,19 @@ void PreferencesDialog::renderOtbmTab() {
     ImGui::SameLine();
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - btn_area_width);
 
+    if (ImGui::Button("Defaults", ImVec2(btn_width, 0))) {
+        otbm_settings_->waypoint_read = Domain::OtbmReadSource::Otbm;
+        otbm_settings_->waypoint_write = Domain::OtbmWriteTarget::Otbm;
+        if (on_apply_settings_) {
+            on_apply_settings_();
+        }
+        Presentation::showSuccess("OTBM settings restored to defaults", 2000);
+    }
+    ImGui::SameLine();
     if (ImGui::Button("Apply", ImVec2(btn_width, 0))) {
         if (on_apply_settings_) {
             on_apply_settings_();
+            Presentation::showSuccess("OTBM settings saved", 2000);
         }
     }
     ImGui::SameLine();
