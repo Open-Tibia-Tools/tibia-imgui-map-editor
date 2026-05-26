@@ -148,6 +148,9 @@ private:
   bool tryLoadItems(const std::filesystem::path &map_dir,
                     const std::filesystem::path &client_path);
 
+  void loadWaypoints(const std::filesystem::path &otbm_path,
+                     Domain::ChunkedMap &map);
+
   template <typename LoaderFunc>
   bool tryLoadResource(std::string_view filename,
                        const std::filesystem::path &map_dir,

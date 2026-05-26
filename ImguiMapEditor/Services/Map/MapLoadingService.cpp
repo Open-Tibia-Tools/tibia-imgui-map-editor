@@ -111,22 +111,7 @@ MapLoadingService::loadMap(const std::filesystem::path &path,
   IO::HouseXmlReader::read(house_path, *current_map_);
 
   // Load Waypoints — conditional on OTBM preference
-  {
-    std::filesystem::path waypoint_path =
-        path.parent_path() / (path.stem().string() + "-waypoints.xml");
-
-    if (otbm_settings_.waypoint_read == Domain::OtbmReadSource::Otbm) {
-        if (current_map_->getWaypoints().empty()) {
-            IO::WaypointXmlReader::read(waypoint_path, *current_map_);
-        }
-    } else {
-        bool xml_exists = std::filesystem::exists(waypoint_path);
-        if (xml_exists) {
-            current_map_->clearWaypoints();
-            IO::WaypointXmlReader::read(waypoint_path, *current_map_);
-        }
-    }
-  }
+  loadWaypoints(path, *current_map_);
 
   // Cache sprites for performance
   if (client_data_service_ && sprite_manager_) {
@@ -229,22 +214,7 @@ MapLoadingResult MapLoadingService::loadMapWithExistingClientData(
   IO::HouseXmlReader::read(house_path, *loaded_map);
 
   // Load Waypoints — conditional on OTBM preference
-  {
-    std::filesystem::path waypoint_path =
-        path.parent_path() / (path.stem().string() + "-waypoints.xml");
-
-    if (otbm_settings_.waypoint_read == Domain::OtbmReadSource::Otbm) {
-        if (loaded_map->getWaypoints().empty()) {
-            IO::WaypointXmlReader::read(waypoint_path, *loaded_map);
-        }
-    } else {
-        bool xml_exists = std::filesystem::exists(waypoint_path);
-        if (xml_exists) {
-            loaded_map->clearWaypoints();
-            IO::WaypointXmlReader::read(waypoint_path, *loaded_map);
-        }
-    }
-  }
+  loadWaypoints(path, *loaded_map);
 
   spdlog::info("Map loaded: {} tiles, version {}", otbm_result.tile_count,
                otbm_result.version.client_version);
@@ -646,6 +616,32 @@ bool MapLoadingService::tryLoadItems(const std::filesystem::path &map_dir,
                          [this](const std::filesystem::path &path) {
                            return client_data_service_->loadItemData(path);
                          });
+}
+
+void MapLoadingService::loadWaypoints(const std::filesystem::path &otbm_path,
+                                       Domain::ChunkedMap &map) {
+    auto waypoint_path = otbm_path.parent_path() / (otbm_path.stem().string() + "-waypoints.xml");
+
+    if (otbm_settings_.waypoint_read == Domain::OtbmReadSource::Otbm) {
+        if (map.getWaypoints().empty()) {
+            if (std::filesystem::exists(waypoint_path)) {
+                auto result = IO::WaypointXmlReader::read(waypoint_path, map);
+                if (!result.success) {
+                    spdlog::warn("XML waypoint fallback failed for {}: {}",
+                                 waypoint_path.string(), result.error);
+                }
+            }
+        }
+    } else {
+        if (std::filesystem::exists(waypoint_path)) {
+            map.clearWaypoints();
+            auto result = IO::WaypointXmlReader::read(waypoint_path, map);
+            if (!result.success) {
+                spdlog::warn("XML waypoint load failed for {}: {}",
+                             waypoint_path.string(), result.error);
+            }
+        }
+    }
 }
 
 } // namespace Services
