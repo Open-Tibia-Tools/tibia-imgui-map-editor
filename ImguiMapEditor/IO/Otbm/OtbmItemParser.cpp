@@ -26,6 +26,24 @@ std::unique_ptr<Domain::Item> OtbmItemParser::parseItem(BinaryNode* node,
         }
     }
     
+    // MAP_OTBM_1: inline count/subtype for stackable/splash/fluid items
+    if (version == OtbmVersion::V1) {
+        const Domain::ItemType* type = item->getType();
+        if (type) {
+            if (type->is_stackable || type->isSplash() || type->isFluidContainer()) {
+                uint8_t count;
+                if (!node->getU8(count)) return nullptr;
+                item->setSubtype(count);
+            }
+        } else {
+            // Type unknown — V1 requires type metadata to know if inline count follows.
+            // Always consume 1 byte as count to prevent stream corruption.
+            uint8_t count;
+            if (!node->getU8(count)) return nullptr;
+            item->setSubtype(count);
+        }
+    }
+    
     return item;
 }
 
@@ -112,6 +130,10 @@ bool OtbmItemParser::parseItemAttributes(BinaryNode* node, Domain::Item& item) {
             case OtbmAttribute::DepotId: {
                 uint16_t depot_id;
                 if (node->getU16(depot_id)) {
+                    if (depot_id > 255) {
+                        spdlog::error("Depot ID too large: {}", depot_id);
+                        return false;
+                    }
                     item.setDepotId(static_cast<uint32_t>(depot_id));
                 }
                 break;
@@ -131,7 +153,29 @@ bool OtbmItemParser::parseItemAttributes(BinaryNode* node, Domain::Item& item) {
                 break;
             }
             case OtbmAttribute::PodiumOutfit: {
-                node->skip(15);
+                uint8_t flags, direction, lookHead, lookBody, lookLegs, lookFeet, lookAddon;
+                uint8_t lookMountHead, lookMountBody, lookMountLegs, lookMountFeet;
+                uint16_t lookType, lookMount;
+                
+                if (!node->getU8(flags) || !node->getU8(direction)) break;
+                if (!node->getU16(lookType)) break;
+                if (!node->getU8(lookHead) || !node->getU8(lookBody) || !node->getU8(lookLegs) || !node->getU8(lookFeet) || !node->getU8(lookAddon)) break;
+                if (!node->getU16(lookMount)) break;
+                if (!node->getU8(lookMountHead) || !node->getU8(lookMountBody) || !node->getU8(lookMountLegs) || !node->getU8(lookMountFeet)) break;
+                
+                item.setGenericAttribute("podium_flags", static_cast<int64_t>(flags));
+                item.setGenericAttribute("podium_direction", static_cast<int64_t>(direction));
+                item.setGenericAttribute("podium_lookType", static_cast<int64_t>(lookType));
+                item.setGenericAttribute("podium_lookHead", static_cast<int64_t>(lookHead));
+                item.setGenericAttribute("podium_lookBody", static_cast<int64_t>(lookBody));
+                item.setGenericAttribute("podium_lookLegs", static_cast<int64_t>(lookLegs));
+                item.setGenericAttribute("podium_lookFeet", static_cast<int64_t>(lookFeet));
+                item.setGenericAttribute("podium_lookAddon", static_cast<int64_t>(lookAddon));
+                item.setGenericAttribute("podium_lookMount", static_cast<int64_t>(lookMount));
+                item.setGenericAttribute("podium_lookMountHead", static_cast<int64_t>(lookMountHead));
+                item.setGenericAttribute("podium_lookMountBody", static_cast<int64_t>(lookMountBody));
+                item.setGenericAttribute("podium_lookMountLegs", static_cast<int64_t>(lookMountLegs));
+                item.setGenericAttribute("podium_lookMountFeet", static_cast<int64_t>(lookMountFeet));
                 break;
             }
             case OtbmAttribute::AttributeMap: {

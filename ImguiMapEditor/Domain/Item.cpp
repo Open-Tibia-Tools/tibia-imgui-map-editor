@@ -168,6 +168,15 @@ const ExtendedAttributes::AttributeValue* Item::getGenericAttribute(const std::s
     return nullptr;
 }
 
+bool Item::hasPodiumOutfit() const {
+    return getGenericAttribute("podium_flags") != nullptr;
+}
+
+const std::unordered_map<std::string, ExtendedAttributes::AttributeValue>& Item::getGenericAttributes() const {
+    static const std::unordered_map<std::string, ExtendedAttributes::AttributeValue> empty;
+    return extended_ ? extended_->generic_attributes : empty;
+}
+
 // ========== Container Support ==========
 
 void Item::addContainerItem(std::unique_ptr<Item> item) {

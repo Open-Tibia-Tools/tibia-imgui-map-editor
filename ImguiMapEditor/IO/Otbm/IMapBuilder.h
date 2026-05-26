@@ -36,12 +36,16 @@ public:
     virtual void setTile(const Domain::Position& pos, std::unique_ptr<Domain::Tile> tile) = 0;
 
     // Entity operations
+    virtual bool hasTown(uint32_t id) const = 0;
     virtual void addTown(uint32_t id, const std::string& name, const Domain::Position& temple_pos) = 0;
     virtual void addWaypoint(const std::string& name, const Domain::Position& pos) = 0;
     virtual void setSpawn(const Domain::Position& pos, std::unique_ptr<Domain::Spawn> spawn) = 0;
     
     // Creature operation (per-tile storage like RME)
     virtual void setCreature(const Domain::Position& pos, std::unique_ptr<Domain::Creature> creature) = 0;
+
+    // House auto-creation from HouseTile nodes
+    virtual void ensureHouse(uint32_t house_id) = 0;
 };
 
 } // namespace IO

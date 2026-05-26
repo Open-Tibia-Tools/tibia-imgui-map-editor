@@ -1,4 +1,5 @@
 #include "OtbmReader.h"
+#include <filesystem>
 #include <spdlog/spdlog.h>
 #include "Domain/Item.h"
 #include "Domain/Spawn.h"
@@ -49,6 +50,12 @@ OtbmResult OtbmReader::readInternal(const std::filesystem::path &path,
 
   if (progress)
     progress(0, "Opening OTBM file...");
+
+  auto file_size = std::filesystem::file_size(path);
+  if (file_size < 4) {
+    result.error = "File too small to be a valid OTBM map";
+    return result;
+  }
 
   DiskNodeFileReadHandle file(path, {"OTBM", "\0\0\0\0"});
   if (!file.isOk()) {
@@ -342,12 +349,6 @@ bool OtbmReader::parseMapData(BinaryNode *mapDataNode, IMapBuilder &builder,
     case static_cast<uint8_t>(OtbmNode::Towns):
       if (!OtbmTileParser::parseTowns(child, builder, result)) {
         spdlog::warn("Failed to parse towns");
-      }
-      break;
-
-    case static_cast<uint8_t>(OtbmNode::Spawns):
-      if (!OtbmTileParser::parseSpawns(child, builder, result)) {
-        spdlog::warn("Failed to parse spawns");
       }
       break;
 

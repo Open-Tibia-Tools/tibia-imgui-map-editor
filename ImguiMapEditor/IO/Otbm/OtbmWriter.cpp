@@ -2,6 +2,8 @@
 #include "../NodeFileWriter.h"
 #include "../HouseXmlWriter.h"
 #include "../SpawnXmlWriter.h"
+#include "../WaypointXmlWriter.h"
+#include "OtbmOpaqueData.h"
 #include "Domain/Tile.h"
 #include "Domain/Item.h"
 #include "Domain/ItemType.h"
@@ -11,6 +13,7 @@
 #include <map>
 #include <tuple>
 #include <algorithm>
+#include <cstring>
 
 namespace MapEditor::IO {
 
@@ -23,6 +26,89 @@ struct ConversionContext {
     size_t items_converted = 0;
     size_t items_skipped = 0;
 };
+
+bool writeAttributeMap(NodeFileWriteHandle& writer, const Domain::Item& item) {
+    struct Entry { 
+        std::string key; 
+        std::string strValue;
+        uint32_t intValue = 0;
+        uint8_t type = 2;  // 1=STRING, 2=INTEGER, 3=FLOAT, 4=DOUBLE, 5=BOOLEAN
+        bool isString = false;
+        bool isDouble = false;
+        bool isBool = false;
+        double doubleValue = 0.0;
+    };
+    std::vector<Entry> entries;
+    
+    if (item.getActionId() > 0) {
+        entries.push_back({"aid", {}, item.getActionId(), 2});
+    }
+    if (item.getUniqueId() > 0) {
+        entries.push_back({"uid", {}, item.getUniqueId(), 2});
+    }
+    if (!item.getText().empty()) {
+        Entry e{"text", item.getText(), 0, 1};
+        e.isString = true;
+        entries.push_back(std::move(e));
+    }
+    if (!item.getDescription().empty()) {
+        Entry e{"desc", item.getDescription(), 0, 1};
+        e.isString = true;
+        entries.push_back(std::move(e));
+    }
+    if (item.getTier() > 0) {
+        entries.push_back({"tier", {}, item.getTier(), 2});
+    }
+    if (item.getCharges() > 0) {
+        entries.push_back({"charges", {}, item.getCharges(), 2});
+    }
+    
+    for (const auto& [key, val] : item.getGenericAttributes()) {
+        if (key.rfind("podium_", 0) == 0) continue;
+        if (key == "aid" || key == "uid" || key == "text" || key == "desc" || 
+            key == "tier" || key == "charges") continue;
+        
+        if (std::holds_alternative<std::string>(val)) {
+            Entry e{key, std::get<std::string>(val), 0, 1};
+            e.isString = true;
+            entries.push_back(std::move(e));
+        } else if (std::holds_alternative<int64_t>(val)) {
+            entries.push_back({key, {}, static_cast<uint32_t>(std::get<int64_t>(val)), 2});
+        } else if (std::holds_alternative<double>(val)) {
+            Entry e{key, {}, 0, 3};
+            e.isDouble = true;
+            e.doubleValue = std::get<double>(val);
+            entries.push_back(std::move(e));
+        } else if (std::holds_alternative<bool>(val)) {
+            Entry e{key, {}, std::get<bool>(val) ? 1U : 0U, 5};
+            e.isBool = true;
+            entries.push_back(std::move(e));
+        }
+    }
+    
+    if (entries.empty()) return true;
+    
+    writer.writeU16(static_cast<uint16_t>(entries.size()));
+    
+    for (const auto& entry : entries) {
+        writer.writeString(entry.key);
+        writer.writeU8(entry.type);
+        
+        if (entry.isString) {
+            writer.writeLongString(entry.strValue);
+        } else if (entry.isDouble) {
+            uint64_t raw;
+            std::memcpy(&raw, &entry.doubleValue, sizeof(raw));
+            writer.writeU64(raw);
+        } else if (entry.isBool) {
+            writer.writeU8(static_cast<uint8_t>(entry.intValue));
+        } else {
+            writer.writeU32(entry.intValue);
+        }
+    }
+    
+    return true;
+}
 
 // Helper to convert ID based on mode
 uint16_t convertItemId(uint16_t original_id, ConversionContext& ctx) {
@@ -64,43 +150,80 @@ bool writeItem(NodeFileWriteHandle& writer, const Domain::Item* item, OtbmVersio
     writer.startNode(static_cast<uint8_t>(OtbmNode::Item));
     writer.writeU16(id_to_write);
     
-    // Subtype/Count - must write for certain item types (matches RME behavior)
-    // - Stackable: count of items (only if > 1, default is 1)
-    // - Splash/Fluid: fluid type (ALWAYS write, even if 1 = water)
     const auto* item_type = item->getType();
     uint16_t subtype = item->getCount();
     
     bool is_stackable = item_type && item_type->is_stackable;
     bool is_splash = item_type && item_type->isSplash();
     bool is_fluid = item_type && item_type->isFluidContainer();
+    bool type_unknown = (item_type == nullptr && subtype > 0);
     
-    if (is_splash || is_fluid) {
-        // Always write fluid type (even if 1 = water)
-        writer.writeU8(static_cast<uint8_t>(OtbmAttribute::Count));
-        writer.writeU8(static_cast<uint8_t>(subtype));
-    } else if (is_stackable && subtype > 1) {
-        // Only write stack count if > 1 (default is 1)
-        writer.writeU8(static_cast<uint8_t>(OtbmAttribute::Count));
-        writer.writeU8(static_cast<uint8_t>(subtype));
+    // MAP_OTBM_1: inline count for stackable/splash/fluid items, OR unknown type with count
+    if (version == OtbmVersion::V1) {
+        if (is_stackable || is_splash || is_fluid || type_unknown) {
+            writer.writeU8(static_cast<uint8_t>(subtype));
+        }
     }
     
-    // Action ID
-    if (item->getActionId() > 0) {
-        writer.writeU8(static_cast<uint8_t>(OtbmAttribute::ActionId));
-        writer.writeU16(item->getActionId());
+    // MAP_OTBM_>=2: Count as attribute for stackable/splash/fluid (RME behavior)
+    if (version >= OtbmVersion::V2) {
+        if (is_stackable || is_splash || is_fluid) {
+            writer.writeU8(static_cast<uint8_t>(OtbmAttribute::Count));
+            writer.writeU8(static_cast<uint8_t>(subtype));
+        }
     }
     
-    // Unique ID
-    if (item->getUniqueId() > 0) {
-        writer.writeU8(static_cast<uint8_t>(OtbmAttribute::UniqueId));
-        writer.writeU16(item->getUniqueId());
-    }
-    
-    // Text
-    std::string text = item->getText();
-    if (!text.empty()) {
-        writer.writeU8(static_cast<uint8_t>(OtbmAttribute::Text));
-        writer.writeString(text);
+    if (version >= OtbmVersion::V4) {
+        bool hasGenericAttrs = (item->getActionId() > 0 || item->getUniqueId() > 0 ||
+                               !item->getText().empty() || !item->getDescription().empty() ||
+                               item->getTier() > 0 || item->getCharges() > 0 ||
+                               !item->getGenericAttributes().empty());
+        if (hasGenericAttrs) {
+            writer.writeU8(static_cast<uint8_t>(OtbmAttribute::AttributeMap));
+            writeAttributeMap(writer, *item);
+        }
+    } else {
+        // MAP_OTBM_<4: individual attributes
+        
+        // Action ID
+        if (item->getActionId() > 0) {
+            writer.writeU8(static_cast<uint8_t>(OtbmAttribute::ActionId));
+            writer.writeU16(item->getActionId());
+        }
+        
+        // Unique ID
+        if (item->getUniqueId() > 0) {
+            writer.writeU8(static_cast<uint8_t>(OtbmAttribute::UniqueId));
+            writer.writeU16(item->getUniqueId());
+        }
+        
+        // Text
+        std::string text = item->getText();
+        if (!text.empty()) {
+            writer.writeU8(static_cast<uint8_t>(OtbmAttribute::Text));
+            writer.writeString(text);
+        }
+        
+        // Desc (7)
+        std::string desc = item->getDescription();
+        if (!desc.empty()) {
+            writer.writeU8(static_cast<uint8_t>(OtbmAttribute::Desc));
+            writer.writeString(desc);
+        }
+        
+        // Tier (41)
+        uint8_t tier = item->getTier();
+        if (tier > 0) {
+            writer.writeU8(static_cast<uint8_t>(OtbmAttribute::Tier));
+            writer.writeU8(tier);
+        }
+        
+        // Charges (22)
+        uint8_t charges = item->getCharges();
+        if (charges > 0) {
+            writer.writeU8(static_cast<uint8_t>(OtbmAttribute::Charges));
+            writer.writeU16(charges);
+        }
     }
     
     // Teleport destination
@@ -124,6 +247,42 @@ bool writeItem(NodeFileWriteHandle& writer, const Domain::Item* item, OtbmVersio
     if (depot_id > 0) {
         writer.writeU8(static_cast<uint8_t>(OtbmAttribute::DepotId));
         writer.writeU16(static_cast<uint16_t>(depot_id));
+    }
+    
+    // Podium outfit (40) — always written for all versions
+    if (item->hasPodiumOutfit()) {
+        const auto* flags_attr = item->getGenericAttribute("podium_flags");
+        const auto* dir_attr = item->getGenericAttribute("podium_direction");
+        const auto* lookType_attr = item->getGenericAttribute("podium_lookType");
+        const auto* lookHead_attr = item->getGenericAttribute("podium_lookHead");
+        const auto* lookBody_attr = item->getGenericAttribute("podium_lookBody");
+        const auto* lookLegs_attr = item->getGenericAttribute("podium_lookLegs");
+        const auto* lookFeet_attr = item->getGenericAttribute("podium_lookFeet");
+        const auto* lookAddon_attr = item->getGenericAttribute("podium_lookAddon");
+        const auto* lookMount_attr = item->getGenericAttribute("podium_lookMount");
+        const auto* lookMountHead_attr = item->getGenericAttribute("podium_lookMountHead");
+        const auto* lookMountBody_attr = item->getGenericAttribute("podium_lookMountBody");
+        const auto* lookMountLegs_attr = item->getGenericAttribute("podium_lookMountLegs");
+        const auto* lookMountFeet_attr = item->getGenericAttribute("podium_lookMountFeet");
+        
+        if (flags_attr && dir_attr && lookType_attr && lookHead_attr && lookBody_attr && lookLegs_attr &&
+            lookFeet_attr && lookAddon_attr && lookMount_attr && lookMountHead_attr && lookMountBody_attr &&
+            lookMountLegs_attr && lookMountFeet_attr) {
+            writer.writeU8(static_cast<uint8_t>(OtbmAttribute::PodiumOutfit));
+            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*flags_attr)));
+            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*dir_attr)));
+            writer.writeU16(static_cast<uint16_t>(std::get<int64_t>(*lookType_attr)));
+            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookHead_attr)));
+            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookBody_attr)));
+            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookLegs_attr)));
+            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookFeet_attr)));
+            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookAddon_attr)));
+            writer.writeU16(static_cast<uint16_t>(std::get<int64_t>(*lookMount_attr)));
+            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookMountHead_attr)));
+            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookMountBody_attr)));
+            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookMountLegs_attr)));
+            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookMountFeet_attr)));
+        }
     }
     
     // Container items
@@ -164,11 +323,26 @@ bool writeTile(
     // Tile flags - only save map flags, not editor flags (Selected, Modified)
     // Map flags are bits 0-5 (ProtectionZone, NoPvP, NoLogout, PvpZone, Refresh)
     // Editor flags are bits 8+ (Selected=0x100, Modified=0x200)
-    constexpr uint32_t MAP_FLAGS_MASK = 0xFF; // Only lower 8 bits are map flags
+    constexpr uint32_t MAP_FLAGS_MASK = 0x3F; // Bits 0-5 are map flags
     uint32_t flags = static_cast<uint32_t>(static_cast<uint16_t>(tile.getFlags())) & MAP_FLAGS_MASK;
+    
+    // Combine with preserved unknown flags from opaque data
+    const auto* opaque = tile.getOpaqueData();
+    if (opaque && opaque->unknownMapFlags != 0) {
+        flags |= opaque->unknownMapFlags;
+    }
+    
     if (flags != 0) {
         writer.writeU8(static_cast<uint8_t>(OtbmAttribute::TileFlags));
         writer.writeU32(flags);
+    }
+    
+    // Write opaque tile attributes (unknown attribute bytes preserved verbatim)
+    if (opaque) {
+        for (const auto& oa : opaque->opaqueAttributes) {
+            writer.writeU8(oa.attributeId);
+            writer.writeRAW(oa.rawBytes.data(), oa.rawBytes.size());
+        }
     }
     
     // Ground item - use compact format for simple items, full node for complex
@@ -198,6 +372,17 @@ bool writeTile(
         if (item) {
             writeItem(writer, item.get(), version, ctx);
             items_written++;
+        }
+    }
+    
+    // Write opaque child nodes (unknown child node types preserved verbatim)
+    if (opaque) {
+        for (const auto& ocn : opaque->opaqueChildNodes) {
+            writer.startNode(ocn.nodeType);
+            if (!ocn.rawBytes.empty()) {
+                writer.writeRAW(ocn.rawBytes.data(), ocn.rawBytes.size());
+            }
+            writer.endNode();
         }
     }
     
@@ -267,14 +452,16 @@ OtbmWriteResult OtbmWriter::write(
     // External files
     std::string spawn_file = map.getSpawnFile();
     if (!spawn_file.empty()) {
+        auto fname = std::filesystem::path(spawn_file).filename().string();
         writer.writeU8(static_cast<uint8_t>(OtbmAttribute::ExtSpawnFile));
-        writer.writeString(spawn_file);
+        writer.writeString(fname.empty() ? spawn_file : fname);
     }
     
     std::string house_file = map.getHouseFile();
     if (!house_file.empty()) {
+        auto fname = std::filesystem::path(house_file).filename().string();
         writer.writeU8(static_cast<uint8_t>(OtbmAttribute::ExtHouseFile));
-        writer.writeString(house_file);
+        writer.writeString(fname.empty() ? house_file : fname);
     }
     
     if (progress) {
@@ -407,8 +594,7 @@ bool OtbmWriter::writeWaypoints(
     const std::filesystem::path& path,
     const Domain::ChunkedMap& map
 ) {
-    // Waypoints are stored in OTBM, not separate file
-    return true;
+    return WaypointXmlWriter::write(path, map);
 }
 
 } // namespace MapEditor::IO

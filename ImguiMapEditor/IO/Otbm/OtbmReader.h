@@ -60,9 +60,10 @@ enum class OtbmAttribute : uint8_t {
   SleeperGuid = 20,
   SleepStart = 21,
   Charges = 22,
-  ContainerItems = 23,
-  Tier = 27,
-  PodiumOutfit = 28,
+  ExtSpawnNpcFile = 23,
+  // IDs 24-39 reserved
+  PodiumOutfit = 40,
+  Tier = 41,
   AttributeMap = 128
 };
 
@@ -72,6 +73,7 @@ enum class OtbmAttribute : uint8_t {
 enum class OtbmTileFlag : uint32_t {
   None = 0,
   Protection = 1 << 0,
+  Deprecated = 1 << 1,
   NoPvp = 1 << 2,
   NoLogout = 1 << 3,
   PvpZone = 1 << 4,
@@ -81,7 +83,7 @@ enum class OtbmTileFlag : uint32_t {
 /**
  * OTBM format versions
  */
-enum class OtbmVersion : uint32_t { V1 = 1, V2 = 2, V3 = 3, V4 = 4 };
+enum class OtbmVersion : uint32_t { V1 = 0, V2 = 1, V3 = 2, V4 = 3 };
 
 /**
  * Version info from OTBM file header

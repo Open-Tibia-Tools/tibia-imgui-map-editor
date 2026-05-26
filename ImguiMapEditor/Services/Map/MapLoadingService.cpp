@@ -3,6 +3,7 @@
 #include "IO/Otbm/OtbmReader.h"
 #include "IO/SecReader.h"
 #include "IO/SpawnXmlReader.h"
+#include "IO/WaypointXmlWriter.h"
 #include "Services/TilesetService.h"
 #include <climits>
 #include <spdlog/spdlog.h>
@@ -107,6 +108,13 @@ MapLoadingService::loadMap(const std::filesystem::path &path,
       path.parent_path() / (path.stem().string() + "-house.xml");
   IO::HouseXmlReader::read(house_path, *current_map_);
 
+  // Auto-migrate waypoints from OTBM to XML (RME-compatible)
+  const auto& waypoints = current_map_->getWaypoints();
+  if (!waypoints.empty()) {
+    auto waypoint_path = path.parent_path() / (path.stem().string() + "-waypoints.xml");
+    IO::WaypointXmlWriter::write(waypoint_path, *current_map_);
+  }
+
   // Cache sprites for performance
   if (client_data_service_ && sprite_manager_) {
     size_t cached =
@@ -206,6 +214,13 @@ MapLoadingResult MapLoadingService::loadMapWithExistingClientData(
   std::filesystem::path house_path =
       path.parent_path() / (path.stem().string() + "-house.xml");
   IO::HouseXmlReader::read(house_path, *loaded_map);
+
+  // Auto-migrate waypoints from OTBM to XML (RME-compatible)
+  const auto& waypoints = loaded_map->getWaypoints();
+  if (!waypoints.empty()) {
+    auto waypoint_path = path.parent_path() / (path.stem().string() + "-waypoints.xml");
+    IO::WaypointXmlWriter::write(waypoint_path, *loaded_map);
+  }
 
   spdlog::info("Map loaded: {} tiles, version {}", otbm_result.tile_count,
                otbm_result.version.client_version);

@@ -38,13 +38,6 @@ public:
                           Services::ClientDataService* client_data);
     
     /**
-     * Parse spawns node.
-     */
-    static bool parseSpawns(BinaryNode* spawnsNode, 
-                            IMapBuilder& builder, 
-                            OtbmResult& result);
-    
-    /**
      * Parse towns node.
      */
     static bool parseTowns(BinaryNode* townsNode, 

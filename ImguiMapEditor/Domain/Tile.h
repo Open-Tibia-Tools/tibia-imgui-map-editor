@@ -7,6 +7,10 @@
 #include <memory>
 #include <vector>
 
+namespace MapEditor::IO {
+    struct InvalidZoneState;
+}
+
 namespace MapEditor {
 namespace Domain {
 
@@ -17,11 +21,12 @@ class Chunk; // Forward declaration
  */
 enum class TileFlag : uint16_t {
   None = 0,
-  ProtectionZone = 1 << 0,
-  NoPvp = 1 << 1,
-  NoLogout = 1 << 2,
-  PvpZone = 1 << 3,
-  Refresh = 1 << 4
+  ProtectionZone = 1 << 0,   // 0x0001
+  Deprecated = 1 << 1,       // 0x0002 — reserved/deprecated bit
+  NoPvp = 1 << 2,            // 0x0004
+  NoLogout = 1 << 3,         // 0x0008
+  PvpZone = 1 << 4,          // 0x0010
+  Refresh = 1 << 5           // 0x0020
 };
 
 inline TileFlag operator|(TileFlag a, TileFlag b) {
@@ -56,7 +61,7 @@ class Tile {
 public:
   Tile() = default;
   explicit Tile(const Position &pos);
-  ~Tile() = default;
+  ~Tile();
 
   // Move semantics
   Tile(Tile &&other) noexcept = default;
@@ -158,6 +163,12 @@ public:
   bool hasHookSouth() const;
   bool hasHookEast() const;
 
+  // Opaque OTBM data preservation for unknown attributes/nodes
+  const IO::InvalidZoneState* getOpaqueData() const { return opaqueData_.get(); }
+  IO::InvalidZoneState* getOpaqueData() { return opaqueData_.get(); }
+  void setOpaqueData(std::unique_ptr<IO::InvalidZoneState> data);
+  bool hasOpaqueData() const { return opaqueData_ != nullptr; }
+
   // Parent Chunk (Performance optimization for dirty tracking)
   void setParentChunk(Chunk *chunk) { parent_chunk_ = chunk; }
   Chunk *getParentChunk() const { return parent_chunk_; }
@@ -174,6 +185,9 @@ private:
 
   // Creature on this tile (per-tile storage like RME)
   std::unique_ptr<Creature> creature_;
+
+  // Opaque OTBM data for preserving unknown attributes/nodes
+  std::unique_ptr<IO::InvalidZoneState> opaqueData_;
 
   // Parent chunk for dirty notification (not owned)
   Chunk *parent_chunk_ = nullptr;
