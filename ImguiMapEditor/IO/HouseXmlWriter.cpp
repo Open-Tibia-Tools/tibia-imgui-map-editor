@@ -27,6 +27,7 @@ bool HouseXmlWriter::write(
         file << " entryz=\"" << static_cast<int>(house->entry_position.z) << "\"";
         file << " rent=\"" << house->rent << "\"";
         file << " townid=\"" << house->town_id << "\"";
+        file << " size=\"" << house->tiles.size() << "\"";
         if (house->is_guildhall) {
             file << " guildhall=\"true\"";
         }

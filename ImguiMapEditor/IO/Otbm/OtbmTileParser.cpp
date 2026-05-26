@@ -66,6 +66,7 @@ bool OtbmTileParser::parseTile(BinaryNode* tileNode,
         }
         tile->setHouseId(house_id);
         builder.ensureHouse(house_id);
+        builder.addTileToHouse(house_id, pos);
     }
     
     OtbmVersion otbm_ver = static_cast<OtbmVersion>(result.version.otbm_version);

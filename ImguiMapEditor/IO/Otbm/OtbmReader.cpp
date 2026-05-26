@@ -192,6 +192,11 @@ OtbmResult OtbmReader::readHeader(const std::filesystem::path &path) {
           }
           break;
         }
+        case static_cast<uint8_t>(OtbmAttribute::ExtSpawnNpcFile): {
+          std::string ignored;
+          mapDataNode->getString(ignored);
+          break;
+        }
         default:
           done = true;
           break;
@@ -307,6 +312,11 @@ bool OtbmReader::parseMapData(BinaryNode *mapDataNode, IMapBuilder &builder,
         builder.setHouseFile(house);
         result.house_file = house;
       }
+      break;
+    }
+    case static_cast<uint8_t>(OtbmAttribute::ExtSpawnNpcFile): {
+      std::string ignored;
+      mapDataNode->getString(ignored);
       break;
     }
     default:

@@ -246,7 +246,14 @@ bool OtbmItemParser::parseAttributeMap(BinaryNode* node, Domain::Item& item) {
 
 bool OtbmItemParser::parseItemChildren(BinaryNode* node, Domain::Item& item,
                                         OtbmVersion version, 
-                                        Services::ClientDataService* client_data) {
+                                        Services::ClientDataService* client_data,
+                                        int depth) {
+    static constexpr int MAX_CONTAINER_DEPTH = 256;
+    if (depth >= MAX_CONTAINER_DEPTH) {
+        spdlog::warn("Container depth exceeds max ({}), stopping recursion", MAX_CONTAINER_DEPTH);
+        return false;
+    }
+    
     for (auto& child : node->children()) {
         uint8_t child_type;
         if (!child.getU8(child_type)) {
@@ -260,8 +267,9 @@ bool OtbmItemParser::parseItemChildren(BinaryNode* node, Domain::Item& item,
         auto child_item = parseItem(&child, version, client_data);
         if (child_item) {
             parseItemAttributes(&child, *child_item);
-            parseItemChildren(&child, *child_item, version, client_data);
-            item.addContainerItem(std::move(child_item));
+            if (parseItemChildren(&child, *child_item, version, client_data, depth + 1)) {
+                item.addContainerItem(std::move(child_item));
+            }
         }
     }
     return true;

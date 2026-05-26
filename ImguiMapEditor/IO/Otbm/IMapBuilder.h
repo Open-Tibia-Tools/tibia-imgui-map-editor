@@ -46,6 +46,7 @@ public:
 
     // House auto-creation from HouseTile nodes
     virtual void ensureHouse(uint32_t house_id) = 0;
+    virtual void addTileToHouse(uint32_t house_id, const Domain::Position& pos) = 0;
 };
 
 } // namespace IO

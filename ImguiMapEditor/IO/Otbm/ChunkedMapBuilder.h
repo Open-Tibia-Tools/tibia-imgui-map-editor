@@ -79,6 +79,13 @@ public:
         }
     }
 
+    void addTileToHouse(uint32_t house_id, const Domain::Position& pos) override {
+        auto* house = map_.getHouse(house_id);
+        if (house) {
+            house->tiles.push_back(pos);
+        }
+    }
+
     // Accessors for external files
     const std::string& getSpawnFile() const { return spawn_file_; }
     const std::string& getHouseFile() const { return house_file_; }

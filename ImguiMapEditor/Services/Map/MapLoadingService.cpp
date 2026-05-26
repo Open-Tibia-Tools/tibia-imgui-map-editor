@@ -4,6 +4,7 @@
 #include "IO/SecReader.h"
 #include "IO/SpawnXmlReader.h"
 #include "IO/WaypointXmlWriter.h"
+#include "IO/WaypointXmlReader.h"
 #include "Services/TilesetService.h"
 #include <climits>
 #include <spdlog/spdlog.h>
@@ -108,10 +109,14 @@ MapLoadingService::loadMap(const std::filesystem::path &path,
       path.parent_path() / (path.stem().string() + "-house.xml");
   IO::HouseXmlReader::read(house_path, *current_map_);
 
+  // Load Waypoints (-waypoints.xml) — may already have OTBM waypoints
+  std::filesystem::path waypoint_path =
+      path.parent_path() / (path.stem().string() + "-waypoints.xml");
+  IO::WaypointXmlReader::read(waypoint_path, *current_map_);
+
   // Auto-migrate waypoints from OTBM to XML (RME-compatible)
   const auto& waypoints = current_map_->getWaypoints();
   if (!waypoints.empty()) {
-    auto waypoint_path = path.parent_path() / (path.stem().string() + "-waypoints.xml");
     IO::WaypointXmlWriter::write(waypoint_path, *current_map_);
   }
 
@@ -215,10 +220,14 @@ MapLoadingResult MapLoadingService::loadMapWithExistingClientData(
       path.parent_path() / (path.stem().string() + "-house.xml");
   IO::HouseXmlReader::read(house_path, *loaded_map);
 
+  // Load Waypoints (-waypoints.xml) — may already have OTBM waypoints
+  std::filesystem::path waypoint_path =
+      path.parent_path() / (path.stem().string() + "-waypoints.xml");
+  IO::WaypointXmlReader::read(waypoint_path, *loaded_map);
+
   // Auto-migrate waypoints from OTBM to XML (RME-compatible)
   const auto& waypoints = loaded_map->getWaypoints();
   if (!waypoints.empty()) {
-    auto waypoint_path = path.parent_path() / (path.stem().string() + "-waypoints.xml");
     IO::WaypointXmlWriter::write(waypoint_path, *loaded_map);
   }
 

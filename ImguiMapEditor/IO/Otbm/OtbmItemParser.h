@@ -48,8 +48,9 @@ public:
      * @return true if successful
      */
     static bool parseItemChildren(BinaryNode* node, Domain::Item& item,
-                                   OtbmVersion version,
-                                   Services::ClientDataService* client_data);
+                                    OtbmVersion version,
+                                    Services::ClientDataService* client_data,
+                                    int depth = 0);
 
     /**
      * Parse OTBM v4 attribute map.
