@@ -3,7 +3,6 @@
 #include "IO/Otbm/OtbmReader.h"
 #include "IO/SecReader.h"
 #include "IO/SpawnXmlReader.h"
-#include "IO/WaypointXmlWriter.h"
 #include "IO/WaypointXmlReader.h"
 #include "Services/TilesetService.h"
 #include <climits>
@@ -15,9 +14,11 @@ namespace Services {
 MapLoadingService::MapLoadingService(ClientVersionRegistry &version_registry,
                                      ViewSettings &view_settings,
                                      Brushes::BrushRegistry &brush_registry,
-                                     TilesetService &tileset_service)
+                                     TilesetService &tileset_service,
+                                     const OtbmSettings &otbm_settings)
     : version_registry_(version_registry), view_settings_(view_settings),
-      brush_registry_(brush_registry), tileset_service_(tileset_service) {}
+      brush_registry_(brush_registry), tileset_service_(tileset_service),
+      otbm_settings_(otbm_settings) {}
 
 MapLoadingResult
 MapLoadingService::loadMap(const std::filesystem::path &path,
@@ -109,18 +110,8 @@ MapLoadingService::loadMap(const std::filesystem::path &path,
       path.parent_path() / (path.stem().string() + "-house.xml");
   IO::HouseXmlReader::read(house_path, *current_map_);
 
-  // Load Waypoints (-waypoints.xml) — may already have OTBM waypoints
-  std::filesystem::path waypoint_path =
-      path.parent_path() / (path.stem().string() + "-waypoints.xml");
-  IO::WaypointXmlReader::read(waypoint_path, *current_map_);
-
-  // Auto-migrate waypoints from OTBM to XML (RME-compatible)
-  const auto& waypoints = current_map_->getWaypoints();
-  if (!waypoints.empty()) {
-    if (!IO::WaypointXmlWriter::write(waypoint_path, *current_map_)) {
-      spdlog::error("Failed to migrate waypoints to {}", waypoint_path.string());
-    }
-  }
+  // Load Waypoints — conditional on OTBM preference
+  loadWaypoints(path, *current_map_);
 
   // Cache sprites for performance
   if (client_data_service_ && sprite_manager_) {
@@ -222,18 +213,8 @@ MapLoadingResult MapLoadingService::loadMapWithExistingClientData(
       path.parent_path() / (path.stem().string() + "-house.xml");
   IO::HouseXmlReader::read(house_path, *loaded_map);
 
-  // Load Waypoints (-waypoints.xml) — may already have OTBM waypoints
-  std::filesystem::path waypoint_path =
-      path.parent_path() / (path.stem().string() + "-waypoints.xml");
-  IO::WaypointXmlReader::read(waypoint_path, *loaded_map);
-
-  // Auto-migrate waypoints from OTBM to XML (RME-compatible)
-  const auto& waypoints = loaded_map->getWaypoints();
-  if (!waypoints.empty()) {
-    if (!IO::WaypointXmlWriter::write(waypoint_path, *loaded_map)) {
-      spdlog::error("Failed to migrate waypoints to {}", waypoint_path.string());
-    }
-  }
+  // Load Waypoints — conditional on OTBM preference
+  loadWaypoints(path, *loaded_map);
 
   spdlog::info("Map loaded: {} tiles, version {}", otbm_result.tile_count,
                otbm_result.version.client_version);
@@ -635,6 +616,32 @@ bool MapLoadingService::tryLoadItems(const std::filesystem::path &map_dir,
                          [this](const std::filesystem::path &path) {
                            return client_data_service_->loadItemData(path);
                          });
+}
+
+void MapLoadingService::loadWaypoints(const std::filesystem::path &otbm_path,
+                                       Domain::ChunkedMap &map) {
+    auto waypoint_path = otbm_path.parent_path() / (otbm_path.stem().string() + "-waypoints.xml");
+
+    if (otbm_settings_.waypoint_read == Domain::OtbmReadSource::Otbm) {
+        if (map.getWaypoints().empty()) {
+            if (std::filesystem::exists(waypoint_path)) {
+                auto result = IO::WaypointXmlReader::read(waypoint_path, map);
+                if (!result.success) {
+                    spdlog::warn("XML waypoint fallback failed for {}: {}",
+                                 waypoint_path.string(), result.error);
+                }
+            }
+        }
+    } else {
+        if (std::filesystem::exists(waypoint_path)) {
+            map.clearWaypoints();
+            auto result = IO::WaypointXmlReader::read(waypoint_path, map);
+            if (!result.success) {
+                spdlog::warn("XML waypoint load failed for {}: {}",
+                             waypoint_path.string(), result.error);
+            }
+        }
+    }
 }
 
 } // namespace Services

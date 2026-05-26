@@ -6,10 +6,13 @@
 #include "Presentation/NotificationHelper.h"
 #include "Services/AppSettings.h"
 #include "Services/HotkeyRegistry.h"
+#include "Services/OtbmSettings.h"
 #include "Services/SecondaryClientData.h"
 #include "ext/fontawesome6/IconsFontAwesome6.h"
+#include <format>
 #include <glad/glad.h>
 #include <imgui.h>
+#include <iterator>
 #include <nfd.hpp>
 
 namespace MapEditor {
@@ -73,6 +76,10 @@ PreferencesDialog::Result PreferencesDialog::render() {
         renderHotkeysTab();
         ImGui::EndTabItem();
       }
+      if (ImGui::BeginTabItem(ICON_FA_FILE " OTBM")) {
+        renderOtbmTab();
+        ImGui::EndTabItem();
+      }
       if (ImGui::BeginTabItem(ICON_FA_CLONE " Secondary Client")) {
         renderSecondaryClientTab();
         ImGui::EndTabItem();
@@ -80,7 +87,8 @@ PreferencesDialog::Result PreferencesDialog::render() {
       ImGui::EndTabBar();
     }
 
-    // Close button at bottom
+    // Close button at bottom (hidden when OTBM tab has its own footer)
+    if (!otbm_tab_active_) {
     float button_width = 100.0f;
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() - 40);
     ImGui::Separator();
@@ -90,12 +98,15 @@ PreferencesDialog::Result PreferencesDialog::render() {
       ImGui::CloseCurrentPopup();
       is_open_ = false;
     }
+    }
 
     if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
       result = Result::Closed;
       ImGui::CloseCurrentPopup();
       is_open_ = false;
     }
+
+    otbm_tab_active_ = false;
 
     ImGui::EndPopup();
   } else if (is_open_) {
@@ -386,6 +397,223 @@ void PreferencesDialog::renderHotkeysTab() {
     } else {
       Presentation::showError("Failed to save hotkeys to file", 3000);
     }
+  }
+}
+
+// ========== OTBM Tab ==========
+
+namespace {
+const char* kOtbmTypeNames[] = { "Waypoints", "Spawns", "Houses", "Towns", "Zones" };
+const char* kOtbmTypeDescs[] = {
+    "Read source and write target for waypoint data",
+    "Coming soon",
+    "Coming soon",
+    "Coming soon",
+    "Coming soon"
+};
+const char* kOtbmReadSourceItems[] = { "OTBM", "XML" };
+const char* kOtbmReadSourceIcons[] = { ICON_FA_FLOPPY_DISK " ", ICON_FA_FILE " " };
+const char* kOtbmWriteTargetItems[] = { "OTBM", "XML" };
+const char* kOtbmWriteTargetIcons[] = { ICON_FA_FLOPPY_DISK " ", ICON_FA_FILE " " };
+} // namespace
+
+void PreferencesDialog::renderOtbmTab() {
+  if (!otbm_settings_) {
+    ImGui::TextDisabled("OTBM settings are not available.");
+    return;
+  }
+  otbm_tab_active_ = true;
+  auto& style = ImGui::GetStyle();
+  bool settings_disabled = !otbm_destructive_ack_;
+
+  // ---- Warning Banner ----
+  {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12, 10));
+    ImGui::BeginChild("##otbm_warning", ImVec2(0, 0),
+                      ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+    ImGui::PushStyleColor(ImGuiCol_Text, style.Colors[ImGuiCol_Text]);
+    ImGui::Text("%s  Changing OTBM read/write settings can be destructive.",
+                 ICON_FA_TRIANGLE_EXCLAMATION);
+    ImGui::PopStyleColor();
+    ImGui::Spacing();
+    ImGui::TextDisabled("Switching formats may cause data to be cleared "
+                        "from the previous format on save.");
+    ImGui::EndChild();
+    ImGui::PopStyleVar();
+  }
+
+  ImGui::Spacing();
+  ImGui::Checkbox("I understand — enable OTBM preferences", &otbm_destructive_ack_);
+  ImGui::Spacing();
+  ImGui::Spacing();
+
+  // ---- Main Two-Panel Layout ----
+  float category_list_width = 160.0f;
+  float footer_height = 52.0f;
+  float child_height = ImGui::GetContentRegionAvail().y - footer_height;
+
+  // Left: category list
+  {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 6));
+    ImGui::BeginGroup();
+    if (ImGui::BeginChild("##otbm_type_list", ImVec2(category_list_width, child_height),
+                          ImGuiChildFlags_Borders)) {
+      ImGui::TextUnformatted("OTBM Categories");
+      ImGui::Separator();
+      ImGui::Spacing();
+
+      ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 6));
+      for (size_t i = 0; i < std::size(kOtbmTypeNames); i++) {
+        ImGui::PushID(static_cast<int>(i));
+        bool is_selected = (selected_otbm_type_ == static_cast<int>(i));
+        if (ImGui::Selectable(kOtbmTypeNames[i], is_selected)) {
+          selected_otbm_type_ = static_cast<int>(i);
+        }
+        ImGui::PopID();
+      }
+      ImGui::PopStyleVar();
+    }
+    ImGui::EndChild();
+    ImGui::EndGroup();
+    ImGui::PopStyleVar();
+  }
+
+  ImGui::SameLine();
+
+  // Right: settings panel
+  {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16, 12));
+    ImGui::BeginGroup();
+    if (ImGui::BeginChild("##otbm_settings_panel", ImVec2(0, child_height),
+                          ImGuiChildFlags_Borders)) {
+      if (settings_disabled) {
+        ImGui::BeginDisabled();
+      }
+
+      ImGui::PushStyleColor(ImGuiCol_Text, style.Colors[ImGuiCol_Text]);
+      ImGui::TextUnformatted(kOtbmTypeNames[selected_otbm_type_]);
+      ImGui::PopStyleColor();
+      ImGui::TextDisabled("%s", kOtbmTypeDescs[selected_otbm_type_]);
+      ImGui::Spacing();
+      ImGui::Separator();
+      ImGui::Spacing();
+
+      renderOtbmSettingsPanel();
+
+      if (settings_disabled) {
+        ImGui::EndDisabled();
+      }
+    }
+    ImGui::EndChild();
+    ImGui::EndGroup();
+    ImGui::PopStyleVar();
+  }
+
+  // ---- Footer ----
+  float btn_width = 120.0f;
+  float btn_area_width = btn_width * 3 + style.ItemSpacing.x * 2;
+
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12, 8));
+  ImGui::BeginChild("##otbm_footer", ImVec2(0, 0),
+                    ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+  ImGui::PopStyleVar();
+
+  ImGui::AlignTextToFramePadding();
+  ImGui::TextColored(style.Colors[ImGuiCol_TextDisabled],
+                     "%s  Changes take effect after restart.",
+                     ICON_FA_CIRCLE_INFO);
+  ImGui::SameLine();
+  ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - btn_area_width);
+
+  if (ImGui::Button("Defaults", ImVec2(btn_width, 0))) {
+    otbm_settings_->waypoint_read = Domain::OtbmReadSource::Otbm;
+    otbm_settings_->waypoint_write = Domain::OtbmWriteTarget::Otbm;
+    if (on_apply_settings_) {
+      on_apply_settings_();
+    }
+    Presentation::showSuccess("OTBM settings restored to defaults", 2000);
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Apply", ImVec2(btn_width, 0))) {
+    if (on_apply_settings_) {
+      on_apply_settings_();
+      Presentation::showSuccess("OTBM settings saved", 2000);
+    }
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Close", ImVec2(btn_width, 0))) {
+    ImGui::CloseCurrentPopup();
+    is_open_ = false;
+  }
+
+  ImGui::EndChild();
+}
+
+void PreferencesDialog::renderOtbmSettingsPanel() {
+  if (!otbm_settings_) return;
+
+  float panel_width = ImGui::GetContentRegionAvail().x;
+  float combo_width = panel_width * 0.48f;
+
+  auto renderCombo = [](const char* label, int* val, const char* const items[],
+                        const char* const icons[], int count) -> bool {
+    const char* preview = (items[*val]);
+    const char* preview_icon = (icons[*val]);
+    bool changed = false;
+    ImGui::SetNextItemWidth(-1.0f);
+    if (ImGui::BeginCombo(label, std::format("{}{}", preview_icon, preview).c_str())) {
+      for (int i = 0; i < count; i++) {
+        ImGui::PushID(i);
+        bool sel = (*val == i);
+        if (ImGui::Selectable(std::format("{}{}", icons[i], items[i]).c_str(), sel)) {
+          *val = i;
+          changed = true;
+        }
+        if (sel) {
+          ImGui::SetItemDefaultFocus();
+        }
+        ImGui::PopID();
+      }
+      ImGui::EndCombo();
+    }
+    return changed;
+  };
+
+  switch (selected_otbm_type_) {
+  case 0: { // Waypoints
+    ImGui::SetNextItemWidth(combo_width);
+    ImGui::TextUnformatted("Read source");
+    ImGui::Spacing();
+    int read_val = static_cast<int>(otbm_settings_->waypoint_read);
+    if (renderCombo("##ws_read", &read_val, kOtbmReadSourceItems, kOtbmReadSourceIcons, 2)) {
+      otbm_settings_->waypoint_read = static_cast<Domain::OtbmReadSource>(read_val);
+    }
+    ImGui::Spacing();
+    ImGui::TextDisabled("Select the format used as source for reading.");
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    ImGui::TextUnformatted("Write target");
+    ImGui::Spacing();
+    int write_val = static_cast<int>(otbm_settings_->waypoint_write);
+    if (renderCombo("##ws_write", &write_val, kOtbmWriteTargetItems, kOtbmWriteTargetIcons, 2)) {
+      otbm_settings_->waypoint_write = static_cast<Domain::OtbmWriteTarget>(write_val);
+    }
+    ImGui::Spacing();
+    ImGui::TextDisabled("Select the format used as target for writing.");
+
+    break;
+  }
+  case 1: // Spawns
+  case 2: // Houses
+  case 3: // Towns
+  case 4: // Zones
+    ImGui::TextDisabled("No settings available yet.");
+    break;
   }
 }
 

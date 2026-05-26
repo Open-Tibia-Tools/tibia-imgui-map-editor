@@ -1,5 +1,7 @@
 #pragma once
 #include "IO/Otbm/OtbmWriter.h"
+#include "Domain/OtbmDataTypes.h"
+#include "Services/OtbmSettings.h"
 #include <filesystem>
 #include <functional>
 
@@ -35,7 +37,8 @@ struct MapSaveResult {
  */
 class MapSavingService {
 public:
-    explicit MapSavingService(ClientDataService* client_data = nullptr);
+    explicit MapSavingService(ClientDataService* client_data = nullptr,
+                             const OtbmSettings* otbm_settings = nullptr);
     
     /**
      * Save map to file.
@@ -63,6 +66,7 @@ public:
     
 private:
     ClientDataService* client_data_;
+    const OtbmSettings* otbm_settings_;
     bool save_houses_ = true;
     bool save_spawns_ = true;
 };

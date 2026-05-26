@@ -64,6 +64,11 @@ bool Application::initialize() {
   // === Final Wiring ===
   dialogs_.preferences.setHotkeyRegistry(
       &settings_registry_->getHotkeyRegistry());
+  dialogs_.preferences.setOtbmSettings(
+      &settings_registry_->getOtbmSettings());
+  dialogs_.preferences.setApplySettingsCallback([this]() {
+    settings_registry_->save();
+  });
 
   // === State Handlers ===
   state_manager_.setStartupUpdater([this]() { onUpdateStartup(); });
@@ -111,6 +116,7 @@ void Application::initializeUIComponents() {
       .config = settings_registry_->getConfig(),
       .version_registry = settings_registry_->getVersionRegistry(),
       .recent_locations = settings_registry_->getRecentLocations(),
+      .otbm_settings = settings_registry_->getOtbmSettings(),
       .tab_manager = tab_manager_,
       .state_manager = state_manager_,
       .tileset_widget = brush_system_->getTilesetWidget(),

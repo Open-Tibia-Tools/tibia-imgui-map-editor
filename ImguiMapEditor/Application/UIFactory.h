@@ -12,6 +12,7 @@ class AppSettings;
 class HotkeyRegistry;
 class ConfigService;
 class ClientVersionRegistry;
+class OtbmSettings;
 class RecentLocationsService;
 class TilesetService;
 } // namespace Services
@@ -40,6 +41,7 @@ struct UIFactoryContext {
   Services::ConfigService &config;
   Services::ClientVersionRegistry &version_registry;
   Services::RecentLocationsService &recent_locations;
+  Services::OtbmSettings &otbm_settings;
   AppLogic::MapTabManager &tab_manager;
   AppStateManager &state_manager;
   UI::TilesetWidget &tileset_widget;

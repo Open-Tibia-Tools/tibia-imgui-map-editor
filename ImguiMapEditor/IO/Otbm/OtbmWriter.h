@@ -1,5 +1,6 @@
 #pragma once
 #include "Domain/ChunkedMap.h"
+#include "Domain/OtbmDataTypes.h"
 #include "OtbmReader.h"  // For OtbmNode, OtbmAttribute, OtbmVersion enums
 #include <filesystem>
 #include <functional>
@@ -52,6 +53,7 @@ public:
      * @param version OTBM format version
      * @param client_data Client data for ID conversion (required if conversion_mode != None)
      * @param conversion_mode ID conversion mode (default: None)
+     * @param waypoint_target Where to write waypoints (default: Otbm = inline in OTBM)
      * @param progress Progress callback (optional)
      * @return Write result with statistics
      */
@@ -61,6 +63,7 @@ public:
         OtbmVersion version = OtbmVersion::V1,
         Services::ClientDataService* client_data = nullptr,
         OtbmConversionMode conversion_mode = OtbmConversionMode::None,
+        Domain::OtbmWriteTarget waypoint_target = Domain::OtbmWriteTarget::Otbm,
         OtbmWriteProgressCallback progress = nullptr
     );
     

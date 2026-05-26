@@ -246,6 +246,7 @@ set(SERVICES_SOURCES
     Services/MapMergeService.cpp
     Services/SessionWiringService.cpp
     Services/SettingsRegistry.cpp
+    Services/OtbmSettings.cpp
     Services/Selection/SelectionService.cpp
     Services/Map/MapEditingService.cpp
     # Phase 0: Lookup Table Services

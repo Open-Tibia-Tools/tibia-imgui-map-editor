@@ -78,7 +78,8 @@ UIComponentContainer UIFactory::create(const UIFactoryContext &ctx) {
   // Initialize MapOperationHandler (no longer needs ProjectConfigDialog)
   components.map_operations = std::make_unique<AppLogic::MapOperationHandler>(
       ctx.config, ctx.version_registry, ctx.recent_locations, ctx.view_settings,
-      ctx.tab_manager, ctx.brush_registry, ctx.tileset_service);
+      ctx.tab_manager, ctx.brush_registry, ctx.tileset_service,
+      ctx.otbm_settings);
 
   // Initialize StartupController
   components.startup_controller = std::make_unique<AppLogic::StartupController>(

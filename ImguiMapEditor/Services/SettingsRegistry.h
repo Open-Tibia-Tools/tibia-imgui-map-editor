@@ -5,6 +5,7 @@
 #include "Services/ClientVersionRegistry.h"
 #include "Services/ConfigService.h"
 #include "Services/HotkeyRegistry.h"
+#include "Services/OtbmSettings.h"
 #include "Services/RecentLocationsService.h"
 #include "Services/ViewSettings.h"
 #include "Domain/SelectionSettings.h"
@@ -35,6 +36,9 @@ public:
   AppSettings &getAppSettings();
   const AppSettings &getAppSettings() const;
 
+  OtbmSettings &getOtbmSettings();
+  const OtbmSettings &getOtbmSettings() const;
+
   Domain::SelectionSettings &getSelectionSettings();
   const Domain::SelectionSettings &getSelectionSettings() const;
 
@@ -48,6 +52,7 @@ private:
 
   ViewSettings view_settings_;
   AppSettings app_settings_;
+  OtbmSettings otbm_settings_;
   Domain::SelectionSettings selection_settings_;
   HotkeyRegistry hotkey_registry_;
 };

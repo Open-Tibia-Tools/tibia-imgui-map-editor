@@ -85,8 +85,9 @@ void RenderOrchestrator::render(Context &ctx) {
                                   &anim_ticks);
 
     renderEditorState(ctx, session);
-    renderDialogs(ctx);
   }
+
+  renderDialogs(ctx);
 
   renderNotifications();
   endFrame(ctx);

@@ -5,6 +5,7 @@
 #include "Services/ConfigService.h"
 #include "Services/Map/MapLoadingService.h"
 #include "Services/Map/MapSavingService.h"
+#include "Services/OtbmSettings.h"
 #include "Services/RecentLocationsService.h"
 #include "Services/ViewSettings.h"
 #include "UI/Dialogs/MapCompatibilityPopup.h"
@@ -58,12 +59,13 @@ public:
       std::function<void(NotificationType type, const std::string &message)>;
 
   MapOperationHandler(Services::ConfigService &config,
-                      Services::ClientVersionRegistry &versions,
-                      Services::RecentLocationsService &recent_locations,
-                      Services::ViewSettings &view_settings,
-                      AppLogic::MapTabManager &tab_manager,
-                      Brushes::BrushRegistry &brush_registry,
-                      Services::TilesetService &tileset_service);
+                       Services::ClientVersionRegistry &versions,
+                       Services::RecentLocationsService &recent_locations,
+                       Services::ViewSettings &view_settings,
+                       AppLogic::MapTabManager &tab_manager,
+                       Brushes::BrushRegistry &brush_registry,
+                       Services::TilesetService &tileset_service,
+                       const Services::OtbmSettings &otbm_settings);
 
   // Destructor must be declared here and defined in .cpp due to
   // forward-declared unique_ptr member
@@ -155,6 +157,7 @@ private:
   AppLogic::MapTabManager &tab_manager_;
   Brushes::BrushRegistry &brush_registry_;
   Services::TilesetService &tileset_service_;
+  const Services::OtbmSettings &otbm_settings_;
 
   // Loading service (owned)
   std::unique_ptr<Services::MapLoadingService> loading_service_;
