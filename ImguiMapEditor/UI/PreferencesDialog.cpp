@@ -416,6 +416,10 @@ const char* kOtbmWriteTargetIcons[] = { ICON_FA_FLOPPY_DISK " ", ICON_FA_FILE " 
 } // namespace
 
 void PreferencesDialog::renderOtbmTab() {
+    if (!otbm_settings_) {
+        ImGui::TextDisabled("OTBM settings are not available.");
+        return;
+    }
     otbm_tab_active_ = true;
     auto& style = ImGui::GetStyle();
     bool settings_disabled = !otbm_destructive_ack_;

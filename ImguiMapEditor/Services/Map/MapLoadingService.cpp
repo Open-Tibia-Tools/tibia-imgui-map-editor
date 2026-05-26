@@ -3,7 +3,6 @@
 #include "IO/Otbm/OtbmReader.h"
 #include "IO/SecReader.h"
 #include "IO/SpawnXmlReader.h"
-#include "IO/WaypointXmlWriter.h"
 #include "IO/WaypointXmlReader.h"
 #include "Services/TilesetService.h"
 #include <climits>
@@ -111,13 +110,23 @@ MapLoadingService::loadMap(const std::filesystem::path &path,
       path.parent_path() / (path.stem().string() + "-house.xml");
   IO::HouseXmlReader::read(house_path, *current_map_);
 
-  // Load Waypoints (-waypoints.xml) — may already have OTBM waypoints
-  std::filesystem::path waypoint_path =
-      path.parent_path() / (path.stem().string() + "-waypoints.xml");
-  IO::WaypointXmlReader::read(waypoint_path, *current_map_);
+  // Load Waypoints — conditional on OTBM preference
+  {
+    std::filesystem::path waypoint_path =
+        path.parent_path() / (path.stem().string() + "-waypoints.xml");
 
-  // Resolve waypoints based on OTBM preferences (primary source + fallback)
-  resolveWaypoints(*current_map_, path);
+    if (otbm_settings_.waypoint_read == Domain::OtbmReadSource::Otbm) {
+        if (current_map_->getWaypoints().empty()) {
+            IO::WaypointXmlReader::read(waypoint_path, *current_map_);
+        }
+    } else {
+        bool xml_exists = std::filesystem::exists(waypoint_path);
+        if (xml_exists) {
+            current_map_->clearWaypoints();
+            IO::WaypointXmlReader::read(waypoint_path, *current_map_);
+        }
+    }
+  }
 
   // Cache sprites for performance
   if (client_data_service_ && sprite_manager_) {
@@ -219,13 +228,23 @@ MapLoadingResult MapLoadingService::loadMapWithExistingClientData(
       path.parent_path() / (path.stem().string() + "-house.xml");
   IO::HouseXmlReader::read(house_path, *loaded_map);
 
-  // Load Waypoints (-waypoints.xml) — may already have OTBM waypoints
-  std::filesystem::path waypoint_path2 =
-      path.parent_path() / (path.stem().string() + "-waypoints.xml");
-  IO::WaypointXmlReader::read(waypoint_path2, *loaded_map);
+  // Load Waypoints — conditional on OTBM preference
+  {
+    std::filesystem::path waypoint_path =
+        path.parent_path() / (path.stem().string() + "-waypoints.xml");
 
-  // Resolve waypoints based on OTBM preferences (primary source + fallback)
-  resolveWaypoints(*loaded_map, path);
+    if (otbm_settings_.waypoint_read == Domain::OtbmReadSource::Otbm) {
+        if (loaded_map->getWaypoints().empty()) {
+            IO::WaypointXmlReader::read(waypoint_path, *loaded_map);
+        }
+    } else {
+        bool xml_exists = std::filesystem::exists(waypoint_path);
+        if (xml_exists) {
+            loaded_map->clearWaypoints();
+            IO::WaypointXmlReader::read(waypoint_path, *loaded_map);
+        }
+    }
+  }
 
   spdlog::info("Map loaded: {} tiles, version {}", otbm_result.tile_count,
                otbm_result.version.client_version);
@@ -627,26 +646,6 @@ bool MapLoadingService::tryLoadItems(const std::filesystem::path &map_dir,
                          [this](const std::filesystem::path &path) {
                            return client_data_service_->loadItemData(path);
                          });
-}
-
-void MapLoadingService::resolveWaypoints(Domain::ChunkedMap &map,
-                                         const std::filesystem::path &otbm_path) {
-    const auto& waypoints = map.getWaypoints();
-    auto waypoint_path = otbm_path.parent_path() / (otbm_path.stem().string() + "-waypoints.xml");
-
-    if (otbm_settings_.waypoint_read == Domain::OtbmReadSource::Otbm) {
-        // OTBM-primary: OTBM waypoints already parsed by OtbmReader.
-        // XML was loaded as supplement (non-duplicate extras — WaypointXmlReader skips dupes).
-        if (waypoints.empty() && std::filesystem::exists(waypoint_path)) {
-            spdlog::info("OTBM had no waypoints, XML provided fallback");
-        }
-    } else {
-        // XML-primary: XML was loaded and OTBM waypoints were already parsed.
-        // WaypointXmlReader deduplicates, so XML waypoints take precedence.
-        if (!waypoints.empty()) {
-            spdlog::info("Waypoints resolved from XML-primary ({} total)", waypoints.size());
-        }
-    }
 }
 
 } // namespace Services

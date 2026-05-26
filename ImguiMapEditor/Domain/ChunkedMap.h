@@ -581,6 +581,12 @@ public:
   std::vector<Town> &getTowns() { return towns_; } // Mutable for dialog editing
   const std::vector<Waypoint> &getWaypoints() const { return waypoints_; }
 
+  void clearWaypoints() {
+    waypoints_.clear();
+    waypoint_lookup_.clear();
+    markChanged();
+  }
+
   /**
    * O(1) lookup of waypoint at a specific position.
    * @return Pointer to waypoint if one exists at this position, nullptr
