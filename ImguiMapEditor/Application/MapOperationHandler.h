@@ -79,11 +79,19 @@ public:
   void handleOpenRecentMap(const std::filesystem::path &path, uint32_t index);
 
   /**
-   * Create a new map directly.
-   * Called from StartupController after NewMap modal is confirmed.
+   * Create a new map directly and load it into the editor.
+   * Called from editor-state shortcut (Ctrl+N / Menu / Ribbon).
+   * Creates an unnamed map with header data copied from the current map.
    */
-  void handleNewMapDirect(const std::string &map_name, uint16_t width,
-                           uint16_t height, uint32_t client_index);
+  void handleNewMapDirect(const Services::NewMapConfig &config);
+
+  /**
+   * Create a new map and save it to disk without loading into editor.
+   * Called from StartupDialog's New Map dialog (Option B flow).
+   * Returns true if save succeeded.
+   */
+  bool createAndSaveNewMap(const Services::NewMapConfig &config,
+                           const std::filesystem::path &save_path);
 
   /**
    * Open a SEC map directly.

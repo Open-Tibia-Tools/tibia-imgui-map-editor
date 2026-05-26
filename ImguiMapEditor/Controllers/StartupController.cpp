@@ -535,12 +535,37 @@ void StartupController::handleNewMapFlow() {
 }
 
 void StartupController::handleNewMapConfirmed(const UI::NewMapPanel::State& config) {
-  spdlog::info("Creating new map: {} ({}x{}) for index {}", config.map_name, 
-               config.map_width, config.map_height, config.selected_client_index);
+  spdlog::info("Creating new map: {} ({}x{})", config.map_name, 
+               config.map_width, config.map_height);
   
-  // Create new map directly via MapOperationHandler
-  map_ops_.handleNewMapDirect(config.map_name, config.map_width, 
-                               config.map_height, config.selected_client_index);
+  // Build NewMapConfig from the dialog state
+  Services::NewMapConfig map_config;
+  map_config.map_name = config.map_name;
+  map_config.map_width = config.map_width;
+  map_config.map_height = config.map_height;
+  map_config.otbm_version = config.otbm_version;
+  map_config.items_major = config.items_major;
+  map_config.items_minor = config.items_minor;
+  map_config.description = config.description;
+
+  // Open save dialog to pick file location
+  NFD::UniquePath outPath;
+  nfdfilteritem_t filters[1] = {{"OTBM Maps", "otbm"}};
+  std::string default_name = config.map_name + ".otbm";
+  nfdresult_t result =
+      NFD::SaveDialog(outPath, filters, 1, nullptr, default_name.c_str());
+
+  if (result != NFD_OKAY) {
+    return; // User cancelled save dialog
+  }
+
+  std::filesystem::path save_path = outPath.get();
+
+  // Create and save the map to disk
+  map_ops_.createAndSaveNewMap(map_config, save_path);
+
+  // Auto-select the newly created map in the startup dialog
+  handleMapSelection(save_path, 0);
 }
 
 void StartupController::handleLoadMap() {

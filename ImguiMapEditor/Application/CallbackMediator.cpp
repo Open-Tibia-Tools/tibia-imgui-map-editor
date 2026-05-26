@@ -38,6 +38,7 @@
 #include "UI/Windows/IngameBoxWindow.h"
 #include "UI/Windows/MinimapWindow.h"
 #include <nfd.hpp>
+#include <format>
 #include <spdlog/spdlog.h>
 
 namespace MapEditor {
@@ -154,10 +155,25 @@ void CallbackMediator::wireTabCallbacks(Context &ctx) {
   });
 
   // Hotkey file operations
-  // NewMap from Editor state uses standalone dialog
+  // NewMap from Editor state: instant unnamed map creation (no dialog)
   ctx.hotkey->setNewMapCallback([ctx]() {
-    if (ctx.main_window)
-      ctx.main_window->showNewMapDialog();
+    if (!ctx.tab_manager || !ctx.map_operations)
+      return;
+    auto *session = ctx.tab_manager->getActiveSession();
+    if (!session || !session->getMap())
+      return;
+    auto *map = session->getMap();
+    uint32_t num = ctx.tab_manager->nextUnnamedNumber();
+    Services::NewMapConfig config;
+    config.map_name = (num == 1) ? "unnamed.otbm"
+                                 : std::format("unnamed-{}.otbm", num);
+    config.map_width = map->getWidth();
+    config.map_height = map->getHeight();
+    config.otbm_version = map->getVersion().otbm_version;
+    config.items_major = map->getVersion().items_major_version;
+    config.items_minor = map->getVersion().items_minor_version;
+    config.description = map->getDescription();
+    ctx.map_operations->handleNewMapDirect(config);
   });
   ctx.hotkey->setOpenMapCallback([ctx]() {
     if (ctx.map_operations)
@@ -279,18 +295,44 @@ void CallbackMediator::wireMapOperationCallbacks(Context &ctx) {
       });
 
   // Wire MainWindow dialog callbacks to MapOperationHandler
+  // Note: Editor-state New Map now uses instant creation (no dialog).
+  // MainWindow's NewMapDialog is kept for potential future use.
   if (ctx.main_window) {
     ctx.main_window->setNewMapCallback([ctx](const UI::NewMapPanel::State& config) {
-      ctx.map_operations->handleNewMapDirect(config.map_name, config.map_width,
-                                             config.map_height, config.selected_client_index);
+      Services::NewMapConfig map_config;
+      map_config.map_name = config.map_name;
+      map_config.map_width = config.map_width;
+      map_config.map_height = config.map_height;
+      map_config.otbm_version = config.otbm_version;
+      map_config.items_major = config.items_major;
+      map_config.items_minor = config.items_minor;
+      map_config.description = config.description;
+      ctx.map_operations->handleNewMapDirect(map_config);
     });
   }
 }
 
 void CallbackMediator::wireMenuCallbacks(Context &ctx) {
-  // NewMap from Editor state uses standalone dialog
-  ctx.menu_bar->setNewMapCallback(
-      [ctx]() { if (ctx.main_window) ctx.main_window->showNewMapDialog(); });
+  // NewMap from Editor state: instant unnamed map creation (no dialog)
+  ctx.menu_bar->setNewMapCallback([ctx]() {
+    if (!ctx.tab_manager || !ctx.map_operations)
+      return;
+    auto *session = ctx.tab_manager->getActiveSession();
+    if (!session || !session->getMap())
+      return;
+    auto *map = session->getMap();
+    uint32_t num = ctx.tab_manager->nextUnnamedNumber();
+    Services::NewMapConfig config;
+    config.map_name = (num == 1) ? "unnamed.otbm"
+                                 : std::format("unnamed-{}.otbm", num);
+    config.map_width = map->getWidth();
+    config.map_height = map->getHeight();
+    config.otbm_version = map->getVersion().otbm_version;
+    config.items_major = map->getVersion().items_major_version;
+    config.items_minor = map->getVersion().items_minor_version;
+    config.description = map->getDescription();
+    ctx.map_operations->handleNewMapDirect(config);
+  });
   ctx.menu_bar->setOpenMapCallback(
       [ctx]() { ctx.map_operations->handleOpenMap(); });
   ctx.menu_bar->setOpenSecMapCallback([ctx]() {
@@ -474,9 +516,26 @@ void CallbackMediator::wireSecondaryClientCallbacks(Context &ctx) {
 
 void CallbackMediator::wireRibbonCallbacks(Context &ctx) {
   if (ctx.file_panel) {
-    // NewMap from Editor state uses standalone dialog  
-    ctx.file_panel->SetNewMapCallback(
-        [ctx]() { if (ctx.main_window) ctx.main_window->showNewMapDialog(); });
+    // NewMap from Editor state: instant unnamed map creation (no dialog)
+    ctx.file_panel->SetNewMapCallback([ctx]() {
+      if (!ctx.tab_manager || !ctx.map_operations)
+        return;
+      auto *session = ctx.tab_manager->getActiveSession();
+      if (!session || !session->getMap())
+        return;
+      auto *map = session->getMap();
+      uint32_t num = ctx.tab_manager->nextUnnamedNumber();
+      Services::NewMapConfig config;
+      config.map_name = (num == 1) ? "unnamed.otbm"
+                                   : std::format("unnamed-{}.otbm", num);
+      config.map_width = map->getWidth();
+      config.map_height = map->getHeight();
+      config.otbm_version = map->getVersion().otbm_version;
+      config.items_major = map->getVersion().items_major_version;
+      config.items_minor = map->getVersion().items_minor_version;
+      config.description = map->getDescription();
+      ctx.map_operations->handleNewMapDirect(config);
+    });
     ctx.file_panel->SetOpenMapCallback(
         [ctx]() { ctx.map_operations->handleOpenMap(); });
     ctx.file_panel->SetSaveMapCallback(

@@ -514,6 +514,9 @@ public:
   // ========== Creation ==========
 
   void createNew(uint16_t width, uint16_t height, uint32_t client_version);
+  void createNew(uint16_t width, uint16_t height, uint32_t client_version,
+                 uint32_t otbm_version, uint32_t items_major,
+                 uint32_t items_minor, const std::string &description = "");
 
   // ========== Towns & Waypoints ==========
 

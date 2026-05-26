@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Config.h"
 #include "Domain/ChunkedMap.h"
 #include "Domain/Position.h"
 #include "Services/ClientDataService.h"
@@ -30,8 +31,12 @@ namespace Services {
  */
 struct NewMapConfig {
   std::string map_name;
-  int map_width = 256;
-  int map_height = 256;
+  uint16_t map_width = Config::Map::DEFAULT_MAP_SIZE;
+  uint16_t map_height = Config::Map::DEFAULT_MAP_SIZE;
+  uint32_t otbm_version = 2;
+  uint32_t items_major = 0;
+  uint32_t items_minor = 0;
+  std::string description;
 };
 
 /**

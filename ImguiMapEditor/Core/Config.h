@@ -82,6 +82,7 @@ inline constexpr int MAX_SIZE = 65535;
 inline constexpr int16_t MIN_FLOOR = 0;
 inline constexpr int16_t MAX_FLOOR = 15;
 inline constexpr int GROUND_LAYER = 7;
+inline constexpr uint16_t DEFAULT_MAP_SIZE = 16384;
 } // namespace Map
 
 // ============================================================================
@@ -164,9 +165,13 @@ inline constexpr float PROJECT_DIALOG_OPEN_W = 900.0f;
 inline constexpr float PROJECT_DIALOG_OPEN_H = 520.0f;
 
 // Modal dialog dimensions (NewMap)
-inline constexpr float NEW_MAP_DIALOG_W = 500.0f;
-inline constexpr float NEW_MAP_DIALOG_H = 400.0f;
+inline constexpr float NEW_MAP_DIALOG_W = 680.0f;
+inline constexpr float NEW_MAP_DIALOG_H = 330.0f;
 inline constexpr float MODAL_BUTTON_W = 120.0f;
+
+// Size presets for New Map dialog (powers of 2 + max)
+inline constexpr uint16_t SIZE_PRESETS[] = {256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65000};
+inline constexpr int SIZE_PRESET_COUNT = sizeof(SIZE_PRESETS) / sizeof(SIZE_PRESETS[0]);
 
 // Action button dimensions
 inline constexpr float ACTION_BUTTON_W = 180.0f;

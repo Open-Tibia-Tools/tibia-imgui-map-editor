@@ -372,7 +372,10 @@ MapLoadingResult MapLoadingService::createNewMap(const NewMapConfig &config,
   }
 
   current_map_ = std::make_unique<Domain::ChunkedMap>();
-  current_map_->createNew(config.map_width, config.map_height, current_client_index);
+  current_map_->createNew(config.map_width, config.map_height,
+                          current_client_index, config.otbm_version,
+                          config.items_major, config.items_minor,
+                          config.description);
   current_map_->setName(config.map_name);
 
   // Set full version info from ClientVersion registry
@@ -381,10 +384,10 @@ MapLoadingResult MapLoadingService::createNewMap(const NewMapConfig &config,
   auto *version_info = version_registry_.getVersion(current_client_index);
   if (version_info) {
     Domain::ChunkedMap::MapVersion map_version;
-    map_version.otbm_version = version_info->getOtbmVersion();
+    map_version.otbm_version = config.otbm_version;
     map_version.client_version = version_info->getVersion();
-    map_version.items_major_version = version_info->getOtbMajor();
-    map_version.items_minor_version = version_info->getOtbVersion();
+    map_version.items_major_version = config.items_major;
+    map_version.items_minor_version = config.items_minor;
     current_map_->setVersion(map_version);
     spdlog::info("New map version set: OTBM v{}, client {}, items {}.{}",
                  map_version.otbm_version, map_version.client_version,

@@ -94,6 +94,9 @@ public:
   const ClipboardService &getClipboard() const { return clipboard_; }
   Domain::CopyBuffer &getCopyBuffer() { return copybuffer_; }
 
+  // Unnamed map counter (monotonic, never reuses, resets on app restart)
+  uint32_t nextUnnamedNumber() { return next_unnamed_number_++; }
+
   // Events - callback receives (old_index, new_index) for proper state
   // save/restore
   using TabChangedCallback = std::function<void(int old_index, int new_index)>;
@@ -118,6 +121,7 @@ private:
   SessionModifiedCallback on_session_modified_;
   Services::ClientDataService *client_data_ = nullptr;
   Rendering::RenderingManager *rendering_manager_ = nullptr;
+  uint32_t next_unnamed_number_ = 1;
 };
 
 } // namespace MapEditor::AppLogic

@@ -287,28 +287,59 @@ void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
 // handleProjectConfigConfirmed() removed - legacy ProjectConfigDialog flow no
 // longer used
 
-void MapOperationHandler::handleNewMapDirect(const std::string &map_name,
-                                              uint16_t width, uint16_t height,
-                                              uint32_t client_index) {
-  spdlog::info("Creating new map directly: {} ({}x{}) index {}", map_name,
-               width, height, client_index);
+void MapOperationHandler::handleNewMapDirect(
+    const Services::NewMapConfig &config) {
+  spdlog::info("Creating new map directly: {} ({}x{})", config.map_name,
+               config.map_width, config.map_height);
 
-  current_client_index_ = client_index;
-  pending_map_path_.clear();
+  pending_map_path_ = config.map_name;
 
   Utils::ScopedFlag loading(is_loading_);
 
-  Services::NewMapConfig map_config;
-  map_config.map_name = map_name;
-  map_config.map_width = width;
-  map_config.map_height = height;
-
-  auto result = loading_service_->createNewMap(map_config, client_index);
+  auto result = loading_service_->createNewMap(config, current_client_index_);
 
   if (result.success) {
     transferNewResources(std::move(result));
   } else {
     notify(NotificationType::Error, "Failed to create new map");
+  }
+}
+
+bool MapOperationHandler::createAndSaveNewMap(
+    const Services::NewMapConfig &config,
+    const std::filesystem::path &save_path) {
+  spdlog::info("Creating and saving new map: {} to {}", config.map_name,
+               save_path.string());
+
+  // Create an empty map with the config data
+  auto map = std::make_unique<Domain::ChunkedMap>();
+  map->createNew(config.map_width, config.map_height, 0, config.otbm_version,
+                 config.items_major, config.items_minor, config.description);
+  map->setName(config.map_name);
+  map->setFilename(save_path.string());
+
+  // Save to disk (no client_data needed for empty map)
+  Services::MapSavingService saving_service(nullptr, &otbm_settings_);
+  saving_service.setSaveHouses(false);
+  saving_service.setSaveSpawns(false);
+
+  auto save_result =
+      saving_service.save(save_path, *map, [](int percent, const std::string &) {
+        spdlog::info("Save progress: {}%", percent);
+      });
+
+  if (save_result.success) {
+    spdlog::info("New map saved to: {}", save_path.string());
+    config_.addRecentFile(save_path.string());
+    recent_locations_.addRecentMap(save_path, 0);
+    notify(NotificationType::Success,
+           "Map created: " + save_path.filename().string());
+    return true;
+  } else {
+    spdlog::error("Failed to save new map: {}", save_result.error);
+    notify(NotificationType::Error,
+           "Failed to save map: " + save_result.error);
+    return false;
   }
 }
 
