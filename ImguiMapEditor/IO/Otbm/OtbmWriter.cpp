@@ -13,6 +13,7 @@
 #include <map>
 #include <tuple>
 #include <algorithm>
+#include <cstdint>
 #include <cstring>
 
 namespace MapEditor::IO {
@@ -74,10 +75,11 @@ bool writeAttributeMap(NodeFileWriteHandle& writer, const Domain::Item& item) {
             entries.push_back(std::move(e));
         } else if (std::holds_alternative<int64_t>(val)) {
             int64_t v = std::get<int64_t>(val);
-            if (v < 0 || v > UINT32_MAX) {
+            if (v < INT32_MIN || v > INT32_MAX) {
+                spdlog::warn("Generic attribute '{}' value {} out of INT32 range, skipping", key, v);
                 continue;
             }
-            entries.push_back({key, {}, static_cast<uint32_t>(v), 2});
+            entries.push_back({key, {}, static_cast<uint32_t>(static_cast<int32_t>(v)), 2});
         } else if (std::holds_alternative<double>(val)) {
             Entry e{key, {}, 0, 4};
             e.isDouble = true;

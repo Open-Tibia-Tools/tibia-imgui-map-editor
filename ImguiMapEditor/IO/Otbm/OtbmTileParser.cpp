@@ -4,6 +4,7 @@
 #include "OtbmOpaqueData.h"
 #include "Domain/Tile.h"
 #include <spdlog/spdlog.h>
+#include <unordered_set>
 
 namespace MapEditor {
 namespace IO {
@@ -94,9 +95,13 @@ bool OtbmTileParser::parseTile(BinaryNode* tileNode,
                         static_cast<uint32_t>(Domain::TileFlag::Refresh);
                     uint32_t unknown_flags = flags & ~KNOWN_FLAGS_MASK;
                     if (unknown_flags != 0) {
-                        auto opaque = std::make_unique<InvalidZoneState>();
+                        auto* opaque = tile->getOpaqueData();
+                        if (!opaque) {
+                            auto newOpaque = std::make_unique<IO::InvalidZoneState>();
+                            opaque = newOpaque.get();
+                            tile->setOpaqueData(std::move(newOpaque));
+                        }
                         opaque->unknownMapFlags = unknown_flags;
-                        tile->setOpaqueData(std::move(opaque));
                     }
                 }
                 break;
@@ -234,6 +239,8 @@ bool OtbmTileParser::parseTowns(BinaryNode* townsNode,
 bool OtbmTileParser::parseWaypoints(BinaryNode* waypointsNode, 
                                      IMapBuilder& builder,
                                      OtbmResult& result) {
+    std::unordered_set<std::string> seen_names;
+    
     for (auto& wpNode : waypointsNode->children()) {
         uint8_t type;
         if (!wpNode.getU8(type)) continue;
@@ -248,6 +255,17 @@ bool OtbmTileParser::parseWaypoints(BinaryNode* waypointsNode,
         if (!wpNode.getU16(x) || !wpNode.getU16(y) || !wpNode.getU8(z)) {
             continue;
         }
+        
+        if (x == 0 && y == 0) {
+            spdlog::warn("Waypoint '{}' has position (0,0), skipping", name);
+            continue;
+        }
+        
+        if (seen_names.contains(name)) {
+            spdlog::warn("Duplicate waypoint name '{}', skipping", name);
+            continue;
+        }
+        seen_names.insert(name);
         
         Domain::Position pos(x, y, z);
         builder.addWaypoint(name, pos);

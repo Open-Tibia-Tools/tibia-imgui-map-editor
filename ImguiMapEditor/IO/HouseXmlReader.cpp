@@ -24,26 +24,20 @@ HouseXmlReader::Result HouseXmlReader::read(const std::filesystem::path& path, D
             continue;
         }
 
-        auto* existing = map.getHouse(id);
-        if (existing) {
-            existing->name = houseNode.attribute("name").as_string();
-            existing->rent = houseNode.attribute("rent").as_uint();
-            existing->town_id = town_id;
-            existing->is_guildhall = houseNode.attribute("guildhall").as_bool();
-            existing->entry_position.x = houseNode.attribute("entryx").as_int();
-            existing->entry_position.y = houseNode.attribute("entryy").as_int();
-            existing->entry_position.z = houseNode.attribute("entryz").as_int();
-        } else {
-            auto house = std::make_unique<Domain::House>(id);
-            house->name = houseNode.attribute("name").as_string();
-            house->rent = houseNode.attribute("rent").as_uint();
-            house->town_id = town_id;
-            house->is_guildhall = houseNode.attribute("guildhall").as_bool();
-            house->entry_position.x = houseNode.attribute("entryx").as_int();
-            house->entry_position.y = houseNode.attribute("entryy").as_int();
-            house->entry_position.z = houseNode.attribute("entryz").as_int();
-            map.addHouse(std::move(house));
+        auto* house = map.getHouse(id);
+        if (!house) {
+            auto new_house = std::make_unique<Domain::House>(id);
+            house = new_house.get();
+            map.addHouse(std::move(new_house));
         }
+
+        house->name = houseNode.attribute("name").as_string();
+        house->rent = houseNode.attribute("rent").as_uint();
+        house->town_id = town_id;
+        house->is_guildhall = houseNode.attribute("guildhall").as_bool();
+        house->entry_position.x = houseNode.attribute("entryx").as_int();
+        house->entry_position.y = houseNode.attribute("entryy").as_int();
+        house->entry_position.z = houseNode.attribute("entryz").as_int();
 
         result.houses_loaded++;
     }

@@ -38,6 +38,7 @@ std::unique_ptr<Domain::Item> OtbmItemParser::parseItem(BinaryNode* node,
         } else {
             // Type unknown — V1 requires type metadata to know if inline count follows.
             // Always consume 1 byte as count to prevent stream corruption.
+            spdlog::warn("Unknown item type for server_id {}, assuming V1 inline count", server_id);
             uint8_t count;
             if (!node->getU8(count)) return nullptr;
             item->setSubtype(count);
@@ -250,7 +251,7 @@ bool OtbmItemParser::parseItemChildren(BinaryNode* node, Domain::Item& item,
     static constexpr int MAX_CONTAINER_DEPTH = 256;
     if (depth >= MAX_CONTAINER_DEPTH) {
         spdlog::warn("Container depth exceeds max ({}), stopping recursion", MAX_CONTAINER_DEPTH);
-        return false;
+        return true;
     }
     
     for (auto& child : node->children()) {
