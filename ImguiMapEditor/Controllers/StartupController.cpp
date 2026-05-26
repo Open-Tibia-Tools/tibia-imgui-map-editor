@@ -243,11 +243,11 @@ void StartupController::handleClientAutoMatch(
     }
   }
 
-  // SEC map: find best SRV client by scanning only SRV data source clients
+  // SEC map: find best validated SRV client
   if (!matched_version && is_sec) {
     for (const auto* cv : registry_.getAllVersions()) {
       if (cv->getDataSource() == Domain::ItemDataSource::SRV &&
-          !cv->getClientPath().empty()) {
+          !cv->getClientPath().empty() && cv->validateFiles()) {
         if (!matched_version || cv->getIndex() < matched_version->getIndex()) {
           matched_version = cv;
         }
@@ -478,7 +478,15 @@ void StartupController::handleBrowseSecMap() {
       }
     }
 
-    if (has_sec_files) {
+    if (ec) {
+      spdlog::error("Failed to read SEC folder: {}", ec.message());
+
+      UI::SelectedMapInfo map_info;
+      map_info.name = path.filename().string();
+      map_info.valid = false;
+      map_info.description = std::format("Folder unreadable: {}", ec.message());
+      dialog_.setSelectedMapInfo(map_info);
+    } else if (has_sec_files) {
       // Add to recent files
       config_.addRecentFile(path.string());
 

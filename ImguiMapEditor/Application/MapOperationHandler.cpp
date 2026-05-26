@@ -214,7 +214,8 @@ void MapOperationHandler::handleOpenRecentMap(const std::filesystem::path &path,
                                                uint32_t index) {
   pending_map_path_ = path;
 
-  if (std::filesystem::is_directory(path)) {
+  std::error_code ec;
+  if (std::filesystem::is_directory(path, ec)) {
     handleOpenSecMapDirect(path, index);
     return;
   }
@@ -312,7 +313,6 @@ void MapOperationHandler::handleOpenSecMapDirect(
   spdlog::info("Opening SEC map directly: {} index {}", sec_folder.string(),
                index);
 
-  current_client_index_ = index;
   pending_map_path_ = sec_folder;
 
   Utils::ScopedFlag loading(is_loading_);
@@ -325,10 +325,12 @@ void MapOperationHandler::handleOpenSecMapDirect(
     result = loading_service_->loadSecMapWithExistingClientData(
         sec_folder, existing_client_data_, existing_sprite_manager_);
   } else {
+    current_client_index_ = index;
     // SEC maps require SRV client data — validate and auto-match if needed
     const auto* cv = versions_.getVersion(current_client_index_);
     if (current_client_index_ == 0 || !cv
-        || cv->getDataSource() != Domain::ItemDataSource::SRV) {
+        || cv->getDataSource() != Domain::ItemDataSource::SRV
+        || !cv->validateFiles()) {
       current_client_index_ = 0;
       for (const auto* cv2 : versions_.getAllVersions()) {
         if (cv2->getDataSource() == Domain::ItemDataSource::SRV
