@@ -31,7 +31,7 @@ namespace Presentation {
 class MenuBar {
 public:
     using ActionCallback = std::function<void()>;
-    using OpenRecentCallback = std::function<void(const std::filesystem::path&)>;
+    using OpenRecentCallback = std::function<void(const std::filesystem::path&, uint32_t)>;
     
     MenuBar(Services::ViewSettings& view_settings, Domain::SelectionSettings& selection_settings, UI::MapPanel* map_panel,
             AppLogic::MapTabManager* tab_manager = nullptr);

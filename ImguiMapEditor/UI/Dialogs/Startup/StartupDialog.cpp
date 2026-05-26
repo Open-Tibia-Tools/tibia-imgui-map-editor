@@ -19,13 +19,6 @@ void StartupDialog::initialize(Services::ClientVersionRegistry *registry,
     pending_result_.action = Action::NewMapConfirmed;
     pending_result_.new_map_config = config;
   });
-  
-  open_sec_dialog_.initialize(registry);
-  open_sec_dialog_.setOnConfirm([this](const std::filesystem::path& folder, uint32_t version) {
-    pending_result_.action = Action::OpenSecMapConfirmed;
-    pending_result_.sec_map_folder = folder;
-    pending_result_.sec_map_version = version;
-  });
 
   // Wire up extracted panel components
   available_clients_panel_.setRegistry(registry);
@@ -181,14 +174,8 @@ void StartupDialog::render(const std::vector<RecentMapEntry> &recent_maps,
     show_new_map_modal_ = false;
   }
   
-  if (show_sec_map_modal_) {
-    open_sec_dialog_.show();
-    show_sec_map_modal_ = false;
-  }
-  
   // Render dialogs (handles their own popup modals)
   new_map_dialog_.render();
-  open_sec_dialog_.render();
 
   // Render sub-dialogs if open
   if (client_config_dialog_.isOpen()) {

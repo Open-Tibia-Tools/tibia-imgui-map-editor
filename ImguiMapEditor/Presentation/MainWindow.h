@@ -9,7 +9,6 @@
 #include "UI/Dialogs/Properties/ItemPropertiesDialog.h"
 #include "UI/Dialogs/Properties/SpawnPropertiesDialog.h"
 #include "UI/Dialogs/NewMapDialog.h"
-#include "UI/Dialogs/OpenSecDialog.h"
 #include "UI/Map/MapContextMenu.h"
 #include "UI/Map/MapPanel.h"
 #include "UI/Windows/IngameBoxWindow.h"
@@ -86,13 +85,9 @@ public:
 
   // === Editor-state modal dialogs ===
   void showNewMapDialog();
-  void showOpenSecDialog();
   
   void setNewMapCallback(std::function<void(const UI::NewMapPanel::State&)> callback) {
     new_map_callback_ = std::move(callback);
-  }
-  void setOpenSecMapCallback(std::function<void(const std::filesystem::path&, uint32_t)> callback) {
-    open_sec_callback_ = std::move(callback);
   }
 
 private:
@@ -116,9 +111,7 @@ private:
   
   // Editor-state modal dialogs
   UI::NewMapDialog new_map_dialog_;
-  UI::OpenSecDialog open_sec_dialog_;
   std::function<void(const UI::NewMapPanel::State&)> new_map_callback_;
-  std::function<void(const std::filesystem::path&, uint32_t)> open_sec_callback_;
 };
 
 } // namespace Presentation

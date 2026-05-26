@@ -71,9 +71,9 @@ private:
   void handleClientSelection(uint32_t index);
   void handleBrowseMap();
   void handleBrowseSecMap();
+  void selectSECMapFolder(const std::filesystem::path &folder);
   void handleNewMapFlow();
   void handleNewMapConfirmed(const UI::NewMapPanel::State& config);
-  void handleOpenSecMapConfirmed(const std::filesystem::path& folder, uint32_t version);
   void handleLoadMap();
   void handleClientConfiguration();
   void handlePreferences();

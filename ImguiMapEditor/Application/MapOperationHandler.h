@@ -90,6 +90,13 @@ public:
   void handleOpenSecMapDirect(const std::filesystem::path &sec_folder,
                                uint32_t index);
 
+  /**
+   * Open a SEC map from the File menu (Editor state).
+   * Handles folder picking and client auto-matching, then delegates to
+   * handleOpenSecMapDirect.
+   */
+  void handleOpenSecMapFromMenu(const std::filesystem::path &folder);
+
   // ID conversion operations
   void handleConvertToServerId();
   void handleConvertToClientId();

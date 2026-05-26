@@ -232,6 +232,64 @@ MapLoadingResult MapLoadingService::loadMapWithExistingClientData(
 }
 
 MapLoadingResult
+MapLoadingService::loadSecMapCore(const std::filesystem::path &directory,
+                                  Services::ClientDataService &client_data) {
+  MapLoadingResult result;
+
+  current_map_ = std::make_unique<Domain::ChunkedMap>();
+
+  IO::SecResult sec_result = IO::SecReader::read(
+      directory, *current_map_, &client_data,
+      [](int percent, const std::string &status) {
+        spdlog::debug("SEC load: {}% - {}", percent, status);
+      });
+
+  if (!sec_result.success) {
+    result.error = sec_result.error;
+    spdlog::error("Failed to load SEC map: {}", sec_result.error);
+    current_map_.reset();
+    return result;
+  }
+
+  current_map_->setName(directory.filename().string());
+
+  result.camera_center = findCameraCenter();
+  result.map = std::move(current_map_);
+  result.success = true;
+  return result;
+}
+
+MapLoadingResult MapLoadingService::loadSecMapWithExistingClientData(
+    const std::filesystem::path &directory,
+    Services::ClientDataService *existing_client_data,
+    Services::SpriteManager *existing_sprite_manager) {
+  if (!existing_client_data || !existing_sprite_manager) {
+    spdlog::error("loadSecMapWithExistingClientData failed: "
+                  "existing_client_data={}, existing_sprite_manager={}",
+                  static_cast<const void*>(existing_client_data),
+                  static_cast<const void*>(existing_sprite_manager));
+    MapLoadingResult result;
+    result.error = "Existing client data and sprite manager are required";
+    return result;
+  }
+
+  spdlog::info("Loading SEC map with existing client data: {}", directory.string());
+
+  auto result = loadSecMapCore(directory, *existing_client_data);
+
+  if (result.success) {
+    Domain::ChunkedMap::MapVersion map_version;
+    map_version.otbm_version = 1;
+    map_version.client_version = existing_client_data->getClientVersion();
+    map_version.items_major_version = 0;
+    map_version.items_minor_version = 0;
+    result.map->setVersion(map_version);
+  }
+
+  return result;
+}
+
+MapLoadingResult
 MapLoadingService::loadSecMap(const std::filesystem::path &directory,
                               uint32_t current_client_index) {
   MapLoadingResult result;
@@ -257,32 +315,23 @@ MapLoadingService::loadSecMap(const std::filesystem::path &directory,
   }
 
   // Create map and load SEC
-  current_map_ = std::make_unique<Domain::ChunkedMap>();
+  result = loadSecMapCore(directory, *client_data_service_);
 
-  IO::SecResult sec_result = IO::SecReader::read(
-      directory, *current_map_, client_data_service_.get(),
-      [](int percent, const std::string &status) {
-        spdlog::debug("SEC load: {}% - {}", percent, status);
-      });
-
-  if (!sec_result.success) {
-    result.error = sec_result.error;
-    spdlog::error("Failed to load SEC map: {}", sec_result.error);
-    current_map_.reset();
+  if (!result.success) {
+    client_data_service_.reset();
+    sprite_manager_.reset();
     return result;
   }
 
-  // Set map version info
+  // Set map version info with actual client version
   Domain::ChunkedMap::MapVersion map_version;
-  map_version.otbm_version = 1; // SEC maps are ancient
+  map_version.otbm_version = 1;
   if (auto *cv = version_registry_.getVersion(current_client_index)) {
     map_version.client_version = cv->getVersion();
   }
   map_version.items_major_version = 0;
   map_version.items_minor_version = 0;
-  current_map_->setVersion(map_version);
-
-  current_map_->setName(directory.filename().string());
+  result.map->setVersion(map_version);
 
   // Cache sprites for performance
   if (client_data_service_ && sprite_manager_) {
@@ -291,21 +340,12 @@ MapLoadingService::loadSecMap(const std::filesystem::path &directory,
     spdlog::info("Sprite caching: {} item types now use direct lookup", cached);
   }
 
-  spdlog::info("SEC map loaded: {} sectors, {} tiles, {} items",
-               sec_result.sector_count, sec_result.tile_count,
-               sec_result.item_count);
-
-  // Find camera center before transferring ownership
-  result.camera_center = findCameraCenter();
-
   // Transfer ownership of resources to result
   // NOTE: Renderer is NOT transferred - caller uses
   // RenderingManager::createRenderer()
-  result.map = std::move(current_map_);
   result.client_data = std::move(client_data_service_);
   result.sprite_manager = std::move(sprite_manager_);
 
-  result.success = true;
   return result;
 }
 
