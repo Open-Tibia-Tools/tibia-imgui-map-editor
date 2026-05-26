@@ -117,7 +117,9 @@ MapLoadingService::loadMap(const std::filesystem::path &path,
   // Auto-migrate waypoints from OTBM to XML (RME-compatible)
   const auto& waypoints = current_map_->getWaypoints();
   if (!waypoints.empty()) {
-    IO::WaypointXmlWriter::write(waypoint_path, *current_map_);
+    if (!IO::WaypointXmlWriter::write(waypoint_path, *current_map_)) {
+      spdlog::error("Failed to migrate waypoints to {}", waypoint_path.string());
+    }
   }
 
   // Cache sprites for performance
@@ -228,7 +230,9 @@ MapLoadingResult MapLoadingService::loadMapWithExistingClientData(
   // Auto-migrate waypoints from OTBM to XML (RME-compatible)
   const auto& waypoints = loaded_map->getWaypoints();
   if (!waypoints.empty()) {
-    IO::WaypointXmlWriter::write(waypoint_path, *loaded_map);
+    if (!IO::WaypointXmlWriter::write(waypoint_path, *loaded_map)) {
+      spdlog::error("Failed to migrate waypoints to {}", waypoint_path.string());
+    }
   }
 
   spdlog::info("Map loaded: {} tiles, version {}", otbm_result.tile_count,

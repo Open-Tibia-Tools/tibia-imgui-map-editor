@@ -14,10 +14,25 @@ bool WaypointXmlWriter::write(
     
     file << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     file << "<waypoints>\n";
-    
+
+    auto escapeXml = [](const std::string& s) {
+        std::string out;
+        out.reserve(s.size());
+        for (char ch : s) {
+            switch (ch) {
+                case '&': out += "&amp;"; break;
+                case '"': out += "&quot;"; break;
+                case '<': out += "&lt;"; break;
+                case '>': out += "&gt;"; break;
+                default: out += ch; break;
+            }
+        }
+        return out;
+    };
+
     const auto& waypoints = map.getWaypoints();
     for (const auto& wp : waypoints) {
-        file << "\t<waypoint name=\"" << wp.name << "\"";
+        file << "\t<waypoint name=\"" << escapeXml(wp.name) << "\"";
         file << " x=\"" << wp.position.x << "\"";
         file << " y=\"" << wp.position.y << "\"";
         file << " z=\"" << static_cast<int>(wp.position.z) << "\"/>\n";
@@ -26,7 +41,7 @@ bool WaypointXmlWriter::write(
     file << "</waypoints>\n";
     file.close();
     
-    return true;
+    return !file.fail();
 }
 
 } // namespace MapEditor::IO

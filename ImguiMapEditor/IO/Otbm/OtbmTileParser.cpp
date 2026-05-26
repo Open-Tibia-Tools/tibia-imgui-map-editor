@@ -85,7 +85,13 @@ bool OtbmTileParser::parseTile(BinaryNode* tileNode,
                     tile->setFlags(flags);
                     
                     // Capture unknown flag bits for preservation
-                    constexpr uint32_t KNOWN_FLAGS_MASK = 0x3F;
+                    constexpr uint32_t KNOWN_FLAGS_MASK =
+                        static_cast<uint32_t>(Domain::TileFlag::ProtectionZone) |
+                        static_cast<uint32_t>(Domain::TileFlag::Deprecated) |
+                        static_cast<uint32_t>(Domain::TileFlag::NoPvp) |
+                        static_cast<uint32_t>(Domain::TileFlag::NoLogout) |
+                        static_cast<uint32_t>(Domain::TileFlag::PvpZone) |
+                        static_cast<uint32_t>(Domain::TileFlag::Refresh);
                     uint32_t unknown_flags = flags & ~KNOWN_FLAGS_MASK;
                     if (unknown_flags != 0) {
                         auto opaque = std::make_unique<InvalidZoneState>();

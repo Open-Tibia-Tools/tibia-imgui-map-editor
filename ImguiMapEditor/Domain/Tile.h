@@ -164,10 +164,10 @@ public:
   bool hasHookEast() const;
 
   // Opaque OTBM data preservation for unknown attributes/nodes
-  const IO::InvalidZoneState* getOpaqueData() const { return opaqueData_.get(); }
-  IO::InvalidZoneState* getOpaqueData() { return opaqueData_.get(); }
+  const IO::InvalidZoneState* getOpaqueData() const { return opaque_data_.get(); }
+  IO::InvalidZoneState* getOpaqueData() { return opaque_data_.get(); }
   void setOpaqueData(std::unique_ptr<IO::InvalidZoneState> data);
-  bool hasOpaqueData() const { return opaqueData_ != nullptr; }
+  bool hasOpaqueData() const { return opaque_data_ != nullptr; }
 
   // Parent Chunk (Performance optimization for dirty tracking)
   void setParentChunk(Chunk *chunk) { parent_chunk_ = chunk; }
@@ -187,7 +187,7 @@ private:
   std::unique_ptr<Creature> creature_;
 
   // Opaque OTBM data for preserving unknown attributes/nodes
-  std::unique_ptr<IO::InvalidZoneState> opaqueData_;
+  std::unique_ptr<IO::InvalidZoneState> opaque_data_;
 
   // Parent chunk for dirty notification (not owned)
   Chunk *parent_chunk_ = nullptr;

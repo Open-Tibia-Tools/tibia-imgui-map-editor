@@ -131,8 +131,7 @@ bool OtbmItemParser::parseItemAttributes(BinaryNode* node, Domain::Item& item) {
                 uint16_t depot_id;
                 if (node->getU16(depot_id)) {
                     if (depot_id > 255) {
-                        spdlog::error("Depot ID too large: {}", depot_id);
-                        return false;
+                        spdlog::warn("Depot ID {} is larger than 255, may be incompatible with older clients", depot_id);
                     }
                     item.setDepotId(static_cast<uint32_t>(depot_id));
                 }
@@ -157,11 +156,11 @@ bool OtbmItemParser::parseItemAttributes(BinaryNode* node, Domain::Item& item) {
                 uint8_t lookMountHead, lookMountBody, lookMountLegs, lookMountFeet;
                 uint16_t lookType, lookMount;
                 
-                if (!node->getU8(flags) || !node->getU8(direction)) break;
-                if (!node->getU16(lookType)) break;
-                if (!node->getU8(lookHead) || !node->getU8(lookBody) || !node->getU8(lookLegs) || !node->getU8(lookFeet) || !node->getU8(lookAddon)) break;
-                if (!node->getU16(lookMount)) break;
-                if (!node->getU8(lookMountHead) || !node->getU8(lookMountBody) || !node->getU8(lookMountLegs) || !node->getU8(lookMountFeet)) break;
+                if (!node->getU8(flags) || !node->getU8(direction)) return false;
+                if (!node->getU16(lookType)) return false;
+                if (!node->getU8(lookHead) || !node->getU8(lookBody) || !node->getU8(lookLegs) || !node->getU8(lookFeet) || !node->getU8(lookAddon)) return false;
+                if (!node->getU16(lookMount)) return false;
+                if (!node->getU8(lookMountHead) || !node->getU8(lookMountBody) || !node->getU8(lookMountLegs) || !node->getU8(lookMountFeet)) return false;
                 
                 item.setGenericAttribute("podium_flags", static_cast<int64_t>(flags));
                 item.setGenericAttribute("podium_direction", static_cast<int64_t>(direction));

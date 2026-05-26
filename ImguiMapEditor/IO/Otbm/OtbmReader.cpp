@@ -1,5 +1,6 @@
 #include "OtbmReader.h"
 #include <filesystem>
+#include <system_error>
 #include <spdlog/spdlog.h>
 #include "Domain/Item.h"
 #include "Domain/Spawn.h"
@@ -51,7 +52,12 @@ OtbmResult OtbmReader::readInternal(const std::filesystem::path &path,
   if (progress)
     progress(0, "Opening OTBM file...");
 
-  auto file_size = std::filesystem::file_size(path);
+  std::error_code ec;
+  auto file_size = std::filesystem::file_size(path, ec);
+  if (ec) {
+    result.error = "Failed to stat file: " + ec.message();
+    return result;
+  }
   if (file_size < 4) {
     result.error = "File too small to be a valid OTBM map";
     return result;

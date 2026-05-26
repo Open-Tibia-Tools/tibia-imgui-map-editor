@@ -73,9 +73,13 @@ bool writeAttributeMap(NodeFileWriteHandle& writer, const Domain::Item& item) {
             e.isString = true;
             entries.push_back(std::move(e));
         } else if (std::holds_alternative<int64_t>(val)) {
-            entries.push_back({key, {}, static_cast<uint32_t>(std::get<int64_t>(val)), 2});
+            int64_t v = std::get<int64_t>(val);
+            if (v < 0 || v > UINT32_MAX) {
+                continue;
+            }
+            entries.push_back({key, {}, static_cast<uint32_t>(v), 2});
         } else if (std::holds_alternative<double>(val)) {
-            Entry e{key, {}, 0, 3};
+            Entry e{key, {}, 0, 4};
             e.isDouble = true;
             e.doubleValue = std::get<double>(val);
             entries.push_back(std::move(e));
@@ -86,9 +90,8 @@ bool writeAttributeMap(NodeFileWriteHandle& writer, const Domain::Item& item) {
         }
     }
     
-    if (entries.empty()) return true;
-    
     writer.writeU16(static_cast<uint16_t>(entries.size()));
+    if (entries.empty()) return true;
     
     for (const auto& entry : entries) {
         writer.writeString(entry.key);
@@ -265,23 +268,37 @@ bool writeItem(NodeFileWriteHandle& writer, const Domain::Item* item, OtbmVersio
         const auto* lookMountLegs_attr = item->getGenericAttribute("podium_lookMountLegs");
         const auto* lookMountFeet_attr = item->getGenericAttribute("podium_lookMountFeet");
         
-        if (flags_attr && dir_attr && lookType_attr && lookHead_attr && lookBody_attr && lookLegs_attr &&
-            lookFeet_attr && lookAddon_attr && lookMount_attr && lookMountHead_attr && lookMountBody_attr &&
-            lookMountLegs_attr && lookMountFeet_attr) {
+        const auto* flags_val = std::get_if<int64_t>(flags_attr);
+        const auto* dir_val = std::get_if<int64_t>(dir_attr);
+        const auto* lookType_val = std::get_if<int64_t>(lookType_attr);
+        const auto* lookHead_val = std::get_if<int64_t>(lookHead_attr);
+        const auto* lookBody_val = std::get_if<int64_t>(lookBody_attr);
+        const auto* lookLegs_val = std::get_if<int64_t>(lookLegs_attr);
+        const auto* lookFeet_val = std::get_if<int64_t>(lookFeet_attr);
+        const auto* lookAddon_val = std::get_if<int64_t>(lookAddon_attr);
+        const auto* lookMount_val = std::get_if<int64_t>(lookMount_attr);
+        const auto* lookMountHead_val = std::get_if<int64_t>(lookMountHead_attr);
+        const auto* lookMountBody_val = std::get_if<int64_t>(lookMountBody_attr);
+        const auto* lookMountLegs_val = std::get_if<int64_t>(lookMountLegs_attr);
+        const auto* lookMountFeet_val = std::get_if<int64_t>(lookMountFeet_attr);
+        
+        if (flags_val && dir_val && lookType_val && lookHead_val && lookBody_val && lookLegs_val &&
+            lookFeet_val && lookAddon_val && lookMount_val && lookMountHead_val && lookMountBody_val &&
+            lookMountLegs_val && lookMountFeet_val) {
             writer.writeU8(static_cast<uint8_t>(OtbmAttribute::PodiumOutfit));
-            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*flags_attr)));
-            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*dir_attr)));
-            writer.writeU16(static_cast<uint16_t>(std::get<int64_t>(*lookType_attr)));
-            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookHead_attr)));
-            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookBody_attr)));
-            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookLegs_attr)));
-            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookFeet_attr)));
-            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookAddon_attr)));
-            writer.writeU16(static_cast<uint16_t>(std::get<int64_t>(*lookMount_attr)));
-            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookMountHead_attr)));
-            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookMountBody_attr)));
-            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookMountLegs_attr)));
-            writer.writeU8(static_cast<uint8_t>(std::get<int64_t>(*lookMountFeet_attr)));
+            writer.writeU8(static_cast<uint8_t>(*flags_val));
+            writer.writeU8(static_cast<uint8_t>(*dir_val));
+            writer.writeU16(static_cast<uint16_t>(*lookType_val));
+            writer.writeU8(static_cast<uint8_t>(*lookHead_val));
+            writer.writeU8(static_cast<uint8_t>(*lookBody_val));
+            writer.writeU8(static_cast<uint8_t>(*lookLegs_val));
+            writer.writeU8(static_cast<uint8_t>(*lookFeet_val));
+            writer.writeU8(static_cast<uint8_t>(*lookAddon_val));
+            writer.writeU16(static_cast<uint16_t>(*lookMount_val));
+            writer.writeU8(static_cast<uint8_t>(*lookMountHead_val));
+            writer.writeU8(static_cast<uint8_t>(*lookMountBody_val));
+            writer.writeU8(static_cast<uint8_t>(*lookMountLegs_val));
+            writer.writeU8(static_cast<uint8_t>(*lookMountFeet_val));
         }
     }
     
@@ -323,7 +340,13 @@ bool writeTile(
     // Tile flags - only save map flags, not editor flags (Selected, Modified)
     // Map flags are bits 0-5 (ProtectionZone, NoPvP, NoLogout, PvpZone, Refresh)
     // Editor flags are bits 8+ (Selected=0x100, Modified=0x200)
-    constexpr uint32_t MAP_FLAGS_MASK = 0x3F; // Bits 0-5 are map flags
+    constexpr uint32_t MAP_FLAGS_MASK =
+        static_cast<uint32_t>(Domain::TileFlag::ProtectionZone) |
+        static_cast<uint32_t>(Domain::TileFlag::Deprecated) |
+        static_cast<uint32_t>(Domain::TileFlag::NoPvp) |
+        static_cast<uint32_t>(Domain::TileFlag::NoLogout) |
+        static_cast<uint32_t>(Domain::TileFlag::PvpZone) |
+        static_cast<uint32_t>(Domain::TileFlag::Refresh);
     uint32_t flags = static_cast<uint32_t>(static_cast<uint16_t>(tile.getFlags())) & MAP_FLAGS_MASK;
     
     // Combine with preserved unknown flags from opaque data

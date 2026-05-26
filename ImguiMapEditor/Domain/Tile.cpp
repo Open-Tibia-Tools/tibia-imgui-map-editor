@@ -12,7 +12,7 @@ Tile::Tile(const Position &pos) : position_(pos) {}
 Tile::~Tile() = default;
 
 void Tile::setOpaqueData(std::unique_ptr<IO::InvalidZoneState> data) {
-    opaqueData_ = std::move(data);
+    opaque_data_ = std::move(data);
 }
 
 void Tile::setGround(std::unique_ptr<Item> item) {
@@ -164,8 +164,8 @@ std::unique_ptr<Tile> Tile::clone() const {
     tile->creature_ = std::make_unique<Creature>(*creature_);
   }
 
-  if (opaqueData_) {
-    tile->opaqueData_ = std::make_unique<IO::InvalidZoneState>(*opaqueData_);
+  if (opaque_data_) {
+    tile->opaque_data_ = std::make_unique<IO::InvalidZoneState>(*opaque_data_);
   }
 
   return tile;
