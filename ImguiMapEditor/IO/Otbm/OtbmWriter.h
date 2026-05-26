@@ -58,7 +58,7 @@ public:
     static OtbmWriteResult write(
         const std::filesystem::path& path,
         const Domain::ChunkedMap& map,
-        OtbmVersion version = OtbmVersion::V2,
+        OtbmVersion version = OtbmVersion::V1,
         Services::ClientDataService* client_data = nullptr,
         OtbmConversionMode conversion_mode = OtbmConversionMode::None,
         OtbmWriteProgressCallback progress = nullptr

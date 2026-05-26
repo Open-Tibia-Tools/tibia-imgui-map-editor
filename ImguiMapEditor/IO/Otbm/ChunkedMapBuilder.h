@@ -46,6 +46,10 @@ public:
         map_.setTile(pos, std::move(tile));
     }
 
+    bool hasTown(uint32_t id) const override {
+        return map_.getTown(id) != nullptr;
+    }
+
     void addTown(uint32_t id, const std::string& name, const Domain::Position& temple_pos) override {
         map_.addTown(id, name, temple_pos);
     }
@@ -65,6 +69,20 @@ public:
         Domain::Tile* tile = map_.getOrCreateTile(pos);
         if (tile) {
             tile->setCreature(std::move(creature));
+        }
+    }
+
+    void ensureHouse(uint32_t house_id) override {
+        auto* existing = map_.getHouse(house_id);
+        if (!existing) {
+            map_.addHouse(std::make_unique<Domain::House>(house_id));
+        }
+    }
+
+    void addTileToHouse(uint32_t house_id, const Domain::Position& pos) override {
+        auto* house = map_.getHouse(house_id);
+        if (house) {
+            house->tiles.push_back(pos);
         }
     }
 

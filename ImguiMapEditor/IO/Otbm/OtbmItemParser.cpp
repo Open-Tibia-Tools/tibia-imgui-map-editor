@@ -26,6 +26,25 @@ std::unique_ptr<Domain::Item> OtbmItemParser::parseItem(BinaryNode* node,
         }
     }
     
+    // MAP_OTBM_1: inline count/subtype for stackable/splash/fluid items
+    if (version == OtbmVersion::V1) {
+        const Domain::ItemType* type = item->getType();
+        if (type) {
+            if (type->is_stackable || type->isSplash() || type->isFluidContainer()) {
+                uint8_t count;
+                if (!node->getU8(count)) return nullptr;
+                item->setSubtype(count);
+            }
+        } else {
+            // Type unknown — V1 requires type metadata to know if inline count follows.
+            // Always consume 1 byte as count to prevent stream corruption.
+            spdlog::warn("Unknown item type for server_id {}, assuming V1 inline count", server_id);
+            uint8_t count;
+            if (!node->getU8(count)) return nullptr;
+            item->setSubtype(count);
+        }
+    }
+    
     return item;
 }
 
@@ -112,6 +131,9 @@ bool OtbmItemParser::parseItemAttributes(BinaryNode* node, Domain::Item& item) {
             case OtbmAttribute::DepotId: {
                 uint16_t depot_id;
                 if (node->getU16(depot_id)) {
+                    if (depot_id > 255) {
+                        spdlog::warn("Depot ID {} is larger than 255, may be incompatible with older clients", depot_id);
+                    }
                     item.setDepotId(static_cast<uint32_t>(depot_id));
                 }
                 break;
@@ -131,7 +153,29 @@ bool OtbmItemParser::parseItemAttributes(BinaryNode* node, Domain::Item& item) {
                 break;
             }
             case OtbmAttribute::PodiumOutfit: {
-                node->skip(15);
+                uint8_t flags, direction, lookHead, lookBody, lookLegs, lookFeet, lookAddon;
+                uint8_t lookMountHead, lookMountBody, lookMountLegs, lookMountFeet;
+                uint16_t lookType, lookMount;
+                
+                if (!node->getU8(flags) || !node->getU8(direction)) return false;
+                if (!node->getU16(lookType)) return false;
+                if (!node->getU8(lookHead) || !node->getU8(lookBody) || !node->getU8(lookLegs) || !node->getU8(lookFeet) || !node->getU8(lookAddon)) return false;
+                if (!node->getU16(lookMount)) return false;
+                if (!node->getU8(lookMountHead) || !node->getU8(lookMountBody) || !node->getU8(lookMountLegs) || !node->getU8(lookMountFeet)) return false;
+                
+                item.setGenericAttribute("podium_flags", static_cast<int64_t>(flags));
+                item.setGenericAttribute("podium_direction", static_cast<int64_t>(direction));
+                item.setGenericAttribute("podium_lookType", static_cast<int64_t>(lookType));
+                item.setGenericAttribute("podium_lookHead", static_cast<int64_t>(lookHead));
+                item.setGenericAttribute("podium_lookBody", static_cast<int64_t>(lookBody));
+                item.setGenericAttribute("podium_lookLegs", static_cast<int64_t>(lookLegs));
+                item.setGenericAttribute("podium_lookFeet", static_cast<int64_t>(lookFeet));
+                item.setGenericAttribute("podium_lookAddon", static_cast<int64_t>(lookAddon));
+                item.setGenericAttribute("podium_lookMount", static_cast<int64_t>(lookMount));
+                item.setGenericAttribute("podium_lookMountHead", static_cast<int64_t>(lookMountHead));
+                item.setGenericAttribute("podium_lookMountBody", static_cast<int64_t>(lookMountBody));
+                item.setGenericAttribute("podium_lookMountLegs", static_cast<int64_t>(lookMountLegs));
+                item.setGenericAttribute("podium_lookMountFeet", static_cast<int64_t>(lookMountFeet));
                 break;
             }
             case OtbmAttribute::AttributeMap: {
@@ -202,7 +246,14 @@ bool OtbmItemParser::parseAttributeMap(BinaryNode* node, Domain::Item& item) {
 
 bool OtbmItemParser::parseItemChildren(BinaryNode* node, Domain::Item& item,
                                         OtbmVersion version, 
-                                        Services::ClientDataService* client_data) {
+                                        Services::ClientDataService* client_data,
+                                        int depth) {
+    static constexpr int MAX_CONTAINER_DEPTH = 256;
+    if (depth >= MAX_CONTAINER_DEPTH) {
+        spdlog::warn("Container depth exceeds max ({}), stopping recursion", MAX_CONTAINER_DEPTH);
+        return true;
+    }
+    
     for (auto& child : node->children()) {
         uint8_t child_type;
         if (!child.getU8(child_type)) {
@@ -216,8 +267,9 @@ bool OtbmItemParser::parseItemChildren(BinaryNode* node, Domain::Item& item,
         auto child_item = parseItem(&child, version, client_data);
         if (child_item) {
             parseItemAttributes(&child, *child_item);
-            parseItemChildren(&child, *child_item, version, client_data);
-            item.addContainerItem(std::move(child_item));
+            if (parseItemChildren(&child, *child_item, version, client_data, depth + 1)) {
+                item.addContainerItem(std::move(child_item));
+            }
         }
     }
     return true;

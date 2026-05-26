@@ -1,10 +1,10 @@
 #include "OtbmTileParser.h"
 #include "OtbmItemParser.h"
 #include "OtbmReader.h"
+#include "OtbmOpaqueData.h"
 #include "Domain/Tile.h"
-#include "Domain/Spawn.h"
-#include "Domain/Creature.h"
 #include <spdlog/spdlog.h>
+#include <unordered_set>
 
 namespace MapEditor {
 namespace IO {
@@ -66,6 +66,8 @@ bool OtbmTileParser::parseTile(BinaryNode* tileNode,
             return false;
         }
         tile->setHouseId(house_id);
+        builder.ensureHouse(house_id);
+        builder.addTileToHouse(house_id, pos);
     }
     
     OtbmVersion otbm_ver = static_cast<OtbmVersion>(result.version.otbm_version);
@@ -82,15 +84,31 @@ bool OtbmTileParser::parseTile(BinaryNode* tileNode,
                 uint32_t flags;
                 if (tileNode->getU32(flags)) {
                     tile->setFlags(flags);
+                    
+                    // Capture unknown flag bits for preservation
+                    constexpr uint32_t KNOWN_FLAGS_MASK =
+                        static_cast<uint32_t>(Domain::TileFlag::ProtectionZone) |
+                        static_cast<uint32_t>(Domain::TileFlag::Deprecated) |
+                        static_cast<uint32_t>(Domain::TileFlag::NoPvp) |
+                        static_cast<uint32_t>(Domain::TileFlag::NoLogout) |
+                        static_cast<uint32_t>(Domain::TileFlag::PvpZone) |
+                        static_cast<uint32_t>(Domain::TileFlag::Refresh);
+                    uint32_t unknown_flags = flags & ~KNOWN_FLAGS_MASK;
+                    if (unknown_flags != 0) {
+                        auto* opaque = tile->getOpaqueData();
+                        if (!opaque) {
+                            auto newOpaque = std::make_unique<IO::InvalidZoneState>();
+                            opaque = newOpaque.get();
+                            tile->setOpaqueData(std::move(newOpaque));
+                        }
+                        opaque->unknownMapFlags = unknown_flags;
+                    }
                 }
                 break;
             }
             case static_cast<uint8_t>(OtbmAttribute::Item): {
                 auto item = OtbmItemParser::parseItem(tileNode, otbm_ver, client_data);
                 if (item) {
-                    // Parse item attributes (count, charges, etc.)
-                    OtbmItemParser::parseItemAttributes(tileNode, *item);
-                    
                     result.item_count++;
                     
                     // OTBM format: first item in tile attributes is ALWAYS ground
@@ -104,9 +122,25 @@ bool OtbmTileParser::parseTile(BinaryNode* tileNode,
                 }
                 break;
             }
-            default:
+            default: {
+                // Unknown tile attribute - capture raw bytes for preservation
+                size_t remaining = tileNode->bytesRemaining();
+                auto* opaque = tile->getOpaqueData();
+                if (!opaque) {
+                    auto newOpaque = std::make_unique<InvalidZoneState>();
+                    opaque = newOpaque.get();
+                    tile->setOpaqueData(std::move(newOpaque));
+                }
+                OpaqueTileAttribute oa;
+                oa.attributeId = attr;
+                oa.rawBytes.resize(remaining);
+                if (remaining > 0) {
+                    tileNode->getRAW(oa.rawBytes.data(), remaining);
+                }
+                opaque->opaqueAttributes.push_back(std::move(oa));
                 done_attributes = true;
                 break;
+            }
         }
     }
 
@@ -120,6 +154,21 @@ bool OtbmTileParser::parseTile(BinaryNode* tileNode,
         }
         
         if (item_type != static_cast<uint8_t>(OtbmNode::Item)) {
+            // Unknown child node type - capture raw bytes for preservation
+            size_t remaining = itemNode.bytesRemaining();
+            auto* opaque = tile->getOpaqueData();
+            if (!opaque) {
+                auto newOpaque = std::make_unique<InvalidZoneState>();
+                opaque = newOpaque.get();
+                tile->setOpaqueData(std::move(newOpaque));
+            }
+            OpaqueChildNode ocn;
+            ocn.nodeType = item_type;
+            ocn.rawBytes.resize(remaining);
+            if (remaining > 0) {
+                itemNode.getRAW(ocn.rawBytes.data(), remaining);
+            }
+            opaque->opaqueChildNodes.push_back(std::move(ocn));
             continue;
         }
         
@@ -149,51 +198,6 @@ bool OtbmTileParser::parseTile(BinaryNode* tileNode,
     return true;
 }
 
-bool OtbmTileParser::parseSpawns(BinaryNode* spawnsNode, 
-                                  IMapBuilder& builder, 
-                                  OtbmResult& result) {
-    for (auto& spawnAreaNode : spawnsNode->children()) {
-        uint8_t type;
-        if (!spawnAreaNode.getU8(type)) continue;
-        if (type != static_cast<uint8_t>(OtbmNode::SpawnArea)) continue;
-        
-        uint16_t x, y, radius;
-        uint8_t z;
-        if (!spawnAreaNode.getU16(x) || !spawnAreaNode.getU16(y) ||
-            !spawnAreaNode.getU8(z) || !spawnAreaNode.getU16(radius)) {
-            continue;
-        }
-
-        Domain::Position pos(x, y, z);
-        auto spawn = std::make_unique<Domain::Spawn>();
-        spawn->position = pos;
-        spawn->radius = radius;
-        
-        // Parse creatures and tell builder to create them on tiles
-        for (auto& monsterNode : spawnAreaNode.children()) {
-             uint8_t mType;
-             if (!monsterNode.getU8(mType)) continue;
-             if (mType != static_cast<uint8_t>(OtbmNode::Monster)) continue;
-             
-             uint16_t mx, my, spawn_time;
-             std::string name;
-             
-             if (!monsterNode.getU16(mx) || !monsterNode.getU16(my) ||
-                 !monsterNode.getString(name) || !monsterNode.getU16(spawn_time)) {
-                 continue;
-             }
-             
-             // Create creature at absolute position (spawn + offset)
-             Domain::Position creature_pos(pos.x + mx, pos.y + my, pos.z);
-             auto creature = std::make_unique<Domain::Creature>(name, spawn_time, 2); // Default: South
-             builder.setCreature(creature_pos, std::move(creature));
-        }
-        
-        builder.setSpawn(pos, std::move(spawn));
-    }
-    return true;
-}
-
 bool OtbmTileParser::parseTowns(BinaryNode* townsNode, 
                                  IMapBuilder& builder, 
                                  OtbmResult& result) {
@@ -206,12 +210,22 @@ bool OtbmTileParser::parseTowns(BinaryNode* townsNode,
         uint32_t town_id;
         if (!townNode.getU32(town_id)) continue;
         
+        if (builder.hasTown(town_id)) {
+            spdlog::warn("Duplicate town ID {}, skipping", town_id);
+            continue;
+        }
+        
         std::string name;
         if (!townNode.getString(name)) continue;
         
         uint16_t x, y;
         uint8_t z;
         if (!townNode.getU16(x) || !townNode.getU16(y) || !townNode.getU8(z)) {
+            continue;
+        }
+        
+        if (x == 0 && y == 0) {
+            spdlog::warn("Town '{}' ({}) has temple position (0,0), skipping", name, town_id);
             continue;
         }
         
@@ -225,6 +239,8 @@ bool OtbmTileParser::parseTowns(BinaryNode* townsNode,
 bool OtbmTileParser::parseWaypoints(BinaryNode* waypointsNode, 
                                      IMapBuilder& builder,
                                      OtbmResult& result) {
+    std::unordered_set<std::string> seen_names;
+    
     for (auto& wpNode : waypointsNode->children()) {
         uint8_t type;
         if (!wpNode.getU8(type)) continue;
@@ -239,6 +255,17 @@ bool OtbmTileParser::parseWaypoints(BinaryNode* waypointsNode,
         if (!wpNode.getU16(x) || !wpNode.getU16(y) || !wpNode.getU8(z)) {
             continue;
         }
+        
+        if (x == 0 && y == 0) {
+            spdlog::warn("Waypoint '{}' has position (0,0), skipping", name);
+            continue;
+        }
+        
+        if (seen_names.contains(name)) {
+            spdlog::warn("Duplicate waypoint name '{}', skipping", name);
+            continue;
+        }
+        seen_names.insert(name);
         
         Domain::Position pos(x, y, z);
         builder.addWaypoint(name, pos);

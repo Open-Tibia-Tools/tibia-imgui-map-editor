@@ -139,6 +139,10 @@ public:
     // Generic Attributes
     void setGenericAttribute(const std::string& key, const ExtendedAttributes::AttributeValue& value);
     const ExtendedAttributes::AttributeValue* getGenericAttribute(const std::string& key) const;
+    const std::unordered_map<std::string, ExtendedAttributes::AttributeValue>& getGenericAttributes() const;
+    
+    // Podium outfit helpers
+    bool hasPodiumOutfit() const;
     
     // Check if extended attributes exist
     bool hasExtendedAttributes() const { return extended_ != nullptr; }

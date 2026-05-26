@@ -189,6 +189,8 @@ set(IO_SOURCES
     IO/SpawnXmlWriter.cpp
     IO/HouseXmlReader.cpp
     IO/HouseXmlWriter.cpp
+    IO/WaypointXmlWriter.cpp
+    IO/WaypointXmlReader.cpp
     IO/XmlUtils.cpp
     IO/HotkeyJsonReader.cpp
     IO/Readers/DatReaderBase.cpp

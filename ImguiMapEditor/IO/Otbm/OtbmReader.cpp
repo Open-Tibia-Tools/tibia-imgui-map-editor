@@ -1,4 +1,6 @@
 #include "OtbmReader.h"
+#include <filesystem>
+#include <system_error>
 #include <spdlog/spdlog.h>
 #include "Domain/Item.h"
 #include "Domain/Spawn.h"
@@ -49,6 +51,17 @@ OtbmResult OtbmReader::readInternal(const std::filesystem::path &path,
 
   if (progress)
     progress(0, "Opening OTBM file...");
+
+  std::error_code ec;
+  auto file_size = std::filesystem::file_size(path, ec);
+  if (ec) {
+    result.error = "Failed to stat file: " + ec.message();
+    return result;
+  }
+  if (file_size < 4) {
+    result.error = "File too small to be a valid OTBM map";
+    return result;
+  }
 
   DiskNodeFileReadHandle file(path, {"OTBM", "\0\0\0\0"});
   if (!file.isOk()) {
@@ -185,6 +198,11 @@ OtbmResult OtbmReader::readHeader(const std::filesystem::path &path) {
           }
           break;
         }
+        case static_cast<uint8_t>(OtbmAttribute::ExtSpawnNpcFile): {
+          std::string ignored;
+          mapDataNode->getString(ignored);
+          break;
+        }
         default:
           done = true;
           break;
@@ -302,6 +320,11 @@ bool OtbmReader::parseMapData(BinaryNode *mapDataNode, IMapBuilder &builder,
       }
       break;
     }
+    case static_cast<uint8_t>(OtbmAttribute::ExtSpawnNpcFile): {
+      std::string ignored;
+      mapDataNode->getString(ignored);
+      break;
+    }
     default:
       spdlog::trace("Unknown map attribute 0x{:02X}", attr);
       done_attrs = true;
@@ -342,12 +365,6 @@ bool OtbmReader::parseMapData(BinaryNode *mapDataNode, IMapBuilder &builder,
     case static_cast<uint8_t>(OtbmNode::Towns):
       if (!OtbmTileParser::parseTowns(child, builder, result)) {
         spdlog::warn("Failed to parse towns");
-      }
-      break;
-
-    case static_cast<uint8_t>(OtbmNode::Spawns):
-      if (!OtbmTileParser::parseSpawns(child, builder, result)) {
-        spdlog::warn("Failed to parse spawns");
       }
       break;
 

@@ -2,8 +2,10 @@
 #include "IO/Otbm/OtbmWriter.h"
 #include "IO/HouseXmlWriter.h"
 #include "IO/SpawnXmlWriter.h"
+#include "IO/WaypointXmlWriter.h"
 #include "Domain/ChunkedMap.h"
 #include "Services/ClientDataService.h"
+#include <spdlog/spdlog.h>
 namespace MapEditor::Services {
 
 MapSavingService::MapSavingService(ClientDataService* client_data)
@@ -18,10 +20,17 @@ MapSaveResult MapSavingService::save(
     MapSaveResult result;
     
     // Write OTBM
+    auto raw_version = map.getVersion().otbm_version;
+    IO::OtbmVersion version = IO::OtbmVersion::V4;
+    if (raw_version <= static_cast<uint32_t>(IO::OtbmVersion::V4)) {
+        version = static_cast<IO::OtbmVersion>(raw_version);
+    } else {
+        spdlog::warn("Invalid OTBM version {}, clamping to V4", raw_version);
+    }
     auto otbm_result = IO::OtbmWriter::write(
         path,
         map,
-        IO::OtbmVersion::V2,
+        version,
         client_data_,
         IO::OtbmConversionMode::None,  // No ID conversion for normal save
         [&progress](int percent, const std::string& status) {
@@ -65,6 +74,18 @@ MapSaveResult MapSavingService::save(
                 result.error = "Failed to write spawn file";
                 return result;
             }
+        }
+    }
+    
+    // Write waypoints (external XML, RME-compatible)
+    const auto& waypoints = map.getWaypoints();
+    if (!waypoints.empty()) {
+        if (progress) progress(97, "Writing waypoints...");
+        
+        auto waypoint_path = path.parent_path() / (path.stem().string() + "-waypoints.xml");
+        if (!IO::WaypointXmlWriter::write(waypoint_path, map)) {
+            result.error = "Failed to write waypoint file";
+            return result;
         }
     }
     
