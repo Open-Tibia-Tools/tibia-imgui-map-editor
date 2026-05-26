@@ -3,6 +3,7 @@
 #include "Domain/Position.h"
 #include "Services/ClientDataService.h"
 #include "Services/ClientVersionRegistry.h"
+#include "Services/OtbmSettings.h"
 #include "Services/SpriteManager.h"
 #include "Services/ViewSettings.h"
 #include <filesystem>
@@ -65,7 +66,8 @@ public:
   MapLoadingService(Services::ClientVersionRegistry &version_registry,
                     Services::ViewSettings &view_settings,
                     Brushes::BrushRegistry &brush_registry,
-                    Services::TilesetService &tileset_service);
+                    Services::TilesetService &tileset_service,
+                    const OtbmSettings &otbm_settings);
 
   ~MapLoadingService() = default;
 
@@ -146,6 +148,9 @@ private:
   bool tryLoadItems(const std::filesystem::path &map_dir,
                     const std::filesystem::path &client_path);
 
+  void resolveWaypoints(Domain::ChunkedMap &map,
+                        const std::filesystem::path &otbm_path);
+
   template <typename LoaderFunc>
   bool tryLoadResource(std::string_view filename,
                        const std::filesystem::path &map_dir,
@@ -183,6 +188,7 @@ private:
   Services::ViewSettings &view_settings_;
   Brushes::BrushRegistry &brush_registry_;
   Services::TilesetService &tileset_service_;
+  const OtbmSettings &otbm_settings_;
 
   // Temporary storage during loading (moved to result after load completes)
   std::unique_ptr<Domain::ChunkedMap> current_map_;

@@ -40,6 +40,8 @@ bool SettingsRegistry::load() {
 
   app_settings_.loadFromConfig(*config_service_);
 
+  otbm_settings_.loadFromConfig(*config_service_);
+
   hotkey_registry_ = HotkeyRegistry::loadOrCreateDefaults();
 
   spdlog::info("Configuration and settings loaded");
@@ -59,6 +61,8 @@ void SettingsRegistry::save() {
   config_service_->set(kSelectionUsePixelPerfectKey, selection_settings_.use_pixel_perfect);
 
   app_settings_.saveToConfig(*config_service_);
+
+  otbm_settings_.saveToConfig(*config_service_);
 
   config_service_->save();
 }
@@ -90,6 +94,13 @@ const ViewSettings &SettingsRegistry::getViewSettings() const {
 AppSettings &SettingsRegistry::getAppSettings() { return app_settings_; }
 const AppSettings &SettingsRegistry::getAppSettings() const {
   return app_settings_;
+}
+
+OtbmSettings &SettingsRegistry::getOtbmSettings() {
+  return otbm_settings_;
+}
+const OtbmSettings &SettingsRegistry::getOtbmSettings() const {
+  return otbm_settings_;
 }
 
 Domain::SelectionSettings &SettingsRegistry::getSelectionSettings() {

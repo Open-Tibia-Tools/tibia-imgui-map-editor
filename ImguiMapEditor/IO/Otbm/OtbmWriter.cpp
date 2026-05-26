@@ -349,7 +349,7 @@ bool writeTile(
         static_cast<uint32_t>(Domain::TileFlag::NoLogout) |
         static_cast<uint32_t>(Domain::TileFlag::PvpZone) |
         static_cast<uint32_t>(Domain::TileFlag::Refresh);
-    uint32_t flags = static_cast<uint32_t>(static_cast<uint16_t>(tile.getFlags())) & MAP_FLAGS_MASK;
+    uint32_t flags = static_cast<uint32_t>(tile.getFlags()) & MAP_FLAGS_MASK;
     
     // Combine with preserved unknown flags from opaque data
     const auto* opaque = tile.getOpaqueData();
@@ -423,6 +423,7 @@ OtbmWriteResult OtbmWriter::write(
     OtbmVersion version,
     Services::ClientDataService* client_data,
     OtbmConversionMode conversion_mode,
+    Domain::OtbmWriteTarget waypoint_target,
     OtbmWriteProgressCallback progress
 ) {
     OtbmWriteResult result;
@@ -563,7 +564,8 @@ OtbmWriteResult OtbmWriter::write(
         writer.endNode();  // End towns
     }
     
-    // Waypoints
+    // Waypoints — skip inline when writing to XML target
+    if (waypoint_target == Domain::OtbmWriteTarget::Otbm) {
     const auto& waypoints = map.getWaypoints();
     if (!waypoints.empty()) {
         writer.startNode(static_cast<uint8_t>(OtbmNode::Waypoints));
@@ -578,6 +580,7 @@ OtbmWriteResult OtbmWriter::write(
         }
         
         writer.endNode();  // End waypoints
+    }
     }
     
     writer.endNode();  // End map data

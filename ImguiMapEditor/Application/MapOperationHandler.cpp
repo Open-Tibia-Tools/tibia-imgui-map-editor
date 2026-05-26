@@ -20,13 +20,16 @@ MapOperationHandler::MapOperationHandler(
     Services::RecentLocationsService &recent_locations,
     Services::ViewSettings &view_settings, AppLogic::MapTabManager &tab_manager,
     Brushes::BrushRegistry &brush_registry,
-    Services::TilesetService &tileset_service)
+    Services::TilesetService &tileset_service,
+    const Services::OtbmSettings &otbm_settings)
     : config_(config), versions_(versions), recent_locations_(recent_locations),
       view_settings_(view_settings), tab_manager_(tab_manager),
-      brush_registry_(brush_registry), tileset_service_(tileset_service) {
+      brush_registry_(brush_registry), tileset_service_(tileset_service),
+      otbm_settings_(otbm_settings) {
 
   loading_service_ = std::make_unique<Services::MapLoadingService>(
-      versions, view_settings_, brush_registry_, tileset_service_);
+      versions, view_settings_, brush_registry_, tileset_service_,
+      otbm_settings_);
 
   // Create conversion handler with notification callback
   // Map ConversionNotificationType to our NotificationType for consistency
@@ -169,7 +172,8 @@ void MapOperationHandler::performSave(EditorSession &session,
 
   spdlog::info("Saving map to: {}", save_path.string());
 
-  Services::MapSavingService saving_service(existing_client_data_);
+  Services::MapSavingService saving_service(existing_client_data_,
+                                             &otbm_settings_);
   saving_service.setSaveHouses(true);
   saving_service.setSaveSpawns(true);
 
