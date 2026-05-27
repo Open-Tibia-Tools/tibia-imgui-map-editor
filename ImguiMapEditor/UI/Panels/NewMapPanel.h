@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Config.h"
 #include "Services/ClientVersionRegistry.h"
 #include <cstdint>
 #include <string>
@@ -13,8 +14,8 @@ public:
 
   struct State {
     std::string map_name = "Untitled";
-    uint16_t map_width = 16384;
-    uint16_t map_height = 16384;
+    uint16_t map_width = Config::Map::DEFAULT_MAP_SIZE;
+    uint16_t map_height = Config::Map::DEFAULT_MAP_SIZE;
     int selected_template_index = -1;
     uint32_t otbm_version = 2;
     uint32_t items_major = 0;

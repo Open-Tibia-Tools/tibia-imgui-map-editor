@@ -38,3 +38,7 @@ compile_commands.json
 .opencode/**/tmp
 .opencode/**/cache
 .opencode/sessions
+/vcproj/vcpkg_installed
+/vcproj/_deps
+/vcproj/CMakeFiles
+/vcproj

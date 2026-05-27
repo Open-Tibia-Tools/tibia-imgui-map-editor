@@ -510,14 +510,7 @@ void ChunkedMap::setName(const std::string &name) {
 
 void ChunkedMap::createNew(uint16_t width, uint16_t height,
                            uint32_t client_version) {
-  clear();
-  width_ = width;
-  height_ = height;
-  client_version_ = client_version;
-  version_.client_version = client_version;
-  version_.otbm_version = 2;
-  name_ = "New Map";
-  has_changes_ = true;
+  createNew(width, height, client_version, 2, 0, 0, "");
 }
 
 void ChunkedMap::createNew(uint16_t width, uint16_t height,

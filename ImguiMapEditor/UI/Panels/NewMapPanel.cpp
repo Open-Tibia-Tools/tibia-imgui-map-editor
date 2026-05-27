@@ -106,11 +106,12 @@ bool NewMapPanel::render(State &state) {
 
   // Inputs
   static const char* sz[] = {"256","512","1024","2048","4096","8192","16384","32768","65000","Custom"};
-  const char* preview = (state.size_preset_index >= 0 && state.size_preset_index < 10)
+  constexpr int preset_count = Config::UI::SIZE_PRESET_COUNT + 1; // +1 for Custom
+  const char* preview = (state.size_preset_index >= 0 && state.size_preset_index < preset_count)
                             ? sz[state.size_preset_index] : "Custom";
   ImGui::SetNextItemWidth(80);
   if (ImGui::BeginCombo("##szpreset", preview)) {
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < preset_count; ++i) {
       if (ImGui::Selectable(sz[i], state.size_preset_index == i)) {
         state.size_preset_index = i;
         size_touched_ = true;
@@ -166,17 +167,16 @@ void NewMapPanel::renderClientVersionCombo(State &state) {
   if (!registry_) return;
 
   const auto &tpls = registry_->getTemplates();
-  std::vector<std::string> lb;
-  for (auto &t : tpls) lb.push_back(std::format("{} ({})", t.name, t.version));
+  std::string preview_str = "Select version...";
+  if (state.selected_template_index >= 0 && state.selected_template_index < (int)tpls.size())
+    preview_str = std::format("{} ({})", tpls[state.selected_template_index].name, tpls[state.selected_template_index].version);
 
-  const char *preview = state.selected_template_index >= 0
-                            ? lb[state.selected_template_index].c_str()
-                            : "Select version...";
   ImGui::SetNextItemWidth(-1);
-  if (ImGui::BeginCombo("##ver", preview)) {
+  if (ImGui::BeginCombo("##ver", preview_str.c_str())) {
     for (size_t i = 0; i < tpls.size(); ++i) {
       ImGui::PushID((int)i);
-      if (ImGui::Selectable(lb[i].c_str(), state.selected_template_index == (int)i)) {
+      std::string label = std::format("{} ({})", tpls[i].name, tpls[i].version);
+      if (ImGui::Selectable(label.c_str(), state.selected_template_index == (int)i)) {
         state.selected_template_index = (int)i;
         state.otbm_version  = tpls[i].otbm_versions.empty()
             ? 2 : *std::max_element(tpls[i].otbm_versions.begin(), tpls[i].otbm_versions.end());

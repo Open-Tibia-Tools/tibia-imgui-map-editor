@@ -386,8 +386,8 @@ MapLoadingResult MapLoadingService::createNewMap(const NewMapConfig &config,
     Domain::ChunkedMap::MapVersion map_version;
     map_version.otbm_version = config.otbm_version;
     map_version.client_version = version_info->getVersion();
-    map_version.items_major_version = config.items_major;
-    map_version.items_minor_version = config.items_minor;
+    map_version.items_major_version = config.items_major ? config.items_major : version_info->getOtbMajor();
+    map_version.items_minor_version = config.items_minor ? config.items_minor : version_info->getOtbVersion();
     current_map_->setVersion(map_version);
     spdlog::info("New map version set: OTBM v{}, client {}, items {}.{}",
                  map_version.otbm_version, map_version.client_version,
@@ -430,6 +430,13 @@ MapLoadingResult MapLoadingService::createNewMapWithExistingClientData(
                           config.otbm_version, config.items_major,
                           config.items_minor, config.description);
   current_map_->setName(config.map_name);
+
+  // Set version metadata on the map
+  Domain::ChunkedMap::MapVersion map_version;
+  map_version.otbm_version = config.otbm_version;
+  map_version.items_major_version = config.items_major;
+  map_version.items_minor_version = config.items_minor;
+  current_map_->setVersion(map_version);
 
   // Cache sprites for performance using existing sprite manager
   if (existing_client_data && existing_sprite_manager) {

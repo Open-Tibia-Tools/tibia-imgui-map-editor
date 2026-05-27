@@ -2,6 +2,7 @@
 #include "Presentation/Dialogs/ClientConfigurationController.h"
 #include "IO/Otbm/OtbmReader.h"
 #include "Services/ClientSignatureDetector.h"
+#include <algorithm>
 #include <chrono>
 #include <cctype>
 #include <iomanip>
@@ -551,7 +552,14 @@ void StartupController::handleNewMapConfirmed(const UI::NewMapPanel::State& conf
   // Open save dialog to pick file location
   NFD::UniquePath outPath;
   nfdfilteritem_t filters[1] = {{"OTBM Maps", "otbm"}};
-  std::string default_name = config.map_name + ".otbm";
+  std::string default_name = config.map_name;
+  {
+    std::string lower = default_name;
+    std::transform(lower.begin(), lower.end(), lower.begin(),
+                   [](unsigned char c) { return (char)std::tolower(c); });
+    if (lower.size() < 5 || lower.compare(lower.size() - 5, 5, ".otbm") != 0)
+      default_name += ".otbm";
+  }
   nfdresult_t result =
       NFD::SaveDialog(outPath, filters, 1, nullptr, default_name.c_str());
 
@@ -562,10 +570,9 @@ void StartupController::handleNewMapConfirmed(const UI::NewMapPanel::State& conf
   std::filesystem::path save_path = outPath.get();
 
   // Create and save the map to disk
-  map_ops_.createAndSaveNewMap(map_config, save_path);
-
-  // Auto-select the newly created map in the startup dialog
-  handleMapSelection(save_path, 0);
+  if (map_ops_.createAndSaveNewMap(map_config, save_path)) {
+    handleMapSelection(save_path, 0);
+  }
 }
 
 void StartupController::handleLoadMap() {

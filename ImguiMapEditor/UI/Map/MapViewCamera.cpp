@@ -153,6 +153,8 @@ glm::vec2 MapViewCamera::tileToScreen(const Domain::Position &tile_pos) const {
 void MapViewCamera::setMapBounds(int32_t max_x, int32_t max_y) {
   map_max_x_ = max_x;
   map_max_y_ = max_y;
+  float cx = camera_pos_.x, cy = camera_pos_.y;
+  setCameraPosition(cx, cy);
 }
 
 } // namespace UI

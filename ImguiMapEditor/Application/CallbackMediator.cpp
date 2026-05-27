@@ -43,6 +43,28 @@
 
 namespace MapEditor {
 
+namespace {
+void createInstantUnnamedMap(const CallbackMediator::Context &ctx) {
+  if (!ctx.tab_manager || !ctx.map_operations)
+    return;
+  auto *session = ctx.tab_manager->getActiveSession();
+  if (!session || !session->getMap())
+    return;
+  auto *map = session->getMap();
+  uint32_t num = ctx.tab_manager->nextUnnamedNumber();
+  Services::NewMapConfig config;
+  config.map_name = (num == 1) ? "unnamed.otbm"
+                               : std::format("unnamed-{}.otbm", num);
+  config.map_width = map->getWidth();
+  config.map_height = map->getHeight();
+  config.otbm_version = map->getVersion().otbm_version;
+  config.items_major = map->getVersion().items_major_version;
+  config.items_minor = map->getVersion().items_minor_version;
+  config.description = map->getDescription();
+  ctx.map_operations->handleNewMapDirect(config);
+}
+} // namespace
+
 void CallbackMediator::wireAll(Context &ctx) {
   // === Edit Towns dialog — inject persistent dependencies once ===
   // The dialog auto-tracks the active session via MapTabManager, so
@@ -155,26 +177,7 @@ void CallbackMediator::wireTabCallbacks(Context &ctx) {
   });
 
   // Hotkey file operations
-  // NewMap from Editor state: instant unnamed map creation (no dialog)
-  ctx.hotkey->setNewMapCallback([ctx]() {
-    if (!ctx.tab_manager || !ctx.map_operations)
-      return;
-    auto *session = ctx.tab_manager->getActiveSession();
-    if (!session || !session->getMap())
-      return;
-    auto *map = session->getMap();
-    uint32_t num = ctx.tab_manager->nextUnnamedNumber();
-    Services::NewMapConfig config;
-    config.map_name = (num == 1) ? "unnamed.otbm"
-                                 : std::format("unnamed-{}.otbm", num);
-    config.map_width = map->getWidth();
-    config.map_height = map->getHeight();
-    config.otbm_version = map->getVersion().otbm_version;
-    config.items_major = map->getVersion().items_major_version;
-    config.items_minor = map->getVersion().items_minor_version;
-    config.description = map->getDescription();
-    ctx.map_operations->handleNewMapDirect(config);
-  });
+  ctx.hotkey->setNewMapCallback([ctx]() { createInstantUnnamedMap(ctx); });
   ctx.hotkey->setOpenMapCallback([ctx]() {
     if (ctx.map_operations)
       ctx.map_operations->handleOpenMap();
@@ -319,26 +322,7 @@ void CallbackMediator::wireMapOperationCallbacks(Context &ctx) {
 }
 
 void CallbackMediator::wireMenuCallbacks(Context &ctx) {
-  // NewMap from Editor state: instant unnamed map creation (no dialog)
-  ctx.menu_bar->setNewMapCallback([ctx]() {
-    if (!ctx.tab_manager || !ctx.map_operations)
-      return;
-    auto *session = ctx.tab_manager->getActiveSession();
-    if (!session || !session->getMap())
-      return;
-    auto *map = session->getMap();
-    uint32_t num = ctx.tab_manager->nextUnnamedNumber();
-    Services::NewMapConfig config;
-    config.map_name = (num == 1) ? "unnamed.otbm"
-                                 : std::format("unnamed-{}.otbm", num);
-    config.map_width = map->getWidth();
-    config.map_height = map->getHeight();
-    config.otbm_version = map->getVersion().otbm_version;
-    config.items_major = map->getVersion().items_major_version;
-    config.items_minor = map->getVersion().items_minor_version;
-    config.description = map->getDescription();
-    ctx.map_operations->handleNewMapDirect(config);
-  });
+  ctx.menu_bar->setNewMapCallback([ctx]() { createInstantUnnamedMap(ctx); });
   ctx.menu_bar->setOpenMapCallback(
       [ctx]() { ctx.map_operations->handleOpenMap(); });
   ctx.menu_bar->setOpenSecMapCallback([ctx]() {
@@ -522,26 +506,8 @@ void CallbackMediator::wireSecondaryClientCallbacks(Context &ctx) {
 
 void CallbackMediator::wireRibbonCallbacks(Context &ctx) {
   if (ctx.file_panel) {
-    // NewMap from Editor state: instant unnamed map creation (no dialog)
-    ctx.file_panel->SetNewMapCallback([ctx]() {
-      if (!ctx.tab_manager || !ctx.map_operations)
-        return;
-      auto *session = ctx.tab_manager->getActiveSession();
-      if (!session || !session->getMap())
-        return;
-      auto *map = session->getMap();
-      uint32_t num = ctx.tab_manager->nextUnnamedNumber();
-      Services::NewMapConfig config;
-      config.map_name = (num == 1) ? "unnamed.otbm"
-                                   : std::format("unnamed-{}.otbm", num);
-      config.map_width = map->getWidth();
-      config.map_height = map->getHeight();
-      config.otbm_version = map->getVersion().otbm_version;
-      config.items_major = map->getVersion().items_major_version;
-      config.items_minor = map->getVersion().items_minor_version;
-      config.description = map->getDescription();
-      ctx.map_operations->handleNewMapDirect(config);
-    });
+    ctx.file_panel->SetNewMapCallback(
+        [ctx]() { createInstantUnnamedMap(ctx); });
     ctx.file_panel->SetOpenMapCallback(
         [ctx]() { ctx.map_operations->handleOpenMap(); });
     ctx.file_panel->SetSaveMapCallback(

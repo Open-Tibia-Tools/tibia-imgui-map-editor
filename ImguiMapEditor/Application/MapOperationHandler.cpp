@@ -307,7 +307,10 @@ void MapOperationHandler::handleNewMapDirect(
   if (result.success) {
     transferNewResources(std::move(result));
   } else {
-    notify(NotificationType::Error, "Failed to create new map");
+    std::string msg = "Failed to create new map";
+    if (!result.error.empty())
+      msg += ": " + result.error;
+    notify(NotificationType::Error, msg);
   }
 }
 
@@ -331,7 +334,8 @@ bool MapOperationHandler::createAndSaveNewMap(
 
   auto save_result =
       saving_service.save(save_path, *map, [](int percent, const std::string &) {
-        spdlog::info("Save progress: {}%", percent);
+        if (percent == 100 || percent % 10 == 0)
+          spdlog::debug("Save progress: {}%", percent);
       });
 
   if (save_result.success) {
