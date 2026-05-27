@@ -296,7 +296,13 @@ void MapOperationHandler::handleNewMapDirect(
 
   Utils::ScopedFlag loading(is_loading_);
 
-  auto result = loading_service_->createNewMap(config, current_client_index_);
+  Services::MapLoadingResult result;
+  if (existing_client_data_ && existing_sprite_manager_) {
+    result = loading_service_->createNewMapWithExistingClientData(
+        config, existing_client_data_, existing_sprite_manager_);
+  } else {
+    result = loading_service_->createNewMap(config, current_client_index_);
+  }
 
   if (result.success) {
     transferNewResources(std::move(result));

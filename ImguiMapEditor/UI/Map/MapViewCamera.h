@@ -45,6 +45,9 @@ public:
     glm::vec2 getViewportPos() const { return viewport_pos_; }
     glm::vec2 getViewportSize() const { return viewport_size_; }
 
+    // Map bounds (clamp camera to prevent scrolling past map edges)
+    void setMapBounds(int32_t max_x, int32_t max_y);
+
 private:
     glm::vec2 camera_pos_{500.0f, 500.0f};
     int16_t current_floor_ = 7; // FLOOR_GROUND
@@ -52,6 +55,9 @@ private:
 
     glm::vec2 viewport_pos_{0, 0};
     glm::vec2 viewport_size_{800, 600};
+
+    int32_t map_max_x_ = 0;
+    int32_t map_max_y_ = 0;
 
 
     // Removed static constexpr constants - now in Config.h

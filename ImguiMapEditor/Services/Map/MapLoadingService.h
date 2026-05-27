@@ -121,7 +121,18 @@ public:
    * @return Load result with success/error
    */
   MapLoadingResult createNewMap(const NewMapConfig &config,
-                                uint32_t current_client_index);
+                                 uint32_t current_client_index);
+
+  /**
+   * Create a new empty map reusing existing client data.
+   * Use this when creating a new map after client data is already loaded
+   * (e.g., editor-state shortcut Ctrl+N).
+   * Does NOT reload or destroy the existing ClientDataService.
+   */
+  MapLoadingResult createNewMapWithExistingClientData(
+      const NewMapConfig &config,
+      Services::ClientDataService *existing_client_data,
+      Services::SpriteManager *existing_sprite_manager);
 
   /**
    * Load client data (OTB, DAT, SPR) for the specified client index.

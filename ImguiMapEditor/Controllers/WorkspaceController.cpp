@@ -40,6 +40,10 @@ void WorkspaceController::bindSession(
 
   map_panel_.setEditorSession(session);
   map_panel_.setClientDataService(client_data);
+  if (session && session->getMap()) {
+    map_panel_.setMapBounds(session->getMap()->getWidth(),
+                            session->getMap()->getHeight());
+  }
   if (initial_camera_pos) {
     map_panel_.setCameraCenter(*initial_camera_pos);
   }

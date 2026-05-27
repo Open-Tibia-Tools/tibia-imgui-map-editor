@@ -10,13 +10,42 @@ namespace UI {
 MapViewCamera::MapViewCamera() = default;
 
 void MapViewCamera::setCameraPosition(float x, float y) {
+  float tsize = Config::Rendering::TILE_SIZE;
   camera_pos_.x = x;
   camera_pos_.y = y;
+
+  if (map_max_x_ > 0 && map_max_y_ > 0 && viewport_size_.x > 0) {
+    float half_vp_x = viewport_size_.x / (2.0f * tsize * zoom_);
+    float half_vp_y = viewport_size_.y / (2.0f * tsize * zoom_);
+    float max_x = static_cast<float>(map_max_x_);
+    float max_y = static_cast<float>(map_max_y_);
+
+    // If viewport is wider than map, center the camera
+    float min_x, min_y, clamp_max_x, clamp_max_y;
+    if (half_vp_x * 2 >= max_x) {
+      min_x = clamp_max_x = max_x / 2.0f;
+    } else {
+      min_x = half_vp_x;
+      clamp_max_x = max_x - half_vp_x;
+    }
+    if (half_vp_y * 2 >= max_y) {
+      min_y = clamp_max_y = max_y / 2.0f;
+    } else {
+      min_y = half_vp_y;
+      clamp_max_y = max_y - half_vp_y;
+    }
+
+    camera_pos_.x = std::clamp(camera_pos_.x, min_x, clamp_max_x);
+    camera_pos_.y = std::clamp(camera_pos_.y, min_y, clamp_max_y);
+  } else {
+    // No bounds set — just prevent negative
+    camera_pos_.x = std::max(camera_pos_.x, 0.0f);
+    camera_pos_.y = std::max(camera_pos_.y, 0.0f);
+  }
 }
 
 void MapViewCamera::setCameraCenter(const Domain::Position &pos) {
-  camera_pos_.x = static_cast<float>(pos.x);
-  camera_pos_.y = static_cast<float>(pos.y);
+  setCameraPosition(static_cast<float>(pos.x), static_cast<float>(pos.y));
   current_floor_ =
       std::clamp(pos.z, Config::Map::MIN_FLOOR, Config::Map::MAX_FLOOR);
 }
@@ -54,6 +83,9 @@ void MapViewCamera::adjustZoom(float delta, const glm::vec2 &pivot_screen) {
   // Adjust camera to keep pivot pointing at same world position
   camera_pos_ += world_before - world_after;
   zoom_ = new_zoom;
+
+  float cx = camera_pos_.x, cy = camera_pos_.y;
+  setCameraPosition(cx, cy);
 }
 
 void MapViewCamera::setCurrentFloor(int16_t floor) {
@@ -95,6 +127,11 @@ MapViewCamera::screenToTile(const glm::vec2 &screen_pos) const {
   int32_t tile_y =
       static_cast<int32_t>(std::floor(camera_pos_.y + local.y + offset_tiles));
 
+  if (map_max_x_ > 0 && map_max_y_ > 0) {
+    tile_x = std::clamp(tile_x, 0, map_max_x_ - 1);
+    tile_y = std::clamp(tile_y, 0, map_max_y_ - 1);
+  }
+
   return Domain::Position(tile_x, tile_y, current_floor_);
 }
 
@@ -111,6 +148,11 @@ glm::vec2 MapViewCamera::tileToScreen(const Domain::Position &tile_pos) const {
 
   offset *= Config::Rendering::TILE_SIZE * zoom_;
   return viewport_pos_ + viewport_size_ * 0.5f + offset;
+}
+
+void MapViewCamera::setMapBounds(int32_t max_x, int32_t max_y) {
+  map_max_x_ = max_x;
+  map_max_y_ = max_y;
 }
 
 } // namespace UI

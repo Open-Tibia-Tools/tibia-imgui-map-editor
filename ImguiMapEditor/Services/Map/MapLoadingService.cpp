@@ -410,6 +410,37 @@ MapLoadingResult MapLoadingService::createNewMap(const NewMapConfig &config,
   result.sprite_manager = std::move(sprite_manager_);
 
   result.success = true;
+  result.camera_center = Domain::Position(
+      static_cast<int32_t>(config.map_width / 2),
+      static_cast<int32_t>(config.map_height / 2), 7);
+  return result;
+}
+
+MapLoadingResult MapLoadingService::createNewMapWithExistingClientData(
+    const NewMapConfig &config,
+    Services::ClientDataService *existing_client_data,
+    Services::SpriteManager *existing_sprite_manager) {
+  MapLoadingResult result;
+
+  spdlog::info("Creating new map with existing client data: {} ({}x{})",
+               config.map_name, config.map_width, config.map_height);
+
+  current_map_ = std::make_unique<Domain::ChunkedMap>();
+  current_map_->createNew(config.map_width, config.map_height, 0,
+                          config.otbm_version, config.items_major,
+                          config.items_minor, config.description);
+  current_map_->setName(config.map_name);
+
+  // Cache sprites for performance using existing sprite manager
+  if (existing_client_data && existing_sprite_manager) {
+    existing_client_data->optimizeItemSprites(*existing_sprite_manager, true);
+  }
+
+  result.map = std::move(current_map_);
+  result.success = true;
+  result.camera_center = Domain::Position(
+      static_cast<int32_t>(config.map_width / 2),
+      static_cast<int32_t>(config.map_height / 2), 7);
   return result;
 }
 

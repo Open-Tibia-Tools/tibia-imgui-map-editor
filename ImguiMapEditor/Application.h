@@ -137,6 +137,7 @@ private:
 
   // State
   AppStateManager state_manager_;
+  Rendering::RenderingManager rendering_manager_;
   AppLogic::MapTabManager tab_manager_;
   CallbackMediator callback_mediator_;
   RenderOrchestrator render_orchestrator_;
@@ -146,9 +147,6 @@ private:
 
   // Brush system (Phase 2-3)
   std::unique_ptr<Brushes::BrushSystem> brush_system_;
-
-  // Selection & Rendering
-  Rendering::RenderingManager rendering_manager_;
 
   // Dialogs & Controllers (Phase 5 container)
   DialogContainer dialogs_;

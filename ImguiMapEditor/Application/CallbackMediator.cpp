@@ -225,6 +225,12 @@ void CallbackMediator::wireTabCallbacks(Context &ctx) {
 
     if (session) {
       const auto &state = session->getViewState();
+
+      if (session->getMap()) {
+        ctx.map_panel->setMapBounds(session->getMap()->getWidth(),
+                                    session->getMap()->getHeight());
+      }
+
       ctx.map_panel->setCameraPosition(state.camera_x, state.camera_y);
       ctx.map_panel->setZoom(state.zoom);
       ctx.map_panel->setCurrentFloor(static_cast<int16_t>(state.current_floor));

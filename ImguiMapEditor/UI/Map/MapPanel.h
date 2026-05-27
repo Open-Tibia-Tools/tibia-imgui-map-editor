@@ -71,6 +71,7 @@ public:
   void setCameraCenter(int32_t x, int32_t y, int16_t z) {
     camera_.setCameraCenter(x, y, z);
   }
+  void setMapBounds(int32_t w, int32_t h) { camera_.setMapBounds(w, h); }
   float getZoom() const { return camera_.getZoom(); }
   void setZoom(float zoom) { camera_.setZoom(zoom); }
   void setCurrentFloor(int16_t floor) { camera_.setCurrentFloor(floor); }
