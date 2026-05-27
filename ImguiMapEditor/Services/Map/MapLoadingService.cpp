@@ -426,14 +426,15 @@ MapLoadingResult MapLoadingService::createNewMapWithExistingClientData(
                config.map_name, config.map_width, config.map_height);
 
   current_map_ = std::make_unique<Domain::ChunkedMap>();
-  current_map_->createNew(config.map_width, config.map_height, 0,
+  uint32_t client_ver = existing_client_data ? existing_client_data->getClientVersion() : 0;
+  current_map_->createNew(config.map_width, config.map_height, client_ver,
                           config.otbm_version, config.items_major,
                           config.items_minor, config.description);
   current_map_->setName(config.map_name);
 
-  // Set version metadata on the map
   Domain::ChunkedMap::MapVersion map_version;
   map_version.otbm_version = config.otbm_version;
+  map_version.client_version = client_ver;
   map_version.items_major_version = config.items_major;
   map_version.items_minor_version = config.items_minor;
   current_map_->setVersion(map_version);

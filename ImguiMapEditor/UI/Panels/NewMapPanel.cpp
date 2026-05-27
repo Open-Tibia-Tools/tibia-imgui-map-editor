@@ -13,7 +13,7 @@ void NewMapPanel::initialize(Services::ClientVersionRegistry *registry) {
   registry_ = registry;
 }
 
-void NewMapPanel::reset() { name_touched_ = false; size_touched_ = false; }
+void NewMapPanel::reset() { size_touched_ = false; }
 
 bool NewMapPanel::render(State &state) {
   bool changed = false;
@@ -24,9 +24,9 @@ bool NewMapPanel::render(State &state) {
   float left_w  = avail.x - right_w - ImGui::GetStyle().ItemSpacing.x;
 
   // === GUIDED GLOW STATE ===
-  bool name_glow    = !name_touched_;
-  bool ver_glow     = name_touched_ && state.selected_template_index < 0;
-  bool size_glow    = name_touched_ && state.selected_template_index >= 0 && !size_touched_;
+  bool name_glow    = state.map_name.empty();
+  bool ver_glow     = !state.map_name.empty() && state.selected_template_index < 0;
+  bool size_glow    = !state.map_name.empty() && state.selected_template_index >= 0 && !size_touched_;
   float pulse = (sinf(ImGui::GetTime() * 3.0f) + 1.0f) * 0.5f;
 
   auto applyGlow = [&](bool cond) {
@@ -52,7 +52,7 @@ bool NewMapPanel::render(State &state) {
   ImGui::SetNextItemWidth(-1);
   if (ImGui::InputText("##mapname", &name_buffer_)) {
     state.map_name = name_buffer_;
-    name_touched_ = changed = true;
+    changed = true;
   }
   popGlow(name_glow);
   ImGui::Spacing();
@@ -60,7 +60,7 @@ bool NewMapPanel::render(State &state) {
   // ---- Client Version ----
   ImGui::TextColored(label, ICON_FA_CODE_BRANCH " Client Version");
   applyGlow(ver_glow);
-  ImGui::BeginDisabled(!name_touched_);
+  ImGui::BeginDisabled(state.map_name.empty());
   renderClientVersionCombo(state);
   ImGui::EndDisabled();
   popGlow(ver_glow);
@@ -106,7 +106,8 @@ bool NewMapPanel::render(State &state) {
 
   // Inputs
   static const char* sz[] = {"256","512","1024","2048","4096","8192","16384","32768","65000","Custom"};
-  constexpr int preset_count = Config::UI::SIZE_PRESET_COUNT + 1; // +1 for Custom
+  static_assert(std::size(sz) == Config::UI::SIZE_PRESET_COUNT + 1, "sz[] must match SIZE_PRESET_COUNT + 1");
+  constexpr int preset_count = Config::UI::SIZE_PRESET_COUNT + 1;
   const char* preview = (state.size_preset_index >= 0 && state.size_preset_index < preset_count)
                             ? sz[state.size_preset_index] : "Custom";
   ImGui::SetNextItemWidth(80);

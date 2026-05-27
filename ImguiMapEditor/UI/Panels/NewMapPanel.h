@@ -36,7 +36,6 @@ private:
   Services::ClientVersionRegistry *registry_ = nullptr;
   std::string name_buffer_{"Untitled"};
   bool version_details_expanded_ = false;
-  bool name_touched_ = false;
   bool size_touched_ = false;
 };
 
