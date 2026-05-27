@@ -75,8 +75,6 @@ inline constexpr int16_t DEFAULT_CENTER_Z = 7;
 // MAP CONFIGURATION
 // ============================================================================
 namespace Map {
-inline constexpr uint16_t DEFAULT_WIDTH = 1024;
-inline constexpr uint16_t DEFAULT_HEIGHT = 1024;
 inline constexpr int MIN_SIZE = 64;
 inline constexpr int MAX_SIZE = 65535;
 inline constexpr int16_t MIN_FLOOR = 0;

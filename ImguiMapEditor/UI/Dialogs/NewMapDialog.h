@@ -10,7 +10,7 @@ namespace UI {
  * Uses NewMapPanel as the content component.
  *
  * Two-column layout:
- *   Left: Map Name, Client Version (template loader), Version Details (collapsible), Map Size
+ *   Left: Map Name, Client Version (template loader), Version Details, Map Size
  *   Right: Description (multi-line)
  *   Footer: Cancel, Create Map
  *
