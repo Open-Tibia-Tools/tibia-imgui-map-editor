@@ -34,8 +34,8 @@ struct NewMapConfig {
   uint16_t map_width = Config::Map::DEFAULT_MAP_SIZE;
   uint16_t map_height = Config::Map::DEFAULT_MAP_SIZE;
   uint32_t otbm_version = 2;
-  uint32_t items_major = 0;
-  uint32_t items_minor = 0;
+  uint32_t items_major = 1;
+  uint32_t items_minor = 1;
   std::string description;
 };
 

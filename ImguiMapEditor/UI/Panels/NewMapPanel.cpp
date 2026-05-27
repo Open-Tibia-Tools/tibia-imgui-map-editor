@@ -61,7 +61,8 @@ bool NewMapPanel::render(State &state) {
   ImGui::TextColored(label, ICON_FA_CODE_BRANCH " Client Version");
   applyGlow(ver_glow);
   ImGui::BeginDisabled(state.map_name.empty());
-  renderClientVersionCombo(state);
+  if (renderClientVersionCombo(state))
+    changed = true;
   ImGui::EndDisabled();
   popGlow(ver_glow);
   ImGui::Spacing();
@@ -156,17 +157,21 @@ bool NewMapPanel::render(State &state) {
   ImGui::BeginChild("##right", ImVec2(right_w, content_h), ImGuiChildFlags_None);
   ImGui::TextColored(label, ICON_FA_FILE_LINES " Description");
   ImGui::Spacing();
+  auto desc_before = state.description;
   ImGui::InputTextMultiline("##desc", &state.description,
                             ImVec2(-1, ImGui::GetContentRegionAvail().y - 1),
                             ImGuiInputTextFlags_None);
+  if (state.description != desc_before)
+    changed = true;
   ImGui::EndChild();
 
   return changed;
 }
 
-void NewMapPanel::renderClientVersionCombo(State &state) {
-  if (!registry_) return;
+bool NewMapPanel::renderClientVersionCombo(State &state) {
+  if (!registry_) return false;
 
+  bool changed = false;
   const auto &tpls = registry_->getTemplates();
   std::string preview_str = "Select version...";
   if (state.selected_template_index >= 0 && state.selected_template_index < (int)tpls.size())
@@ -183,11 +188,13 @@ void NewMapPanel::renderClientVersionCombo(State &state) {
             ? 2 : *std::max_element(tpls[i].otbm_versions.begin(), tpls[i].otbm_versions.end());
         state.items_major   = tpls[i].otb_major;
         state.items_minor   = tpls[i].otb_id;
+        changed = true;
       }
       ImGui::PopID();
     }
     ImGui::EndCombo();
   }
+  return changed;
 }
 
 } // namespace UI

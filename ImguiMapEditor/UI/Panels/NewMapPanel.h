@@ -18,8 +18,8 @@ public:
     uint16_t map_height = Config::Map::DEFAULT_MAP_SIZE;
     int selected_template_index = -1;
     uint32_t otbm_version = 2;
-    uint32_t items_major = 0;
-    uint32_t items_minor = 0;
+    uint32_t items_major = 1;
+    uint32_t items_minor = 1;
     std::string description = "Made with Tibia Imgui Map Editor!";
     int size_preset_index = 6;
   };
@@ -31,7 +31,7 @@ public:
   bool render(State &state);
 
 private:
-  void renderClientVersionCombo(State &state);
+  bool renderClientVersionCombo(State &state);
 
   Services::ClientVersionRegistry *registry_ = nullptr;
   std::string name_buffer_{"Untitled"};

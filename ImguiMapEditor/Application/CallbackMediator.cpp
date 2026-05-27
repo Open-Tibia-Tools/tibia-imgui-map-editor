@@ -29,7 +29,6 @@
 #include "UI/Dialogs/Properties/MapPropertiesDialog.h"
 #include "UI/Dialogs/UnsavedChangesModal.h"
 #include "UI/Map/MapPanel.h"
-#include "UI/Panels/NewMapPanel.h"
 #include "UI/PreferencesDialog.h"
 #include "UI/Ribbon/Panels/FilePanel.h"
 #include "UI/Widgets/QuickSearchPopup.h"
@@ -302,23 +301,6 @@ void CallbackMediator::wireMapOperationCallbacks(Context &ctx) {
           ctx.on_notification(static_cast<int>(type), message);
         }
       });
-
-  // Wire MainWindow dialog callbacks to MapOperationHandler
-  // Note: Editor-state New Map now uses instant creation (no dialog).
-  // MainWindow's NewMapDialog is kept for potential future use.
-  if (ctx.main_window) {
-    ctx.main_window->setNewMapCallback([ctx](const UI::NewMapPanel::State& config) {
-      Services::NewMapConfig map_config;
-      map_config.map_name = config.map_name;
-      map_config.map_width = config.map_width;
-      map_config.map_height = config.map_height;
-      map_config.otbm_version = config.otbm_version;
-      map_config.items_major = config.items_major;
-      map_config.items_minor = config.items_minor;
-      map_config.description = config.description;
-      ctx.map_operations->handleNewMapDirect(map_config);
-    });
-  }
 }
 
 void CallbackMediator::wireMenuCallbacks(Context &ctx) {

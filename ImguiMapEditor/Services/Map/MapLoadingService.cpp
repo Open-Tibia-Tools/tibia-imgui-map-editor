@@ -437,6 +437,14 @@ MapLoadingResult MapLoadingService::createNewMapWithExistingClientData(
   map_version.client_version = client_ver;
   map_version.items_major_version = config.items_major;
   map_version.items_minor_version = config.items_minor;
+
+  // Normalize: fall back to registry values if config provides zero
+  if (!map_version.items_major_version || !map_version.items_minor_version) {
+    if (auto *cv = version_registry_.findBestByVersion(client_ver)) {
+      if (!map_version.items_major_version) map_version.items_major_version = cv->getOtbMajor();
+      if (!map_version.items_minor_version) map_version.items_minor_version = cv->getOtbVersion();
+    }
+  }
   current_map_->setVersion(map_version);
 
   // Cache sprites for performance using existing sprite manager

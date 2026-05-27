@@ -14,10 +14,7 @@ MainWindow::MainWindow(Services::ViewSettings &view_settings,
                        MenuBar &menu_bar, AppLogic::MapTabManager *tab_manager)
     : view_settings_(view_settings), version_registry_(version_registry),
       map_panel_(map_panel), ingame_box_window_(ingame_box_window),
-      menu_bar_(menu_bar), tab_manager_(tab_manager) {
-  // Initialize modal dialogs with registry reference
-  new_map_dialog_.initialize(&version_registry_);
-}
+      menu_bar_(menu_bar), tab_manager_(tab_manager) {}
 
 void MainWindow::openPropertiesDialog(Domain::Item *item) {
   if (!item)
@@ -229,18 +226,6 @@ void MainWindow::renderEditor(Domain::ChunkedMap *current_map,
     ingame_box_window_.render(current_map, map_renderer, view_settings_,
                               cursor_pos, &view_settings_.show_ingame_box);
   }
-
-  // Render Editor-state modal dialogs
-  new_map_dialog_.render();
-}
-
-void MainWindow::showNewMapDialog() {
-  new_map_dialog_.setOnConfirm([this](const UI::NewMapPanel::State& config) {
-    if (new_map_callback_) {
-      new_map_callback_(config);
-    }
-  });
-  new_map_dialog_.show();
 }
 
 } // namespace Presentation

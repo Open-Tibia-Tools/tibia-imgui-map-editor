@@ -8,7 +8,6 @@
 #include "UI/Dialogs/Properties/CreaturePropertiesDialog.h"
 #include "UI/Dialogs/Properties/ItemPropertiesDialog.h"
 #include "UI/Dialogs/Properties/SpawnPropertiesDialog.h"
-#include "UI/Dialogs/NewMapDialog.h"
 #include "UI/Map/MapContextMenu.h"
 #include "UI/Map/MapPanel.h"
 #include "UI/Windows/IngameBoxWindow.h"
@@ -83,13 +82,6 @@ public:
     context_menu_.setBrowseTileCallback(std::move(callback));
   }
 
-  // === Editor-state modal dialogs ===
-  void showNewMapDialog();
-  
-  void setNewMapCallback(std::function<void(const UI::NewMapPanel::State&)> callback) {
-    new_map_callback_ = std::move(callback);
-  }
-
 private:
   std::function<void(int)> on_close_requested_;
 
@@ -108,10 +100,6 @@ private:
   UI::ItemPropertiesDialog properties_dialog_;
   UI::SpawnPropertiesDialog spawn_properties_dialog_;
   UI::CreaturePropertiesDialog creature_properties_dialog_;
-  
-  // Editor-state modal dialogs
-  UI::NewMapDialog new_map_dialog_;
-  std::function<void(const UI::NewMapPanel::State&)> new_map_callback_;
 };
 
 } // namespace Presentation
