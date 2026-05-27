@@ -333,7 +333,8 @@ void StartupDialog::renderFooter() {
   ImGui::SetCursorPosY(button_y);
 
   // Ignore signatures toggle button
-  if (ignore_signatures_) {
+  const bool pushed_color = ignore_signatures_;
+  if (pushed_color) {
     ImGui::PushStyleColor(ImGuiCol_Button, SC::INFO);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::INFO));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::INFO));
@@ -345,7 +346,7 @@ void StartupDialog::renderFooter() {
     ignore_signatures_ = !ignore_signatures_;
   }
 
-  if (ignore_signatures_) {
+  if (pushed_color) {
     ImGui::PopStyleColor(3);
   }
 
