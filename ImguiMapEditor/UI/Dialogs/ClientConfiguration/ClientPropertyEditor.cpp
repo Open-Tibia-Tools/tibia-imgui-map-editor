@@ -1,4 +1,5 @@
 #include "UI/Dialogs/ClientConfiguration/ClientPropertyEditor.h"
+#include "UI/Core/Theme.h"
 #include "Presentation/Dialogs/ClientConfigurationController.h"
 #include "Services/ClientVersionRegistry.h"
 #include <IconsFontAwesome6.h>
@@ -36,13 +37,13 @@ ImVec4 blend(const ImVec4& a, const ImVec4& b, float t) {
                   a.z + (b.z - a.z) * t, a.w + (b.w - a.w) * t);
 }
 
-constexpr ImVec4 kRed       = ImVec4(0.6f, 0.15f, 0.15f, 1.0f);
-constexpr ImVec4 kYellow    = ImVec4(0.6f, 0.5f, 0.0f, 1.0f);
-constexpr ImVec4 kGreen     = ImVec4(0.15f, 0.55f, 0.15f, 1.0f);
-constexpr ImVec4 kTextMuted = ImVec4(0.67f, 0.70f, 0.75f, 1.0f);
-constexpr ImVec4 kGreenStatus = ImVec4(0.43f, 0.82f, 0.43f, 1.0f);
-constexpr ImVec4 kBlueAccent  = ImVec4(0.19f, 0.44f, 0.84f, 1.0f);
-constexpr ImVec4 kBlueHover   = ImVec4(0.25f, 0.50f, 0.92f, 1.0f);
+constexpr ImVec4 kRed       = SemanticColors::DANGER;
+constexpr ImVec4 kYellow    = SemanticColors::PULSE_BASE;
+constexpr ImVec4 kGreen     = SemanticColors::SAVED;
+constexpr ImVec4 kTextMuted = SemanticColors::MUTED;
+constexpr ImVec4 kGreenStatus = SemanticColors::SAVED;
+constexpr ImVec4 kBlueAccent  = SemanticColors::INFO;
+constexpr ImVec4 kBlueHover   = SemanticColors::Lighten(SemanticColors::INFO);
 
 float labelColumn() { return 195.0f; }
 

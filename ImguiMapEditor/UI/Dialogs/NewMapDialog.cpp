@@ -1,10 +1,13 @@
 #include "NewMapDialog.h"
 #include "Core/Config.h"
+#include "UI/Core/Theme.h"
 #include "ext/fontawesome6/IconsFontAwesome6.h"
 #include <imgui.h>
 
 namespace MapEditor {
 namespace UI {
+
+namespace SC = SemanticColors;
 
 void NewMapDialog::initialize(Services::ClientVersionRegistry *registry) {
   panel_.initialize(registry);
@@ -49,10 +52,10 @@ void NewMapDialog::render() {
 
       if (ImGui::BeginTabItem("SEC")) {
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.55f, 0.58f, 0.62f, 1.0f),
+        ImGui::TextColored(SC::LABEL,
                            ICON_FA_CLOCK " Coming soon");
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.4f, 0.42f, 0.45f, 1.0f),
+        ImGui::TextColored(SC::EMPTY,
                            "SEC format support is not yet implemented.");
         ImGui::EndTabItem();
       }
@@ -81,12 +84,11 @@ void NewMapDialog::render() {
         !state_.map_name.empty() && state_.selected_template_index >= 0;
 
     if (!can_create) {
-      ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+      ImGui::PushStyleVar(ImGuiStyleVar_Alpha, SC::DISABLED_ALPHA);
     }
 
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.45f, 0.70f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                          ImVec4(0.28f, 0.55f, 0.80f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Button, SC::INFO);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::INFO));
 
     if (ImGui::Button(ICON_FA_CHECK " Create Map", ImVec2(button_width, 0)) &&
         can_create) {

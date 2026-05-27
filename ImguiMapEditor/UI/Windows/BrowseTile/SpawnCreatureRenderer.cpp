@@ -1,4 +1,5 @@
 #include "SpawnCreatureRenderer.h"
+#include "UI/Core/Theme.h"
 #include "Domain/Creature.h"
 #include "Domain/Spawn.h"
 #include "Rendering/Core/Texture.h"
@@ -6,6 +7,8 @@
 #include "Services/SpriteManager.h"
 #include "UI/Utils/PreviewUtils.hpp"
 namespace MapEditor::UI::BrowseTile {
+
+namespace SC = SemanticColors;
 
 SpawnCreatureRenderer::SpawnCreatureRenderer(
     Services::SpriteManager *spriteManager,

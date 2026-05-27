@@ -1,13 +1,16 @@
 #include "RecentMapsPanel.h"
+#include "UI/Core/Theme.h"
 #include <IconsFontAwesome6.h>
 #include <imgui.h>
 
 namespace MapEditor {
 namespace UI {
 
+namespace SC = SemanticColors;
+
 void RecentMapsPanel::render(const std::vector<RecentMapEntry> &entries) {
   // Panel header
-  ImGui::TextColored(ImVec4(0.85f, 0.88f, 0.92f, 1.0f), "Recent Maps List");
+  ImGui::TextColored(SC::HEADER_TEXT, "Recent Maps List");
   ImGui::Spacing();
   ImGui::Separator();
   ImGui::Spacing();
@@ -26,18 +29,16 @@ void RecentMapsPanel::render(const std::vector<RecentMapEntry> &entries) {
 
     // Style for selected/hover
     if (is_selected) {
-      ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.25f, 0.45f, 0.70f, 0.9f));
-      ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
-                            ImVec4(0.30f, 0.50f, 0.75f, 1.0f));
+      ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
+      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
     } else {
-      ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.18f, 0.20f, 0.24f, 0.6f));
-      ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
-                            ImVec4(0.22f, 0.25f, 0.30f, 0.8f));
+      ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_Header));
+      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
     }
 
     // Grayed out if file doesn't exist
     if (!entry.exists) {
-      ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+      ImGui::PushStyleVar(ImGuiStyleVar_Alpha, SC::DISABLED_ALPHA);
     }
 
     // Make selectable span full width
@@ -64,7 +65,7 @@ void RecentMapsPanel::render(const std::vector<RecentMapEntry> &entries) {
     // Map icon (standard size)
     ImGui::BeginGroup();
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 12.0f);
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.65f, 0.85f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Text, SC::INFO);
     ImGui::Text(ICON_FA_MAP);
     ImGui::PopStyleColor();
     ImGui::EndGroup();
@@ -74,9 +75,9 @@ void RecentMapsPanel::render(const std::vector<RecentMapEntry> &entries) {
     // Map name and date
     ImGui::BeginGroup();
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
-    ImGui::TextColored(ImVec4(0.95f, 0.95f, 0.95f, 1.0f), "%s",
+    ImGui::TextColored(SC::VALUE, "%s",
                        entry.filename.c_str());
-    ImGui::TextColored(ImVec4(0.55f, 0.58f, 0.62f, 1.0f), "%s",
+    ImGui::TextColored(SC::LABEL, "%s",
                        entry.last_modified.c_str());
     ImGui::EndGroup();
 
@@ -94,7 +95,7 @@ void RecentMapsPanel::render(const std::vector<RecentMapEntry> &entries) {
 
   if (entries.empty()) {
     ImGui::Spacing();
-    ImGui::TextColored(ImVec4(0.5f, 0.52f, 0.55f, 1.0f), "No recent maps");
+    ImGui::TextColored(SC::LABEL, "No recent maps");
   }
 
   ImGui::EndChild();

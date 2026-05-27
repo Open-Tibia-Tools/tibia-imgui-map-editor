@@ -2,6 +2,7 @@
 #include "Application/MapTabManager.h"
 #include "Application/EditorSession.h"
 #include "Domain/MapInstance.h"
+#include "UI/Core/Theme.h"
 #include <imgui.h>
 #include <IconsFontAwesome6.h>
 #include <algorithm>
@@ -10,13 +11,9 @@
 namespace MapEditor {
 namespace UI {
 
+namespace SC = SemanticColors;
+
 static constexpr ImVec4 kModifiedYellow{0.50f, 0.42f, 0.14f, 1.0f};
-static constexpr ImVec4 kDangerRed{0.70f, 0.18f, 0.18f, 1.0f};
-static constexpr ImVec4 kDangerRedHover{0.80f, 0.25f, 0.25f, 1.0f};
-static constexpr ImVec4 kDangerRedActive{0.60f, 0.12f, 0.12f, 1.0f};
-static constexpr ImVec4 kGoToBlue{0.18f, 0.40f, 0.65f, 1.0f};
-static constexpr ImVec4 kGoToBlueHover{0.22f, 0.48f, 0.75f, 1.0f};
-static constexpr ImVec4 kGoToBlueActive{0.14f, 0.35f, 0.58f, 1.0f};
 
 static float bounceOffset() {
     return std::sin(static_cast<float>(ImGui::GetTime()) * 3.0f) * 3.0f;
@@ -160,9 +157,9 @@ EditTownsDialog::Result EditTownsDialog::render() {
                 ImGui::TextDisabled("ID %u: %s", towns_[selected_index_].id, towns_[selected_index_].name.c_str());
                 ImGui::Spacing();
 
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.1f, 0.1f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_Button, SC::DANGER);
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::DANGER));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::DANGER));
 
                 if (ImGui::Button(ICON_FA_TRASH " Yes, Remove", ImVec2(120, 0))) {
                     uint32_t removed_id = towns_[selected_index_].id;
@@ -332,9 +329,9 @@ EditTownsDialog::Result EditTownsDialog::render() {
 
         ImGui::Spacing();
 
-        ImGui::PushStyleColor(ImGuiCol_Button, kDangerRed);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kDangerRedHover);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, kDangerRedActive);
+        ImGui::PushStyleColor(ImGuiCol_Button, SC::DANGER);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::DANGER));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::DANGER));
         if (ImGui::Button(ICON_FA_CROSSHAIRS " Change Temple Position", ImVec2(-1, 0))) {
             if (on_pick_position_ && on_pick_position_()) {
                 is_picking_position_ = true;
@@ -345,9 +342,9 @@ EditTownsDialog::Result EditTownsDialog::render() {
             ImGui::SetTooltip("Click on map to set temple position");
         }
 
-        ImGui::PushStyleColor(ImGuiCol_Button, kGoToBlue);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, kGoToBlueHover);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, kGoToBlueActive);
+        ImGui::PushStyleColor(ImGuiCol_Button, SC::INFO);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::INFO));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::INFO));
         if (ImGui::Button(ICON_FA_LOCATION_DOT " Go To Position", ImVec2(-1, 0))) {
             if (has_selection && on_go_to_) {
                 on_go_to_(towns_[selected_index_].temple_position);
@@ -359,7 +356,7 @@ EditTownsDialog::Result EditTownsDialog::render() {
         }
 
         if (is_picking_position_) {
-            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.0f, 1.0f),
+            ImGui::TextColored(SC::GOLD,
                               ICON_FA_CROSSHAIRS " Click on map to select...");
         }
 
@@ -386,9 +383,9 @@ EditTownsDialog::Result EditTownsDialog::render() {
         bool flash_active = flash_age < 1.0f && flash_age > 0.0f;
 
         if (flash_active) {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.55f, 0.15f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.18f, 0.65f, 0.18f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.12f, 0.50f, 0.12f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_Button, SC::SAVED);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::SAVED));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::SAVED));
         }
 
         if (ImGui::Button(ICON_FA_FLOPPY_DISK " Apply", ImVec2(button_w, 0))) {
@@ -403,9 +400,9 @@ EditTownsDialog::Result EditTownsDialog::render() {
 
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.45f, 0.70f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.25f, 0.55f, 0.80f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.40f, 0.65f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Button, SC::INFO);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::INFO));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::INFO));
 
         if (ImGui::Button(ICON_FA_CHECK " OK", ImVec2(button_w, 0))) {
             applyChangesToMap();

@@ -66,6 +66,8 @@ bool Application::initialize() {
       &settings_registry_->getHotkeyRegistry());
   dialogs_.preferences.setOtbmSettings(
       &settings_registry_->getOtbmSettings());
+  dialogs_.preferences.setThemePtr(
+      &settings_registry_->getAppSettings().theme);
   dialogs_.preferences.setApplySettingsCallback([this]() {
     settings_registry_->save();
   });

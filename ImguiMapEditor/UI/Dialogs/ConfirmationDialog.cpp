@@ -1,4 +1,5 @@
 #include "ConfirmationDialog.h"
+#include "UI/Core/Theme.h"
 #include <imgui.h>
 #include <IconsFontAwesome6.h>
 

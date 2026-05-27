@@ -1,5 +1,7 @@
 #include "TilesetGridWidget.h"
 
+#include "UI/Core/Theme.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cmath>

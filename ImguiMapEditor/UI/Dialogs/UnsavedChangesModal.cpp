@@ -1,4 +1,5 @@
 #include "UnsavedChangesModal.h"
+#include "UI/Core/Theme.h"
 #include <imgui.h>
 #include "ext/fontawesome6/IconsFontAwesome6.h"
 

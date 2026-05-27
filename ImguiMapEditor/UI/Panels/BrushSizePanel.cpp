@@ -1,6 +1,7 @@
 #include "BrushSizePanel.h"
 
 #include "Services/BrushSettingsService.h"
+#include "UI/Core/Theme.h"
 #include "UI/Utils/UIUtils.hpp"
 #include "ext/fontawesome6/IconsFontAwesome6.h"
 #include <algorithm>
@@ -11,8 +12,9 @@ namespace MapEditor {
 namespace UI {
 namespace Panels {
 
-// Green highlight color for active toggles
-static const ImVec4 ACTIVE_TOGGLE_COLOR = ImVec4(0.2f, 0.7f, 0.3f, 1.0f);
+namespace SC = SemanticColors;
+
+static const ImVec4 ACTIVE_TOGGLE_COLOR = SC::SAVED;
 
 BrushSizePanel::BrushSizePanel(Services::BrushSettingsService *brushService,
                                SaveCallback onSave)

@@ -8,7 +8,48 @@
 #include <iterator>
 
 
+// ============================================================================
+// Semantic Colors — universal across all themes
+// These represent UI state meaning, visible regardless of background.
+// ============================================================================
+namespace SemanticColors {
+    // State indicators
+    inline constexpr ImVec4 MODIFIED     { 1.00f, 0.80f, 0.00f, 1.00f }; // Yellow — unsaved/dirty
+    inline constexpr ImVec4 SAVED        { 0.20f, 0.80f, 0.20f, 1.00f }; // Green — clean/saved
+    inline constexpr ImVec4 DANGER       { 0.90f, 0.30f, 0.30f, 1.00f }; // Red — error/delete
+    inline constexpr ImVec4 WARNING      { 0.90f, 0.70f, 0.20f, 1.00f }; // Orange — caution
+    inline constexpr ImVec4 INFO         { 0.20f, 0.50f, 0.90f, 1.00f }; // Blue — informational
+    inline constexpr ImVec4 GOLD         { 1.00f, 0.80f, 0.00f, 1.00f }; // Gold — special/attention
+
+    // Text roles
+    inline constexpr ImVec4 LABEL        { 0.55f, 0.58f, 0.62f, 1.00f }; // Gray — label text in key/value pairs
+    inline constexpr ImVec4 VALUE        { 0.95f, 0.95f, 0.95f, 1.00f }; // Near-white — value text
+    inline constexpr ImVec4 EMPTY        { 0.40f, 0.42f, 0.45f, 1.00f }; // Dark gray — absent/empty/unknown
+    inline constexpr ImVec4 HEADER_TEXT  { 0.85f, 0.88f, 0.92f, 1.00f }; // Bright — panel/section headers
+    inline constexpr ImVec4 MUTED        { 0.67f, 0.70f, 0.75f, 1.00f }; // Medium gray — secondary info
+
+    // Pulse/Glow base
+    inline constexpr ImVec4 PULSE_BASE   { 0.60f, 0.50f, 0.00f, 1.00f }; // Yellow base for glow effects
+
+    // Misc
+    inline constexpr float DISABLED_ALPHA = 0.5f;
+
+    // Helpers for deriving hover/active variants from base semantic colors
+    constexpr ImVec4 Lighten(const ImVec4& c, float amount = 0.12f) {
+        return ImVec4(std::clamp(c.x + amount, 0.0f, 1.0f),
+                      std::clamp(c.y + amount, 0.0f, 1.0f),
+                      std::clamp(c.z + amount, 0.0f, 1.0f), c.w);
+    }
+    constexpr ImVec4 Darken(const ImVec4& c, float amount = 0.12f) {
+        return ImVec4(std::clamp(c.x - amount, 0.0f, 1.0f),
+                      std::clamp(c.y - amount, 0.0f, 1.0f),
+                      std::clamp(c.z - amount, 0.0f, 1.0f), c.w);
+    }
+} // namespace SemanticColors
+
+// ============================================================================
 // Theme selection enum
+// ============================================================================
 enum class ThemeType {
     TibiaRPG = 0,
     ModernDark,
