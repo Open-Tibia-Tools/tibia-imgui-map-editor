@@ -1,4 +1,5 @@
 #include "BrowseTileWindow.h"
+#include "UI/Core/Theme.h"
 #include "Application/EditorSession.h"
 #include "Domain/ChunkedMap.h"
 #include "Domain/Creature.h"
@@ -19,6 +20,8 @@
 #include <imgui.h>
 #include <map>
 #include <spdlog/spdlog.h>
+
+namespace SC = SemanticColors;
 
 namespace MapEditor::UI {
 
@@ -334,8 +337,8 @@ void BrowseTileWindow::renderTileProperties() {
   bool no_logout = Domain::hasFlag(flags, Domain::TileFlag::NoLogout);
   bool pvp_zone = Domain::hasFlag(flags, Domain::TileFlag::PvpZone);
 
-  ImVec4 green(0.2f, 0.8f, 0.2f, 1.0f);
-  ImVec4 red(0.5f, 0.3f, 0.3f, 1.0f);
+  ImVec4 green = SC::SAVED;
+  ImVec4 red = SC::DANGER;
 
   ImGui::Spacing();
 

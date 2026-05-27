@@ -1,6 +1,7 @@
 #pragma once
 
-#include <format>
+#include "UI/Core/Theme.h"
+#include <functional>
 #include <imgui.h>
 #include <string>
 
@@ -119,7 +120,7 @@ inline void RenderRadioButton(const char *icon, bool selected,
  * Renders a vertical separator customized for the ribbon.
  */
 inline void RenderSeparator() {
-  ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
+  ImGui::PushStyleColor(ImGuiCol_Text, SemanticColors::MUTED);
   ImGui::Text("|");
   ImGui::PopStyleColor();
 }

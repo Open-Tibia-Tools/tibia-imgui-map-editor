@@ -1,4 +1,5 @@
 #include "AvailableClientsPanel.h"
+#include "UI/Core/Theme.h"
 #include <IconsFontAwesome6.h>
 #include <filesystem>
 #include <imgui.h>
@@ -6,8 +7,16 @@
 namespace MapEditor {
 namespace UI {
 
+namespace SC = SemanticColors;
+
+// Custom list-item header colors for the dark-theme clients panel
+constexpr ImVec4 kSelectedHeader       { 0.25f, 0.45f, 0.70f, 0.90f };
+constexpr ImVec4 kSelectedHeaderHover  { 0.30f, 0.50f, 0.75f, 1.00f };
+constexpr ImVec4 kUnselectedHeader     { 0.18f, 0.20f, 0.24f, 0.60f };
+constexpr ImVec4 kUnselectedHeaderHover{ 0.22f, 0.25f, 0.30f, 0.80f };
+
 void AvailableClientsPanel::render() {
-  ImGui::TextColored(ImVec4(0.85f, 0.88f, 0.92f, 1.0f), "Available Clients");
+  ImGui::TextColored(SC::HEADER_TEXT, "Available Clients");
   ImGui::Spacing();
   ImGui::Separator();
   ImGui::Spacing();
@@ -34,13 +43,11 @@ void AvailableClientsPanel::render() {
       ImGui::PushID(static_cast<int>(index));
 
       if (is_selected) {
-        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.25f, 0.45f, 0.70f, 0.9f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
-                              ImVec4(0.30f, 0.50f, 0.75f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Header, kSelectedHeader);
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, kSelectedHeaderHover);
       } else {
-        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.18f, 0.20f, 0.24f, 0.6f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered,
-                              ImVec4(0.22f, 0.25f, 0.30f, 0.8f));
+        ImGui::PushStyleColor(ImGuiCol_Header, kUnselectedHeader);
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, kUnselectedHeaderHover);
       }
 
       float item_height = 60.0f;
@@ -60,7 +67,7 @@ void AvailableClientsPanel::render() {
       // Bookmark icon
       ImGui::BeginGroup();
       ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 12.0f);
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.85f, 0.65f, 0.30f, 1.0f));
+      ImGui::PushStyleColor(ImGuiCol_Text, SC::GOLD);
       ImGui::Text(ICON_FA_BOOKMARK);
       ImGui::PopStyleColor();
       ImGui::EndGroup();
@@ -70,7 +77,7 @@ void AvailableClientsPanel::render() {
       // Client name and version info
       ImGui::BeginGroup();
       ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
-      ImGui::TextColored(ImVec4(0.43f, 0.82f, 0.43f, 1.0f), "%s",
+      ImGui::TextColored(SC::SAVED, "%s",
                          client->getName().c_str());
 
       const char* type_str = "???";
@@ -79,7 +86,7 @@ void AvailableClientsPanel::render() {
         case Domain::ItemDataSource::SRV: type_str = "SRV"; break;
         case Domain::ItemDataSource::DAT: type_str = "DAT"; break;
       }
-      ImGui::TextColored(ImVec4(0.55f, 0.58f, 0.62f, 1.0f), "%u | %s",
+      ImGui::TextColored(SC::LABEL, "%u | %s",
                          client->getVersion(), type_str);
       ImGui::EndGroup();
 
@@ -94,8 +101,8 @@ void AvailableClientsPanel::render() {
 
   if (total_count == 0) {
     ImGui::Spacing();
-    ImGui::TextColored(ImVec4(0.5f, 0.52f, 0.55f, 1.0f), "No clients in database.");
-    ImGui::TextColored(ImVec4(0.4f, 0.42f, 0.45f, 1.0f),
+    ImGui::TextColored(SC::LABEL, "No clients in database.");
+    ImGui::TextColored(SC::EMPTY,
                        "Use 'Client Config' to add clients.");
   }
 

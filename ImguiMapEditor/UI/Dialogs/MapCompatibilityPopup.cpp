@@ -1,10 +1,13 @@
 #include "MapCompatibilityPopup.h"
+#include "UI/Core/Theme.h"
 #include "ext/fontawesome6/IconsFontAwesome6.h"
 #include <imgui.h>
 
 
 namespace MapEditor {
 namespace UI {
+
+namespace SC = SemanticColors;
 
 void MapCompatibilityPopup::show(const MapCompatibilityResult &compat,
                                  const std::filesystem::path &map_path) {
@@ -33,7 +36,7 @@ void MapCompatibilityPopup::render() {
   if (ImGui::BeginPopupModal("Map Compatibility Warning", &is_open_,
                              ImGuiWindowFlags_AlwaysAutoResize)) {
     // Warning icon and title
-    ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f),
+    ImGui::TextColored(SC::WARNING,
                        ICON_FA_TRIANGLE_EXCLAMATION " Version Mismatch");
     ImGui::Separator();
     ImGui::Spacing();
@@ -79,11 +82,9 @@ void MapCompatibilityPopup::render() {
     ImGui::SameLine();
 
     // Force load button - warning color
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.4f, 0.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
-                          ImVec4(0.8f, 0.5f, 0.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive,
-                          ImVec4(0.6f, 0.3f, 0.0f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Button, SC::WARNING);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::WARNING);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::WARNING);
     if (ImGui::Button(ICON_FA_BOLT " Force Load", ImVec2(button_width, 0))) {
       result_ = Result::ForceLoad;
       is_open_ = false;

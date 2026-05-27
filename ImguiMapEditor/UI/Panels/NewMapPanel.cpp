@@ -1,5 +1,6 @@
 #include "UI/Panels/NewMapPanel.h"
 #include "Core/Config.h"
+#include "UI/Core/Theme.h"
 #include "ext/fontawesome6/IconsFontAwesome6.h"
 #include <algorithm>
 #include <format>
@@ -8,6 +9,8 @@
 
 namespace MapEditor {
 namespace UI {
+
+namespace SC = SemanticColors;
 
 void NewMapPanel::initialize(Services::ClientVersionRegistry *registry) {
   registry_ = registry;
@@ -31,13 +34,13 @@ bool NewMapPanel::render(State &state) {
 
   auto applyGlow = [&](bool cond) {
     if (cond) {
-      ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.6f, 0.5f, 0.0f, 0.3f + pulse * 0.5f));
-      ImGui::PushStyleColor(ImGuiCol_Border,  ImVec4(0.9f, 0.8f, 0.2f, 0.5f + pulse * 0.5f));
+      ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(SC::PULSE_BASE.x, SC::PULSE_BASE.y, SC::PULSE_BASE.z, 0.3f + pulse * 0.5f));
+      ImGui::PushStyleColor(ImGuiCol_Border,  ImVec4(SC::GOLD.x, SC::GOLD.y, SC::GOLD.z, 0.5f + pulse * 0.5f));
     }
   };
   auto popGlow = [](bool cond) { if (cond) ImGui::PopStyleColor(2); };
 
-  constexpr ImVec4 label(0.55f, 0.58f, 0.62f, 1.0f);
+  constexpr ImVec4 label = SC::LABEL;
 
   // =========================================================
   //  LEFT COLUMN

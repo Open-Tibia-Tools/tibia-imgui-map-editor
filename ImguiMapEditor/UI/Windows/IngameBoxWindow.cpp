@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <imgui.h>
 #include <spdlog/spdlog.h>
+#include "UI/Core/Theme.h"
 #include "ext/fontawesome6/IconsFontAwesome6.h"
 #include "Application/EditorSession.h"
 #include "Core/Config.h"
@@ -13,6 +14,8 @@
 
 namespace MapEditor {
 namespace UI {
+
+namespace SC = SemanticColors;
 
 IngameBoxWindow::IngameBoxWindow() = default;
 
@@ -45,7 +48,7 @@ void IngameBoxWindow::render(Domain::ChunkedMap* map,
     
     // === Toggle Buttons Row ===
     // Follow Selection toggle button (crosshairs icon)
-    ImVec4 follow_color = follow_cursor_ ? ImVec4(0.2f, 0.8f, 0.2f, 1.0f) : ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+    ImVec4 follow_color = follow_cursor_ ? SC::SAVED : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
     ImGui::PushStyleColor(ImGuiCol_Text, follow_color);
     if (ImGui::Button(ICON_FA_CROSSHAIRS "##follow")) {
         follow_cursor_ = !follow_cursor_;
@@ -58,7 +61,7 @@ void IngameBoxWindow::render(Domain::ChunkedMap* map,
     ImGui::SameLine();
     
     // Enable Lighting toggle button (lightbulb icon)
-    ImVec4 light_color = settings.preview_lighting_enabled ? ImVec4(1.0f, 0.85f, 0.2f, 1.0f) : ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+    ImVec4 light_color = settings.preview_lighting_enabled ? SC::GOLD : ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
     ImGui::PushStyleColor(ImGuiCol_Text, light_color);
     if (ImGui::Button(ICON_FA_LIGHTBULB "##lighting")) {
         settings.preview_lighting_enabled = !settings.preview_lighting_enabled;
@@ -168,10 +171,10 @@ void IngameBoxWindow::render(Domain::ChunkedMap* map,
                 ImVec2(0, 1), ImVec2(1, 0)
             );
         } else {
-            ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "Initializing preview...");
+            ImGui::TextColored(SC::WARNING, "Initializing preview...");
         }
     } else {
-        ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1), "No map loaded");
+        ImGui::TextColored(SC::LABEL, "No map loaded");
     }
     
     ImGui::End();

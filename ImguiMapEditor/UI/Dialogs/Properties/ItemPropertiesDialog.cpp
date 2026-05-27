@@ -1,4 +1,5 @@
 #include "ItemPropertiesDialog.h"
+#include "UI/Core/Theme.h"
 #include "Core/Config.h"
 #include "Domain/ItemType.h"
 #include "Domain/Position.h"

@@ -1,6 +1,7 @@
 #pragma once
 #include "Domain/OtbmDataTypes.h"
 #include "Services/SecondaryClientConstants.h"
+#include "UI/Core/Theme.h"
 #include <filesystem>
 #include <functional>
 #include <string>
@@ -73,6 +74,10 @@ public:
     otbm_settings_ = settings;
   }
 
+  void setThemePtr(ThemeType* theme_ptr) {
+    theme_ptr_ = theme_ptr;
+  }
+
   using ApplySettingsCallback = std::function<void()>;
   void setApplySettingsCallback(ApplySettingsCallback callback) {
     on_apply_settings_ = std::move(callback);
@@ -96,6 +101,9 @@ private:
   bool otbm_destructive_ack_ = false;
   int selected_otbm_type_ = 0;
   bool otbm_tab_active_ = false;
+
+  // Theme
+  ThemeType* theme_ptr_ = nullptr;
 
   // Callbacks
   LoadSecondaryCallback on_load_secondary_;

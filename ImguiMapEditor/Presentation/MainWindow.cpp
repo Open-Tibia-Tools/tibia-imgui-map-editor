@@ -1,11 +1,14 @@
 #include "MainWindow.h"
 #include "Rendering/Frame/RenderingManager.h"
 #include "Services/ClipboardService.h"
+#include "UI/Core/Theme.h"
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 
 namespace MapEditor {
 namespace Presentation {
+
+namespace SC = SemanticColors;
 
 MainWindow::MainWindow(Services::ViewSettings &view_settings,
                        Services::ClientVersionRegistry &version_registry,
@@ -96,8 +99,8 @@ void MainWindow::renderEditor(Domain::ChunkedMap *current_map,
               if (is_active) {
                   // Pulsate between Green and Yellow for Active + Modified
                   float t = (sinf((float)ImGui::GetTime() * 5.0f) * 0.5f) + 0.5f;
-                  ImVec4 color_green = ImVec4(0.0f, 0.5f, 0.0f, 0.7f);
-                  ImVec4 color_yellow = ImVec4(1.0f, 0.8f, 0.0f, 0.7f);
+                  ImVec4 color_green = ImVec4(SC::SAVED.x, SC::SAVED.y, SC::SAVED.z, 0.7f);
+                  ImVec4 color_yellow = ImVec4(SC::MODIFIED.x, SC::MODIFIED.y, SC::MODIFIED.z, 0.7f);
 
                   tab_color.x = color_green.x + (color_yellow.x - color_green.x) * t;
                   tab_color.y = color_green.y + (color_yellow.y - color_green.y) * t;
@@ -105,11 +108,11 @@ void MainWindow::renderEditor(Domain::ChunkedMap *current_map,
                   tab_color.w = 0.7f;
               } else {
                   // Static yellow/gold for Modified
-                  tab_color = ImVec4(0.8f, 0.65f, 0.0f, 0.7f);
+                  tab_color = ImVec4(SC::GOLD.x, SC::GOLD.y, SC::GOLD.z, 0.7f);
               }
           } else {
               // Static green for Active
-              tab_color = ImVec4(0.0f, 0.5f, 0.0f, 0.7f);
+              tab_color = ImVec4(SC::SAVED.x, SC::SAVED.y, SC::SAVED.z, 0.7f);
           }
 
           ImGui::PushStyleColor(ImGuiCol_Tab, tab_color);
@@ -145,7 +148,7 @@ void MainWindow::renderEditor(Domain::ChunkedMap *current_map,
             } else {
               spdlog::error("Error: RenderState not found for session {}",
                             static_cast<int>(session->getID()));
-              ImGui::TextColored(ImVec4(1, 0, 0, 1),
+              ImGui::TextColored(SC::DANGER,
                                  "Error: RenderState not found for session %d",
                                  static_cast<int>(session->getID()));
             }

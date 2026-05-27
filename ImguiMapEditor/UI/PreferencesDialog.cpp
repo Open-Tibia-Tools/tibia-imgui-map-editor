@@ -1,6 +1,7 @@
 // Prevent GLFW from including OpenGL headers (glad provides them)
 #define GLFW_INCLUDE_NONE
 #include "PreferencesDialog.h"
+#include "UI/Core/Theme.h"
 #include "../ext/imhotkey/imHotKey.h"
 #include "IO/HotkeyJsonReader.h"
 #include "Presentation/NotificationHelper.h"
@@ -9,6 +10,7 @@
 #include "Services/OtbmSettings.h"
 #include "Services/SecondaryClientData.h"
 #include "ext/fontawesome6/IconsFontAwesome6.h"
+#include <algorithm>
 #include <format>
 #include <glad/glad.h>
 #include <imgui.h>
@@ -17,6 +19,8 @@
 
 namespace MapEditor {
 namespace UI {
+
+namespace SC = SemanticColors;
 
 namespace {
 
@@ -119,7 +123,67 @@ PreferencesDialog::Result PreferencesDialog::render() {
 
 void PreferencesDialog::renderEditorTab() {
   ImGui::Spacing();
-  ImGui::TextDisabled("General editor settings will be added here.");
+
+  // === Theme ===
+  if (ImGui::CollapsingHeader(ICON_FA_PALETTE " Theme", ImGuiTreeNodeFlags_DefaultOpen)) {
+    ImGui::Spacing();
+
+    float combo_width = 220.0f;
+    ImGui::TextUnformatted("Select Theme");
+
+    const char* current_name = "Select Theme";
+    if (theme_ptr_) {
+      current_name = GetThemeName(*theme_ptr_);
+    }
+
+    ImGui::SetNextItemWidth(combo_width);
+    if (ImGui::BeginCombo("##ThemeCombo", current_name)) {
+      for (const auto& theme : AVAILABLE_THEMES) {
+        bool is_selected = theme_ptr_ && (*theme_ptr_ == theme.type);
+
+        const char* theme_icon = ICON_FA_CIRCLE;
+        switch (theme.type) {
+          case ThemeType::TibiaRPG:       theme_icon = ICON_FA_CIRCLE; break;
+          case ThemeType::ModernDark:     theme_icon = ICON_FA_MOON; break;
+          case ThemeType::ForestGreen:    theme_icon = ICON_FA_LEAF; break;
+          case ThemeType::SunsetOrange:   theme_icon = ICON_FA_SUN; break;
+          case ThemeType::MidnightPurple: theme_icon = ICON_FA_MOON; break;
+          case ThemeType::ClassicLight:   theme_icon = ICON_FA_SUN; break;
+          case ThemeType::OtclientTheme:  theme_icon = ICON_FA_GAMEPAD; break;
+        }
+
+        ImGui::PushStyleColor(ImGuiCol_Text, theme.preview_color);
+        ImGui::Text("%s", ICON_FA_SQUARE);
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+
+        std::string label = std::string(theme_icon) + " " + theme.name;
+
+        if (ImGui::Selectable(label.c_str(), is_selected)) {
+          ApplyTheme(theme.type);
+          if (theme_ptr_) {
+            *theme_ptr_ = theme.type;
+          }
+          if (on_apply_settings_) {
+            on_apply_settings_();
+          }
+        }
+        if (ImGui::IsItemHovered() && theme.description) {
+          ImGui::SetTooltip("%s", theme.description);
+        }
+      }
+      ImGui::EndCombo();
+    }
+
+    if (theme_ptr_) {
+      ImGui::SameLine();
+      const auto& current_theme = *std::ranges::find_if(
+          AVAILABLE_THEMES, [this](const ThemeInfo& ti) { return ti.type == *theme_ptr_; });
+      ImGui::TextUnformatted(current_theme.description);
+    }
+
+    ImGui::Spacing();
+  }
 }
 
 void PreferencesDialog::renderSecondaryClientTab() {
@@ -144,10 +208,10 @@ void PreferencesDialog::renderSecondaryClientTab() {
     bool is_active = sec_client->isActive();
 
     if (is_active) {
-      ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f),
+      ImGui::TextColored(SC::SAVED,
                          ICON_FA_CHECK " Secondary Client Active");
     } else {
-      ImGui::TextColored(ImVec4(0.8f, 0.6f, 0.2f, 1.0f),
+      ImGui::TextColored(SC::WARNING,
                          ICON_FA_PAUSE " Secondary Client Loaded (Inactive)");
     }
 
@@ -230,7 +294,7 @@ void PreferencesDialog::renderSecondaryClientTab() {
 
     // Error display
     if (!secondary_error_.empty()) {
-      ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f),
+      ImGui::TextColored(SC::DANGER,
                          ICON_FA_TRIANGLE_EXCLAMATION " %s",
                          secondary_error_.c_str());
       ImGui::Spacing();
@@ -372,7 +436,7 @@ void PreferencesDialog::renderHotkeysTab() {
           ImGui::TableNextColumn();
           char shortcut[64];
           ImHotKey::GetHotKeyLib(hotkeys[i], shortcut, sizeof(shortcut));
-          ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "%s",
+          ImGui::TextColored(SC::INFO, "%s",
                              shortcut[0] ? shortcut : "(none)");
 
           ImGui::TableNextColumn();
