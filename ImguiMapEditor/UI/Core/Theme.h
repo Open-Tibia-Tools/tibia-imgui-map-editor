@@ -36,10 +36,14 @@ namespace SemanticColors {
 
     // Helpers for deriving hover/active variants from base semantic colors
     constexpr ImVec4 Lighten(const ImVec4& c, float amount = 0.12f) {
-        return ImVec4(c.x + amount, c.y + amount, c.z + amount, c.w);
+        return ImVec4(std::clamp(c.x + amount, 0.0f, 1.0f),
+                      std::clamp(c.y + amount, 0.0f, 1.0f),
+                      std::clamp(c.z + amount, 0.0f, 1.0f), c.w);
     }
     constexpr ImVec4 Darken(const ImVec4& c, float amount = 0.12f) {
-        return ImVec4(c.x - amount, c.y - amount, c.z - amount, c.w);
+        return ImVec4(std::clamp(c.x - amount, 0.0f, 1.0f),
+                      std::clamp(c.y - amount, 0.0f, 1.0f),
+                      std::clamp(c.z - amount, 0.0f, 1.0f), c.w);
     }
 } // namespace SemanticColors
 

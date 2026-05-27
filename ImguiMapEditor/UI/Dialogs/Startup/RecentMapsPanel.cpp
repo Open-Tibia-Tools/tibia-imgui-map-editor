@@ -10,6 +10,8 @@ namespace SC = SemanticColors;
 
 namespace SC = SemanticColors;
 
+namespace SC = SemanticColors;
+
 void RecentMapsPanel::render(const std::vector<RecentMapEntry> &entries) {
   // Panel header
   ImGui::TextColored(SC::HEADER_TEXT, "Recent Maps List");

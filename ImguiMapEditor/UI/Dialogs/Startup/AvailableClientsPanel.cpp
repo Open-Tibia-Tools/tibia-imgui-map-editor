@@ -9,8 +9,6 @@ namespace UI {
 
 namespace SC = SemanticColors;
 
-namespace SC = SemanticColors;
-
 void AvailableClientsPanel::render() {
   ImGui::TextColored(SC::HEADER_TEXT, "Available Clients");
   ImGui::Spacing();
