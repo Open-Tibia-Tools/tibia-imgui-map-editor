@@ -1,44 +1,75 @@
-/ImguiMapEditor/build
+# ============================================================
+# Build Directories
+# ============================================================
 /build
-/RME_Readonly/data/760
-/ImguiMapEditor/.qoder
+/build-ninja
+/ImguiMapEditor/build
 /ImguiMapEditor/build-release
-/ImguiMapEditor/vcpkg_installed
+/ImguiMapEditor/build-ninja
 /ImguiMapEditor/out
-/sec_files
+
+# ============================================================
+# Build Artifacts & Logs
+# ============================================================
+*.log
+build*.txt
+compile_commands.json
+
+# ============================================================
+# IDE & Editor Config
+# ============================================================
+/.vs
+/ImguiMapEditor/.qoder
 CMakeUserPresets.json
 /ImguiMapEditor/CMakeUserPresets.json
-/.vs
 
-# Build artifacts and analysis files
-*.log
-*_analysis.md
-/ActionScript_ObjectBuilder_source
-
-# Build logs
-build_log.txt
-ImguiMapEditor/build_log.txt
-build*.txt
-/.agent
-.agent
+# ============================================================
+# Dependencies & Package Managers
+# ============================================================
+/ImguiMapEditor/vcpkg_installed
 /ImguiMapEditor/ext/_imgui-docking
-/RME_Readonly
-/Map_Viewer_Readonly
-Map_Viewer_Readonly
-RME_Readonly
-
-/ImguiMapEditor/build-ninja
-/ImguiMapEditor/sample_data
-
-.gemini/
-gha-creds-*.json
-/build-ninja
-compile_commands.json
 .opencode/**/node_modules
 .opencode/**/tmp
 .opencode/**/cache
 .opencode/sessions
+<<<<<<< Updated upstream
 /vcproj/vcpkg_installed
 /vcproj/_deps
 /vcproj/CMakeFiles
 /vcproj
+=======
+
+# ============================================================
+# Read-only / External Source Trees
+# ============================================================
+/RME_Readonly
+/Map_Viewer_Readonly
+
+# ============================================================
+# Generated VS Solution
+# ============================================================
+vcproj/*
+!vcproj/generate_vcproj.bat
+
+# ============================================================
+# Secrets & Credentials
+# ============================================================
+gha-creds-*.json
+
+# ============================================================
+# AI Agent Directories
+# ============================================================
+/.agent
+.gemini/
+
+# ============================================================
+# Misc / Project-Specific
+# ============================================================
+/sec_files
+/ImguiMapEditor/sample_data
+/ActionScript_ObjectBuilder_source
+
+# ============================================================
+# Unorganized (auto-appended)
+# ============================================================
+>>>>>>> Stashed changes
