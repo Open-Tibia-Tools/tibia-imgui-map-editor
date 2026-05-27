@@ -33,6 +33,14 @@ namespace SemanticColors {
 
     // Misc
     inline constexpr float DISABLED_ALPHA = 0.5f;
+
+    // Helpers for deriving hover/active variants from base semantic colors
+    constexpr ImVec4 Lighten(const ImVec4& c, float amount = 0.12f) {
+        return ImVec4(c.x + amount, c.y + amount, c.z + amount, c.w);
+    }
+    constexpr ImVec4 Darken(const ImVec4& c, float amount = 0.12f) {
+        return ImVec4(c.x - amount, c.y - amount, c.z - amount, c.w);
+    }
 } // namespace SemanticColors
 
 // ============================================================================

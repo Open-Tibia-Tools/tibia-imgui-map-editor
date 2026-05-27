@@ -8,11 +8,7 @@ namespace UI {
 
 namespace SC = SemanticColors;
 
-// Custom list-item header colors for the dark-theme recent maps panel
-constexpr ImVec4 kSelectedHeader       { 0.25f, 0.45f, 0.70f, 0.90f };
-constexpr ImVec4 kSelectedHeaderHover  { 0.30f, 0.50f, 0.75f, 1.00f };
-constexpr ImVec4 kUnselectedHeader     { 0.18f, 0.20f, 0.24f, 0.60f };
-constexpr ImVec4 kUnselectedHeaderHover{ 0.22f, 0.25f, 0.30f, 0.80f };
+namespace SC = SemanticColors;
 
 void RecentMapsPanel::render(const std::vector<RecentMapEntry> &entries) {
   // Panel header
@@ -35,11 +31,11 @@ void RecentMapsPanel::render(const std::vector<RecentMapEntry> &entries) {
 
     // Style for selected/hover
     if (is_selected) {
-      ImGui::PushStyleColor(ImGuiCol_Header, kSelectedHeader);
-      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, kSelectedHeaderHover);
+      ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
+      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
     } else {
-      ImGui::PushStyleColor(ImGuiCol_Header, kUnselectedHeader);
-      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, kUnselectedHeaderHover);
+      ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyleColorVec4(ImGuiCol_Header));
+      ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered));
     }
 
     // Grayed out if file doesn't exist

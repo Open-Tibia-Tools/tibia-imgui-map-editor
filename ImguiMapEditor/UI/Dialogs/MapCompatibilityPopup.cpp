@@ -83,8 +83,8 @@ void MapCompatibilityPopup::render() {
 
     // Force load button - warning color
     ImGui::PushStyleColor(ImGuiCol_Button, SC::WARNING);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::WARNING);
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::WARNING);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::WARNING));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::WARNING));
     if (ImGui::Button(ICON_FA_BOLT " Force Load", ImVec2(button_width, 0))) {
       result_ = Result::ForceLoad;
       is_open_ = false;

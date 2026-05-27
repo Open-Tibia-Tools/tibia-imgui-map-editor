@@ -2,6 +2,7 @@
 #include "Rendering/Frame/RenderingManager.h"
 #include "Services/ClipboardService.h"
 #include "UI/Core/Theme.h"
+#include <cmath>
 #include <imgui.h>
 #include <spdlog/spdlog.h>
 

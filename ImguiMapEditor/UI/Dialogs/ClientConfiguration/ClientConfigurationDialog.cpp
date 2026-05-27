@@ -28,10 +28,10 @@ void pushCompactStyle() {
 void popCompactStyle() { ImGui::PopStyleVar(5); }
 
 constexpr ImVec4 kBlueAccent   = SemanticColors::INFO;
-constexpr ImVec4 kBlueHover    = SemanticColors::INFO;
-constexpr ImVec4 kBlueActive   = SemanticColors::INFO;
+constexpr ImVec4 kBlueHover    = SemanticColors::Lighten(SemanticColors::INFO);
+constexpr ImVec4 kBlueActive   = SemanticColors::Darken(SemanticColors::INFO);
 constexpr ImVec4 kRedDelete    = SemanticColors::DANGER;
-constexpr ImVec4 kRedHover     = SemanticColors::DANGER;
+constexpr ImVec4 kRedHover     = SemanticColors::Lighten(SemanticColors::DANGER);
 constexpr ImVec4 kGreenStatus  = SemanticColors::SAVED;
 constexpr ImVec4 kTextOffWhite = SemanticColors::HEADER_TEXT;
 constexpr ImVec4 kTextMuted    = SemanticColors::MUTED;

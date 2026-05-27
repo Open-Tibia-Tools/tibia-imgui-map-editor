@@ -88,7 +88,7 @@ void NewMapDialog::render() {
     }
 
     ImGui::PushStyleColor(ImGuiCol_Button, SC::INFO);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::INFO);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::INFO));
 
     if (ImGui::Button(ICON_FA_CHECK " Create Map", ImVec2(button_width, 0)) &&
         can_create) {

@@ -177,9 +177,11 @@ void PreferencesDialog::renderEditorTab() {
 
     if (theme_ptr_) {
       ImGui::SameLine();
-      const auto& current_theme = *std::ranges::find_if(
+      auto it = std::ranges::find_if(
           AVAILABLE_THEMES, [this](const ThemeInfo& ti) { return ti.type == *theme_ptr_; });
-      ImGui::TextUnformatted(current_theme.description);
+      if (it != std::end(AVAILABLE_THEMES)) {
+        ImGui::TextUnformatted(it->description);
+      }
     }
 
     ImGui::Spacing();

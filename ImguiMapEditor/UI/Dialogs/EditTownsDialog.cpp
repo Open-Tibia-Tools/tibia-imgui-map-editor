@@ -158,8 +158,8 @@ EditTownsDialog::Result EditTownsDialog::render() {
                 ImGui::Spacing();
 
                 ImGui::PushStyleColor(ImGuiCol_Button, SC::DANGER);
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::DANGER);
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::DANGER);
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::DANGER));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::DANGER));
 
                 if (ImGui::Button(ICON_FA_TRASH " Yes, Remove", ImVec2(120, 0))) {
                     uint32_t removed_id = towns_[selected_index_].id;
@@ -330,8 +330,8 @@ EditTownsDialog::Result EditTownsDialog::render() {
         ImGui::Spacing();
 
         ImGui::PushStyleColor(ImGuiCol_Button, SC::DANGER);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::DANGER);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::DANGER);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::DANGER));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::DANGER));
         if (ImGui::Button(ICON_FA_CROSSHAIRS " Change Temple Position", ImVec2(-1, 0))) {
             if (on_pick_position_ && on_pick_position_()) {
                 is_picking_position_ = true;
@@ -343,8 +343,8 @@ EditTownsDialog::Result EditTownsDialog::render() {
         }
 
         ImGui::PushStyleColor(ImGuiCol_Button, SC::INFO);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::INFO);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::INFO);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::INFO));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::INFO));
         if (ImGui::Button(ICON_FA_LOCATION_DOT " Go To Position", ImVec2(-1, 0))) {
             if (has_selection && on_go_to_) {
                 on_go_to_(towns_[selected_index_].temple_position);
@@ -384,8 +384,8 @@ EditTownsDialog::Result EditTownsDialog::render() {
 
         if (flash_active) {
             ImGui::PushStyleColor(ImGuiCol_Button, SC::SAVED);
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::SAVED);
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::SAVED);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::SAVED));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::SAVED));
         }
 
         if (ImGui::Button(ICON_FA_FLOPPY_DISK " Apply", ImVec2(button_w, 0))) {
@@ -401,8 +401,8 @@ EditTownsDialog::Result EditTownsDialog::render() {
         ImGui::SameLine();
 
         ImGui::PushStyleColor(ImGuiCol_Button, SC::INFO);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::INFO);
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::INFO);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::INFO));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::INFO));
 
         if (ImGui::Button(ICON_FA_CHECK " OK", ImVec2(button_w, 0))) {
             applyChangesToMap();

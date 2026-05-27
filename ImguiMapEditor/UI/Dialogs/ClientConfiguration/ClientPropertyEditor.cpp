@@ -43,7 +43,7 @@ constexpr ImVec4 kGreen     = SemanticColors::SAVED;
 constexpr ImVec4 kTextMuted = SemanticColors::MUTED;
 constexpr ImVec4 kGreenStatus = SemanticColors::SAVED;
 constexpr ImVec4 kBlueAccent  = SemanticColors::INFO;
-constexpr ImVec4 kBlueHover   = SemanticColors::INFO;
+constexpr ImVec4 kBlueHover   = SemanticColors::Lighten(SemanticColors::INFO);
 
 float labelColumn() { return 195.0f; }
 

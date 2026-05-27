@@ -217,23 +217,17 @@ void StartupDialog::renderHeader() {
                   right_padding);
   ImGui::SetCursorPosY(button_y);
 
-  ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
-  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
   if (ImGui::Button(ICON_FA_GEAR " Preferences", kUniformButtonSize)) {
     pending_result_.action = Action::Preferences;
   }
-  ImGui::PopStyleColor(2);
 
   // Position second button at same Y level
   ImGui::SameLine(0, button_spacing);
   ImGui::SetCursorPosY(button_y);
 
-  ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
-  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
   if (ImGui::Button(ICON_FA_SLIDERS " Client Config", kUniformButtonSize)) {
     pending_result_.action = Action::ClientConfiguration;
   }
-  ImGui::PopStyleColor(2);
 
   ImGui::EndChild();
   ImGui::PopStyleColor(); // ChildBg
@@ -247,8 +241,8 @@ void StartupDialog::renderSidebar() {
 
   // New Map button (primary action)
   ImGui::PushStyleColor(ImGuiCol_Button, SC::INFO);
-  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::INFO);
-  ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::INFO);
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::INFO));
+  ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::INFO));
   if (ImGui::Button(ICON_FA_FILE " New map", kUniformButtonSize)) {
     pending_result_.action = Action::NewMap;
   }
@@ -258,26 +252,18 @@ void StartupDialog::renderSidebar() {
   ImGui::Spacing();
 
   // Browse Map button
-  ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
-  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
-  ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
   if (ImGui::Button(ICON_FA_FOLDER_OPEN " Browse Map", kUniformButtonSize)) {
     pending_result_.action = Action::BrowseMap;
   }
-  ImGui::PopStyleColor(3);
 
   ImGui::Spacing();
   ImGui::Spacing();
 
   // Browse .sec MAP button
-  ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
-  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
-  ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
   if (ImGui::Button(ICON_FA_MAGNIFYING_GLASS " Browse .sec",
                     kUniformButtonSize)) {
     pending_result_.action = Action::BrowseSecMap;
   }
-  ImGui::PopStyleColor(3);
 }
 
 void StartupDialog::renderRecentMapsPanel(
@@ -330,12 +316,9 @@ void StartupDialog::renderFooter() {
 
   // Exit button (left)
   ImGui::SetCursorPosY(button_y);
-  ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
-  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
   if (ImGui::Button(ICON_FA_POWER_OFF " Exit", kUniformButtonSize)) {
     pending_result_.action = Action::Exit;
   }
-  ImGui::PopStyleColor(2);
 
   ImGui::SameLine();
   ImGui::SetCursorPosY(button_y + 8.0f);
@@ -349,15 +332,11 @@ void StartupDialog::renderFooter() {
   ImGui::SameLine(region.x - right_buttons_width - right_padding);
   ImGui::SetCursorPosY(button_y);
 
-  // Ignore signatures toggle button (converted from checkbox)
+  // Ignore signatures toggle button
   if (ignore_signatures_) {
     ImGui::PushStyleColor(ImGuiCol_Button, SC::INFO);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::INFO);
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::INFO);
-  } else {
-    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_Button));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::INFO));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::INFO));
   }
 
   const char *sig_label = ignore_signatures_ ? ICON_FA_CHECK " Ignore Sigs"
@@ -365,7 +344,10 @@ void StartupDialog::renderFooter() {
   if (ImGui::Button(sig_label, kUniformButtonSize)) {
     ignore_signatures_ = !ignore_signatures_;
   }
-  ImGui::PopStyleColor(3);
+
+  if (ignore_signatures_) {
+    ImGui::PopStyleColor(3);
+  }
 
   ImGui::SameLine(0, button_spacing);
 
@@ -373,8 +355,8 @@ void StartupDialog::renderFooter() {
   bool can_load = load_enabled_ || ignore_signatures_;
 
   ImGui::PushStyleColor(ImGuiCol_Button, SC::INFO);
-  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::INFO);
-  ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::INFO);
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SC::Lighten(SC::INFO));
+  ImGui::PushStyleColor(ImGuiCol_ButtonActive, SC::Darken(SC::INFO));
 
   if (!can_load) {
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, SC::DISABLED_ALPHA);
